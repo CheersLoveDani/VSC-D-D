@@ -1,0 +1,11 @@
+{
+  "imagePath": "https://raw.githubusercontent.com/microsoft/vscode-extension-samples/main/custom-editor-sample/media/cat.gif",
+  "pins": [
+    {
+      "x": 100,
+      "y": 100,
+      "label": "Start Here",
+      "link": "./sample.dndchar"
+    }
+  ]
+}

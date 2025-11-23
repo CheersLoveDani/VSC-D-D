@@ -1,0 +1,7 @@
+{
+  "name": "Potion of Healing ",
+  "type": "potion",
+  "value": 50,
+  "weight": 0.5,
+  "description": "Restores 2d4 + 2 hit points."
+}

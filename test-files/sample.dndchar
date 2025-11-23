@@ -1,0 +1,80 @@
+{
+  "name": "Derek of Morovere",
+  "class": "Derek lvl 1",
+  "race": "Derek",
+  "alignment": "Derekish",
+  "stats": {
+    "str": 10,
+    "dex": 10,
+    "con": 10,
+    "int": 10,
+    "wis": 10,
+    "cha": 10
+  },
+  "hp": {
+    "current": null,
+    "max": null
+  },
+  "ac": null,
+  "initiative": null,
+  "speed": "",
+  "inventory": "",
+  "traits": "",
+  "notes": "",
+  "skills": {
+    "acrobatics": {
+      "prof": false
+    },
+    "animal_handling": {
+      "prof": false
+    },
+    "arcana": {
+      "prof": false
+    },
+    "athletics": {
+      "prof": false
+    },
+    "deception": {
+      "prof": false
+    },
+    "history": {
+      "prof": false
+    },
+    "insight": {
+      "prof": false
+    },
+    "intimidation": {
+      "prof": false
+    },
+    "investigation": {
+      "prof": false
+    },
+    "medicine": {
+      "prof": false
+    },
+    "nature": {
+      "prof": false
+    },
+    "perception": {
+      "prof": false
+    },
+    "performance": {
+      "prof": false
+    },
+    "persuasion": {
+      "prof": false
+    },
+    "religion": {
+      "prof": false
+    },
+    "sleight_of_hand": {
+      "prof": false
+    },
+    "stealth": {
+      "prof": false
+    },
+    "survival": {
+      "prof": false
+    }
+  }
+}

@@ -1,0 +1,74 @@
+:root {
+    /* Fonts */
+    --dnd-font-header: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif; /* Modern sans-serif headers */
+    --dnd-font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    /* Colors - Light Mode */
+    --dnd-bg: var(--vscode-editor-background);
+    --dnd-text: var(--vscode-editor-foreground);
+    --dnd-accent: #D32F2F; /* Subtle Red */
+    --dnd-border: var(--vscode-panel-border);
+    --dnd-input-bg: var(--vscode-input-background);
+    --dnd-card-bg: var(--vscode-editor-background);
+    --dnd-shadow: rgba(0, 0, 0, 0.1);
+    --dnd-radius: 6px;
+}
+
+body.vscode-dark {
+    /* Colors - Dark Mode */
+    --dnd-accent: #EF5350; /* Lighter Red for dark mode */
+    --dnd-shadow: rgba(0, 0, 0, 0.3);
+}
+
+body {
+    background-color: var(--dnd-bg);
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-body);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--dnd-font-header);
+    color: var(--dnd-text);
+    font-weight: 600;
+    border-bottom: 1px solid var(--dnd-border);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+}
+
+input, select, textarea {
+    background: var(--dnd-input-bg);
+    color: var(--dnd-text);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    padding: 8px 12px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+}
+
+.dnd-card {
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    box-shadow: 0 2px 8px var(--dnd-shadow);
+    padding: 20px;
+}
+
+.dnd-btn {
+    background: var(--dnd-accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--dnd-radius);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.dnd-btn:hover {
+    opacity: 0.9;
+}

@@ -1,0 +1,76 @@
+@import 'dnd-theme.css';
+
+body {
+    padding: 20px;
+}
+
+.container {
+    display: flex;
+    gap: 40px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.editor-pane, .preview-pane {
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-family: var(--dnd-font-header);
+}
+
+input, select, textarea {
+    width: 100%;
+    /* Styles inherited from theme */
+}
+
+/* Item Card Preview */
+.item-card {
+    border: 4px double var(--dnd-border);
+    border-radius: 8px;
+    background: var(--dnd-card-bg);
+    color: var(--dnd-text);
+    overflow: hidden;
+    box-shadow: 0 4px 12px var(--dnd-shadow);
+}
+
+.card-header {
+    background: var(--dnd-accent);
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.2em;
+    font-family: var(--dnd-font-header);
+    text-shadow: 1px 1px 2px black;
+}
+
+.card-body {
+    padding: 15px;
+    min-height: 100px;
+}
+
+.item-type {
+    color: var(--dnd-border);
+    font-style: italic;
+    margin-top: 0;
+    border-bottom: 1px solid var(--dnd-border);
+    padding-bottom: 5px;
+}
+
+.card-footer {
+    background: rgba(0,0,0,0.1);
+    padding: 5px 15px;
+    text-align: right;
+    font-size: 0.9em;
+    color: var(--dnd-text);
+    font-weight: bold;
+}

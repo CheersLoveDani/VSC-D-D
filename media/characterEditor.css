@@ -1,0 +1,147 @@
+@import 'dnd-theme.css';
+
+body {
+    padding: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--dnd-card-bg);
+    padding: 40px;
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    box-shadow: 0 4px 20px var(--dnd-shadow);
+}
+
+/* Stat Block Header */
+.stat-block-header {
+    border-bottom: 1px solid var(--dnd-border);
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+}
+
+.char-name-input {
+    font-family: var(--dnd-font-header);
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--dnd-accent);
+    border: none;
+    background: transparent;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.char-meta {
+    display: flex;
+    gap: 10px;
+    font-style: italic;
+}
+
+.char-meta input {
+    border: none;
+    border-bottom: 1px solid var(--dnd-border);
+    background: transparent;
+    font-style: italic;
+}
+
+/* Main Grid Layout */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+}
+
+/* Ability Scores */
+.ability-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: var(--dnd-accent);
+    padding: 15px;
+    border-radius: 8px;
+    color: white;
+}
+
+.ability-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--dnd-card-bg);
+    color: var(--dnd-text);
+    padding: 10px;
+    border-radius: 4px;
+    border: 2px solid var(--dnd-border);
+}
+
+.ability-score label {
+    font-weight: bold;
+    font-family: var(--dnd-font-header);
+    text-transform: uppercase;
+}
+
+.ability-score input {
+    font-size: 1.5em;
+    width: 50px;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-weight: bold;
+}
+
+/* Combat Stats */
+.combat-stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-content: space-around;
+    background: rgba(0,0,0,0.05);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--dnd-border);
+}
+
+.combat-stat {
+    text-align: center;
+}
+
+.combat-stat label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.8em;
+    text-transform: uppercase;
+}
+
+.combat-stat input {
+    width: 60px;
+    text-align: center;
+    font-size: 1.2em;
+}
+
+/* Tabbed Content (Skills, Inventory, Notes) */
+.tabs {
+    margin-top: 20px;
+}
+
+.section-title {
+    font-family: var(--dnd-font-header);
+    color: var(--dnd-accent);
+    border-bottom: 2px solid var(--dnd-border);
+    margin-bottom: 10px;
+}
+
+.skill-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+.skill-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.skill-row input[type="checkbox"] {
+    width: auto;
+}

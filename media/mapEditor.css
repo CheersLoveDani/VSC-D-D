@@ -1,0 +1,64 @@
+@import 'dnd-theme.css';
+
+body {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    /* Background handled by theme */
+}
+
+#map-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--vscode-editor-background); /* Keep editor bg for infinite canvas feel */
+}
+
+#map-content {
+    position: relative;
+    transform-origin: 0 0;
+}
+
+#map-image {
+    max-width: none; /* Allow image to be full size */
+    display: block;
+}
+
+.pin {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%;
+    cursor: pointer;
+    transform: translate(-50%, -50%); /* Center on coordinates */
+    border: 2px solid white;
+}
+
+.pin:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: black;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+#controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--vscode-editor-background);
+    padding: 10px;
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 4px;
+}
