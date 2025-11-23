@@ -6,6 +6,7 @@
     const container = /** @type {HTMLElement} */ (document.getElementById('app'));
     const toggleBtn = /** @type {HTMLElement} */ (document.getElementById('toggle-mode-btn'));
     const popover = /** @type {HTMLElement} */ (document.getElementById('popover'));
+    const toolbar = /** @type {HTMLElement} */ (document.querySelector('.toolbar'));
 
     /** @type {{ content: string, mode: 'read' | 'edit' }} */
     let state = {
@@ -15,6 +16,44 @@
 
     // Initialize
     vscode.postMessage({ type: 'ready' });
+
+    // Add "Edit as Text" button
+    if (toolbar) {
+        const editTextBtn = document.createElement('button');
+        editTextBtn.className = 'dnd-btn secondary';
+        editTextBtn.textContent = 'Edit as Text';
+        editTextBtn.onclick = showPlainTextWarning;
+        toolbar.appendChild(editTextBtn);
+    }
+
+    function showPlainTextWarning() {
+        const warning = document.createElement('div');
+        warning.className = 'warning-popover';
+        warning.innerHTML = `
+            <h3>⚠️ Warning</h3>
+            <p>Editing this file manually may corrupt the data. Are you sure?</p>
+            <div class="buttons">
+                <button id="warning-continue" class="dnd-btn danger">Continue</button>
+                <button id="warning-cancel" class="dnd-btn secondary">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(warning);
+
+        const continueBtn = document.getElementById('warning-continue');
+        if (continueBtn) {
+            continueBtn.onclick = () => {
+                vscode.postMessage({ type: 'editInPlainText' });
+                warning.remove();
+            };
+        }
+
+        const cancelBtn = document.getElementById('warning-cancel');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                warning.remove();
+            };
+        }
+    }
 
     window.addEventListener('message', event => {
         const message = event.data;
@@ -46,7 +85,7 @@
                 state.content = textarea.value;
                 vscode.postMessage({
                     type: 'updateData',
-                    data: state.content
+                    text: state.content
                 });
             });
             container.appendChild(textarea);

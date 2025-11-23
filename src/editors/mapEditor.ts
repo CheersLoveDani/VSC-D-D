@@ -1,131 +1,161 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 export class MapEditorProvider implements vscode.CustomTextEditorProvider {
 
-	public static readonly viewType = 'dnd.mapEditor';
+    public static readonly viewType = 'dnd.mapEditor';
 
-	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new MapEditorProvider(context);
-		const providerRegistration = vscode.window.registerCustomEditorProvider(MapEditorProvider.viewType, provider);
-		return providerRegistration;
-	}
+    public static register(context: vscode.ExtensionContext): vscode.Disposable {
+        const provider = new MapEditorProvider(context);
+        const providerRegistration = vscode.window.registerCustomEditorProvider(MapEditorProvider.viewType, provider);
+        return providerRegistration;
+    }
 
-	constructor(
-		private readonly context: vscode.ExtensionContext
-	) { }
+    constructor(
+        private readonly context: vscode.ExtensionContext
+    ) { }
 
-	/**
-	 * Called when our custom editor is opened.
-	 */
-	public async resolveCustomTextEditor(
-		document: vscode.TextDocument,
-		webviewPanel: vscode.WebviewPanel,
-		_token: vscode.CancellationToken
-	): Promise<void> {
-		// Setup initial content for the webview
-		webviewPanel.webview.options = {
-			enableScripts: true,
-		};
+    /**
+     * Called when our custom editor is opened.
+     */
+    public async resolveCustomTextEditor(
+        document: vscode.TextDocument,
+        webviewPanel: vscode.WebviewPanel,
+        _token: vscode.CancellationToken
+    ): Promise<void> {
+        // Setup initial content for the webview
+        webviewPanel.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [
+                vscode.Uri.joinPath(this.context.extensionUri, 'media'),
+                vscode.Uri.joinPath(document.uri, '..')
+            ]
+        };
 
-		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
+        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
-		function updateWebview() {
-			webviewPanel.webview.postMessage({
-				type: 'update',
-				text: document.getText(),
-			});
-		}
+        function updateWebview() {
+            const text = document.getText();
+            let resolvedImageUri = '';
+            try {
+                const json = JSON.parse(text);
+                if (json.imagePath) {
+                    const docDir = vscode.Uri.joinPath(document.uri, '..');
+                    const imageUri = vscode.Uri.joinPath(docDir, json.imagePath);
+                    resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
+                }
+            } catch { }
 
-		// Hook up event handlers so that when the document changes, the webview is updated
-		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-			if (e.document.uri.toString() === document.uri.toString()) {
-				updateWebview();
-			}
-		});
+            webviewPanel.webview.postMessage({
+                type: 'update',
+                text: text,
+                resolvedImageUri: resolvedImageUri
+            });
+        }
 
-		// Make sure we get rid of the listener when our editor is closed.
-		webviewPanel.onDidDispose(() => {
-			changeDocumentSubscription.dispose();
-		});
+        // Hook up event handlers so that when the document changes, the webview is updated
+        const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
+            if (e.document.uri.toString() === document.uri.toString()) {
+                updateWebview();
+            }
+        });
 
-		// Receive message from the webview.
-		webviewPanel.webview.onDidReceiveMessage(e => {
-			switch (e.type) {
-				case 'addPin':
-                    // TODO: Implement adding pin logic (modifying the document)
-                    this.addPin(document, e.x, e.y);
-					return;
-                case 'ready':
-                    updateWebview();
+        // Make sure we get rid of the listener when our editor is closed.
+        webviewPanel.onDidDispose(() => {
+            changeDocumentSubscription.dispose();
+        });
+
+        // Receive message from the webview.
+        webviewPanel.webview.onDidReceiveMessage(e => {
+            switch (e.type) {
+                case 'update':
+                    this.updateDocument(document, e.data);
                     return;
-			}
-		});
+                case 'editInPlainText':
+                    vscode.commands.executeCommand('workbench.action.toggleEditorType');
+                    return;
+                case 'selectImage':
+                    this.selectImage(document);
+                    return;
+                case 'openFile':
+                    this.openFile(document, e.path);
+                    return;
+            }
+        });
 
-		updateWebview();
-	}
+        updateWebview();
+    }
 
-	/**
-	 * Get the static HTML used for the editor webviews.
-	 */
-	private getHtmlForWebview(webview: vscode.Webview): string {
-		// Local path to script and css for the webview
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.js'));
-		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.css'));
+    /**
+     * Get the static HTML used for the editor webviews.
+     */
+    private getHtmlForWebview(webview: vscode.Webview): string {
+        // Local path to script and css for the webview
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.js'));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.css'));
 
-		return `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link href="${styleUri}" rel="stylesheet" />
-				<title>D&D Map Editor</title>
-			</head>
-			<body>
-				<div id="map-container">
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${styleUri}" rel="stylesheet" />
+                <title>D&D Map Editor</title>
+            </head>
+            <body>
+                <div id="map-container">
                     <div id="map-content">
                         <img id="map-image" src="" alt="Map Image" />
                         <div id="pins-layer"></div>
                     </div>
-				</div>
-                <div id="controls">
-                    <button id="add-pin-btn">Add Pin Mode</button>
                 </div>
-				<script src="${scriptUri}"></script>
-			</body>
-			</html>`;
-	}
-
-    private addPin(document: vscode.TextDocument, x: number, y: number) {
-        const json = this.getDocumentAsJson(document);
-        if (!json.pins) {
-            json.pins = [];
-        }
-        json.pins.push({ x, y, label: "New Pin", link: "" });
-        
-        return this.updateTextDocument(document, json);
+                <!-- Toolbar is created by JS -->
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>`;
     }
 
-    private getDocumentAsJson(document: vscode.TextDocument): any {
-        const text = document.getText();
-        if (text.trim().length === 0) {
-            return {};
-        }
-        try {
-            return JSON.parse(text);
-        } catch {
-            throw new Error('Could not get document as json. Content is not valid json');
-        }
-    }
-
-    private updateTextDocument(document: vscode.TextDocument, json: any) {
+    private updateDocument(document: vscode.TextDocument, data: any) {
         const edit = new vscode.WorkspaceEdit();
-        // Just replace the entire document for now
         edit.replace(
             document.uri,
             new vscode.Range(0, 0, document.lineCount, 0),
-            JSON.stringify(json, null, 2)
+            JSON.stringify(data, null, 2)
         );
-        return vscode.workspace.applyEdit(edit);
+        vscode.workspace.applyEdit(edit);
+    }
+
+    private async selectImage(document: vscode.TextDocument) {
+        const uris = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            openLabel: 'Select Map Image',
+            filters: {
+                'Images': ['png', 'jpg', 'jpeg', 'gif', 'webp']
+            }
+        });
+
+        if (uris && uris[0]) {
+            // Calculate relative path
+            const imageUri = uris[0];
+            const docDir = vscode.Uri.joinPath(document.uri, '..');
+            const relativePath = './' + path.relative(docDir.fsPath, imageUri.fsPath).replace(/\\/g, '/');
+
+            // Update document
+            const text = document.getText();
+            try {
+                const json = JSON.parse(text);
+                json.imagePath = relativePath;
+                this.updateDocument(document, json);
+            } catch {
+                // Ignore parse errors
+            }
+        }
+    }
+
+    private openFile(currentDoc: vscode.TextDocument, relativePath: string) {
+        if (!relativePath) return;
+        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
+        vscode.commands.executeCommand('vscode.open', targetUri);
     }
 }

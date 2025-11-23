@@ -6,10 +6,10 @@
     /** @type {any} */
     let state = {};
 
-    // List of all inputs to bind
     const inputs = [
-        'name', 'class', 'race', 'alignment',
-        'stats.str', 'stats.dex', 'stats.con', 'stats.int', 'stats.wis', 'stats.cha',
+        // Core Stats
+        'name', 'class', 'level', 'background', 'race', 'alignment', 'xp',
+        'str', 'dex', 'con', 'int', 'wis', 'cha',
         'hp.current', 'hp.max', 'ac', 'initiative', 'speed',
         'inventory', 'traits', 'notes',
         // Skills
@@ -34,6 +34,49 @@
             });
         }
     });
+
+    // Toolbar buttons
+    const editToggleBtn = document.getElementById('edit-toggle-btn'); // Not used here but good to have reference if needed
+    
+    // Create toolbar if not exists (though it should be in HTML)
+    // We need to add the "Edit as Text" button
+    const toolbar = document.querySelector('.toolbar');
+    if (toolbar) {
+        const editTextBtn = document.createElement('button');
+        editTextBtn.className = 'dnd-btn secondary';
+        editTextBtn.textContent = 'Edit as Text';
+        editTextBtn.onclick = showPlainTextWarning;
+        toolbar.appendChild(editTextBtn);
+    }
+
+    function showPlainTextWarning() {
+        const warning = document.createElement('div');
+        warning.className = 'warning-popover';
+        warning.innerHTML = `
+            <h3>⚠️ Warning</h3>
+            <p>Editing this file manually may corrupt the data. Are you sure?</p>
+            <div class="buttons">
+                <button id="warning-continue" class="dnd-btn danger">Continue</button>
+                <button id="warning-cancel" class="dnd-btn secondary">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(warning);
+
+        const continueBtn = document.getElementById('warning-continue');
+        if (continueBtn) {
+            continueBtn.onclick = () => {
+                vscode.postMessage({ type: 'editInPlainText' });
+                warning.remove();
+            };
+        }
+
+        const cancelBtn = document.getElementById('warning-cancel');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                warning.remove();
+            };
+        }
+    }
 
     // Debounce function to prevent too many updates
     /** @type {any} */

@@ -3,7 +3,7 @@
     // @ts-ignore
     const vscode = acquireVsCodeApi();
 
-    /** @type {{name?: string, type?: string, value?: number, weight?: number, description?: string}} */
+    /** @type {any} */
     let state = {};
 
     const inputs = ['name', 'type', 'value', 'weight', 'description'];
@@ -22,6 +22,46 @@
             });
         }
     });
+
+    // Toolbar buttons
+    // Create toolbar if not exists (though it should be in HTML)
+    const toolbar = document.querySelector('.toolbar');
+    if (toolbar) {
+        const editTextBtn = document.createElement('button');
+        editTextBtn.className = 'dnd-btn secondary';
+        editTextBtn.textContent = 'Edit as Text';
+        editTextBtn.onclick = showPlainTextWarning;
+        toolbar.appendChild(editTextBtn);
+    }
+
+    function showPlainTextWarning() {
+        const warning = document.createElement('div');
+        warning.className = 'warning-popover';
+        warning.innerHTML = `
+            <h3>⚠️ Warning</h3>
+            <p>Editing this file manually may corrupt the data. Are you sure?</p>
+            <div class="buttons">
+                <button id="warning-continue" class="dnd-btn danger">Continue</button>
+                <button id="warning-cancel" class="dnd-btn secondary">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(warning);
+
+        const continueBtn = document.getElementById('warning-continue');
+        if (continueBtn) {
+            continueBtn.onclick = () => {
+                vscode.postMessage({ type: 'editInPlainText' });
+                warning.remove();
+            };
+        }
+
+        const cancelBtn = document.getElementById('warning-cancel');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                warning.remove();
+            };
+        }
+    }
 
     window.addEventListener('message', event => {
         const message = event.data;

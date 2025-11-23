@@ -27,19 +27,6 @@ class CharacterSheetProvider {
                 updateWebview();
             }
         });
-        webviewPanel.onDidDispose(() => {
-            changeDocumentSubscription.dispose();
-        });
-        webviewPanel.webview.onDidReceiveMessage(e => {
-            switch (e.type) {
-                case 'updateData':
-                    this.updateDocument(document, e.data);
-                    return;
-                case 'ready':
-                    updateWebview();
-                    return;
-            }
-        });
         updateWebview();
     }
     getHtmlForWebview(webview) {

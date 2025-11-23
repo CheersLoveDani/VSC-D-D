@@ -72,3 +72,40 @@ input:focus, select:focus, textarea:focus {
 .dnd-btn:hover {
     opacity: 0.9;
 }
+
+.dnd-btn.secondary {
+    background: #555;
+    color: white;
+}
+
+.dnd-btn.danger {
+    background: #d32f2f;
+    color: white;
+}
+
+.warning-popover {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    text-align: center;
+    min-width: 300px;
+}
+
+.warning-popover h3 {
+    margin-top: 0;
+    color: var(--dnd-accent);
+}
+
+.warning-popover .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}

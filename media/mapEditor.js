@@ -7,80 +7,301 @@
     const mapContent = /** @type {HTMLElement} */ (document.getElementById('map-content'));
     const mapImage = /** @type {HTMLImageElement} */ (document.getElementById('map-image'));
     const pinsLayer = /** @type {HTMLElement} */ (document.getElementById('pins-layer'));
-    const addPinBtn = /** @type {HTMLElement} */ (document.getElementById('add-pin-btn'));
-
-    /** @type {{imagePath: string, pins: Array<{x: number, y: number, label: string}>}} */
+    
+    /** @type {{imagePath: string, pins: Array<{id: string, x: number, y: number, label: string, link: string, icon: string}>}} */
     let state = {
         imagePath: '',
         pins: []
     };
 
-    let isAddPinMode = false;
+    let isEditMode = false;
+    /** @type {HTMLElement | null} */
+    let activePopover = null;
 
-    // Handle messages from the extension
+    // Initialize UI
+    createToolbar();
+
+    function createToolbar() {
+        let toolbar = document.querySelector('.toolbar');
+        if (!toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.className = 'toolbar';
+            document.body.appendChild(toolbar);
+            
+            const toggle = document.createElement('button');
+            toggle.id = 'edit-toggle-btn';
+            toggle.className = 'dnd-btn';
+            toggle.textContent = 'Edit Map';
+            toggle.onclick = toggleEditMode;
+            toolbar.appendChild(toggle);
+
+            const changeImg = document.createElement('button');
+            changeImg.id = 'change-image-btn';
+            changeImg.className = 'dnd-btn hidden';
+            changeImg.textContent = 'Change Image';
+            changeImg.onclick = () => vscode.postMessage({ type: 'selectImage' });
+            toolbar.appendChild(changeImg);
+
+            const editTextBtn = document.createElement('button');
+            editTextBtn.className = 'dnd-btn secondary';
+            editTextBtn.textContent = 'Edit as Text';
+            editTextBtn.onclick = showPlainTextWarning;
+            toolbar.appendChild(editTextBtn);
+        }
+    }
+
+    function showPlainTextWarning() {
+        const warning = document.createElement('div');
+        warning.className = 'warning-popover';
+        warning.innerHTML = `
+            <h3>⚠️ Warning</h3>
+            <p>Editing this file manually may corrupt the data. Are you sure?</p>
+            <div class="buttons">
+                <button id="warning-continue" class="dnd-btn danger">Continue</button>
+                <button id="warning-cancel" class="dnd-btn secondary">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(warning);
+
+        const continueBtn = document.getElementById('warning-continue');
+        if (continueBtn) {
+            continueBtn.onclick = () => {
+                vscode.postMessage({ type: 'editInPlainText' });
+                warning.remove();
+            };
+        }
+
+        const cancelBtn = document.getElementById('warning-cancel');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                warning.remove();
+            };
+        }
+    }
+
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        const toggleBtn = document.getElementById('edit-toggle-btn');
+        const changeImgBtn = document.getElementById('change-image-btn');
+        
+        if (toggleBtn) toggleBtn.textContent = isEditMode ? 'Done Editing' : 'Edit Map';
+        if (changeImgBtn) {
+            if (isEditMode) changeImgBtn.classList.remove('hidden');
+            else changeImgBtn.classList.add('hidden');
+        }
+
+        if (mapContainer) {
+            mapContainer.style.cursor = isEditMode ? 'crosshair' : 'default';
+        }
+        closePopover();
+        render();
+    }
+
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.type) {
             case 'update':
-                const text = message.text;
                 try {
-                    state = JSON.parse(text);
+                    const newState = JSON.parse(message.text);
+                    state = newState || {};
+                    // Ensure pins is an array
+                    if (!Array.isArray(state.pins)) {
+                        state.pins = [];
+                    }
+                    // @ts-ignore
+                    state.resolvedImageUri = message.resolvedImageUri;
                     render();
-                } catch {
-                    // ignore
+                } catch (e) { 
+                    console.error('Error parsing state:', e);
                 }
                 return;
         }
     });
 
     function render() {
-        if (state.imagePath) {
+        if (!mapImage || !pinsLayer) return;
+
+        // @ts-ignore
+        if (state.resolvedImageUri) {
+            // @ts-ignore
+            mapImage.src = state.resolvedImageUri;
+        } else if (state.imagePath) {
+            // Fallback
             mapImage.src = state.imagePath;
         } else {
-            mapImage.src = ''; // TODO: Show placeholder
+            mapImage.src = ''; 
         }
 
         pinsLayer.innerHTML = '';
-        if (state.pins) {
-            state.pins.forEach(pin => {
+        if (state.pins && Array.isArray(state.pins)) {
+            state.pins.forEach((pin, index) => {
                 const el = document.createElement('div');
                 el.className = 'pin';
                 el.style.left = `${pin.x}px`;
                 el.style.top = `${pin.y}px`;
-                el.setAttribute('data-label', pin.label || 'Pin');
+                el.textContent = pin.icon || '📍';
+                el.title = pin.label || 'Pin';
+                
+                // Click Handler
                 el.onclick = (e) => {
                     e.stopPropagation();
-                    // TODO: Open link
-                    console.log('Clicked pin', pin);
+                    if (isEditMode) {
+                        showPinPopover(pin, index, e.clientX, e.clientY);
+                    } else {
+                        if (pin.link) {
+                            vscode.postMessage({ type: 'openFile', path: pin.link });
+                        }
+                    }
                 };
+
+                // Right Click (Context Menu) - Delete
+                el.oncontextmenu = (e) => {
+                    if (isEditMode) {
+                        e.preventDefault();
+                        if (confirm(`Delete pin "${pin.label}"?`)) {
+                            deletePin(index);
+                        }
+                    }
+                };
+
                 pinsLayer.appendChild(el);
             });
         }
     }
 
-    addPinBtn.addEventListener('click', () => {
-        isAddPinMode = !isAddPinMode;
-        addPinBtn.textContent = isAddPinMode ? 'Cancel Add Pin' : 'Add Pin Mode';
-        mapContainer.style.cursor = isAddPinMode ? 'crosshair' : 'default';
-    });
+    /**
+     * @param {{id: string, x: number, y: number, label: string, link: string, icon: string}} pin 
+     * @param {number} index 
+     * @param {number} x 
+     * @param {number} y 
+     */
+    function showPinPopover(pin, index, x, y) {
+        closePopover();
 
-    mapContent.addEventListener('click', (e) => {
-        if (!isAddPinMode) return;
+        const popover = document.createElement('div');
+        popover.className = 'pin-popover';
+        popover.style.left = `${x}px`;
+        popover.style.top = `${y}px`;
 
-        const rect = mapContent.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        popover.innerHTML = `
+            <label>Label</label>
+            <input type="text" id="pin-label" value="${pin.label || ''}">
+            <label>Icon (Emoji)</label>
+            <input type="text" id="pin-icon" value="${pin.icon || '📍'}" style="width: 50px;">
+            <label>Link (Path)</label>
+            <input type="text" id="pin-link" value="${pin.link || ''}" placeholder="./file.dnditem">
+            <div class="actions">
+                <button class="dnd-btn" id="pin-save">Save</button>
+                <button class="dnd-btn delete-btn" id="pin-delete">Delete</button>
+            </div>
+        `;
 
+        document.body.appendChild(popover);
+        activePopover = popover;
+
+        // Bind events
+        const saveBtn = popover.querySelector('#pin-save');
+        const deleteBtn = popover.querySelector('#pin-delete');
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                const labelInput = /** @type {HTMLInputElement} */ (document.getElementById('pin-label'));
+                const iconInput = /** @type {HTMLInputElement} */ (document.getElementById('pin-icon'));
+                const linkInput = /** @type {HTMLInputElement} */ (document.getElementById('pin-link'));
+
+                if (labelInput && iconInput && linkInput) {
+                    updatePin(index, { 
+                        ...pin, 
+                        label: labelInput.value, 
+                        icon: iconInput.value, 
+                        link: linkInput.value 
+                    });
+                }
+                closePopover();
+            });
+        }
+
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                deletePin(index);
+                closePopover();
+            });
+        }
+    }
+
+    function closePopover() {
+        if (activePopover) {
+            activePopover.remove();
+            activePopover = null;
+        }
+    }
+
+    /**
+     * @param {number} index 
+     * @param {any} newPin 
+     */
+    function updatePin(index, newPin) {
+        const newPins = [...state.pins];
+        newPins[index] = newPin;
+        state.pins = newPins;
+        saveState();
+    }
+
+    /**
+     * @param {number} index 
+     */
+    function deletePin(index) {
+        const newPins = [...state.pins];
+        newPins.splice(index, 1);
+        state.pins = newPins;
+        saveState();
+    }
+
+    function saveState() {
         vscode.postMessage({
-            type: 'addPin',
-            x: Math.round(x),
-            y: Math.round(y)
+            type: 'updateData',
+            data: state
         });
+        render();
+    }
 
-        isAddPinMode = false;
-        addPinBtn.textContent = 'Add Pin Mode';
-        mapContainer.style.cursor = 'default';
-    });
+    if (mapContent) {
+        mapContent.addEventListener('click', (e) => {
+            if (!isEditMode) return;
+            // If clicking on map (not pin), add new pin
+            if (e.target !== mapContent && e.target !== mapImage) return;
+
+            const rect = mapContent.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const newPin = {
+                id: Date.now().toString(),
+                x: Math.round(x),
+                y: Math.round(y),
+                label: 'New Pin',
+                icon: '📍',
+                link: ''
+            };
+
+            state.pins = state.pins || [];
+            state.pins.push(newPin);
+            saveState();
+            
+            // Immediately show edit for new pin
+            setTimeout(() => {
+                 // Find the last pin element (the new one)
+                 if (pinsLayer) {
+                     const pins = pinsLayer.querySelectorAll('.pin');
+                     const lastPin = pins[pins.length - 1];
+                     if (lastPin) {
+                         const rect = lastPin.getBoundingClientRect();
+                         showPinPopover(newPin, state.pins.length - 1, rect.left, rect.top);
+                     }
+                 }
+            }, 50);
+        });
+    }
 
     // Signal that the webview is ready to receive data
     vscode.postMessage({ type: 'ready' });

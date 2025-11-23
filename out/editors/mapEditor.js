@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MapEditorProvider = void 0;
 const vscode = require("vscode");
+const path = require("path");
 class MapEditorProvider {
     static register(context) {
         const provider = new MapEditorProvider(context);
@@ -18,12 +19,28 @@ class MapEditorProvider {
         // Setup initial content for the webview
         webviewPanel.webview.options = {
             enableScripts: true,
+            localResourceRoots: [
+                vscode.Uri.joinPath(this.context.extensionUri, 'media'),
+                vscode.Uri.joinPath(document.uri, '..')
+            ]
         };
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
         function updateWebview() {
+            const text = document.getText();
+            let resolvedImageUri = '';
+            try {
+                const json = JSON.parse(text);
+                if (json.imagePath) {
+                    const docDir = vscode.Uri.joinPath(document.uri, '..');
+                    const imageUri = vscode.Uri.joinPath(docDir, json.imagePath);
+                    resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
+                }
+            }
+            catch { }
             webviewPanel.webview.postMessage({
                 type: 'update',
-                text: document.getText(),
+                text: text,
+                resolvedImageUri: resolvedImageUri
             });
         }
         // Hook up event handlers so that when the document changes, the webview is updated
@@ -39,12 +56,17 @@ class MapEditorProvider {
         // Receive message from the webview.
         webviewPanel.webview.onDidReceiveMessage(e => {
             switch (e.type) {
-                case 'addPin':
-                    // TODO: Implement adding pin logic (modifying the document)
-                    this.addPin(document, e.x, e.y);
+                case 'update':
+                    this.updateDocument(document, e.data);
                     return;
-                case 'ready':
-                    updateWebview();
+                case 'editInPlainText':
+                    vscode.commands.executeCommand('workbench.action.toggleEditorType');
+                    return;
+                case 'selectImage':
+                    this.selectImage(document);
+                    return;
+                case 'openFile':
+                    this.openFile(document, e.path);
                     return;
             }
         });
@@ -58,53 +80,61 @@ class MapEditorProvider {
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.css'));
         return `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link href="${styleUri}" rel="stylesheet" />
-				<title>D&D Map Editor</title>
-			</head>
-			<body>
-				<div id="map-container">
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${styleUri}" rel="stylesheet" />
+                <title>D&D Map Editor</title>
+            </head>
+            <body>
+                <div id="map-container">
                     <div id="map-content">
                         <img id="map-image" src="" alt="Map Image" />
                         <div id="pins-layer"></div>
                     </div>
-				</div>
-                <div id="controls">
-                    <button id="add-pin-btn">Add Pin Mode</button>
                 </div>
-				<script src="${scriptUri}"></script>
-			</body>
-			</html>`;
+                <!-- Toolbar is created by JS -->
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>`;
     }
-    addPin(document, x, y) {
-        const json = this.getDocumentAsJson(document);
-        if (!json.pins) {
-            json.pins = [];
-        }
-        json.pins.push({ x, y, label: "New Pin", link: "" });
-        return this.updateTextDocument(document, json);
-    }
-    getDocumentAsJson(document) {
-        const text = document.getText();
-        if (text.trim().length === 0) {
-            return {};
-        }
-        try {
-            return JSON.parse(text);
-        }
-        catch {
-            throw new Error('Could not get document as json. Content is not valid json');
-        }
-    }
-    updateTextDocument(document, json) {
+    updateDocument(document, data) {
         const edit = new vscode.WorkspaceEdit();
-        // Just replace the entire document for now
-        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(json, null, 2));
-        return vscode.workspace.applyEdit(edit);
+        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(data, null, 2));
+        vscode.workspace.applyEdit(edit);
+    }
+    async selectImage(document) {
+        const uris = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            openLabel: 'Select Map Image',
+            filters: {
+                'Images': ['png', 'jpg', 'jpeg', 'gif', 'webp']
+            }
+        });
+        if (uris && uris[0]) {
+            // Calculate relative path
+            const imageUri = uris[0];
+            const docDir = vscode.Uri.joinPath(document.uri, '..');
+            const relativePath = './' + path.relative(docDir.fsPath, imageUri.fsPath).replace(/\\/g, '/');
+            // Update document
+            const text = document.getText();
+            try {
+                const json = JSON.parse(text);
+                json.imagePath = relativePath;
+                this.updateDocument(document, json);
+            }
+            catch {
+                // Ignore parse errors
+            }
+        }
+    }
+    openFile(currentDoc, relativePath) {
+        if (!relativePath)
+            return;
+        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
+        vscode.commands.executeCommand('vscode.open', targetUri);
     }
 }
 exports.MapEditorProvider = MapEditorProvider;

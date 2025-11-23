@@ -70,6 +70,10 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                         y: e.y
                     });
                     return;
+
+                case 'editInPlainText':
+                    vscode.commands.executeCommand('workbench.action.toggleEditorType');
+                    return;
             }
         });
     }
