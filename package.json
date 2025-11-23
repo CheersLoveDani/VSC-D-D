@@ -65,6 +65,16 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "dnd.notesEditor",
+        "displayName": "D&D Notes Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.dndnotes"
+          }
+        ],
+        "priority": "default"
       }
     ],
     "commands": [

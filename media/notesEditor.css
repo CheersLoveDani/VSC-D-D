@@ -1,0 +1,108 @@
+@import 'dnd-theme.css';
+
+body {
+    padding: 0;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Toolbar */
+.toolbar {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--dnd-border);
+    background: var(--dnd-card-bg);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Content Area */
+.content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 40px;
+    position: relative;
+}
+
+/* Edit Mode */
+#editor-textarea {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    resize: none;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--dnd-text);
+    outline: none;
+}
+
+/* Read Mode (Markdown Styles) */
+.markdown-preview {
+    font-family: var(--dnd-font-body);
+    line-height: 1.8;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+    font-family: var(--dnd-font-header);
+    color: var(--dnd-text);
+    border-bottom: 1px solid var(--dnd-border);
+}
+
+.markdown-preview a {
+    color: var(--dnd-accent);
+    text-decoration: none;
+    font-weight: 600;
+    position: relative;
+    cursor: pointer;
+}
+
+.markdown-preview a:hover {
+    text-decoration: underline;
+}
+
+/* Hover Popover */
+.popover {
+    position: fixed;
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    box-shadow: 0 4px 12px var(--dnd-shadow);
+    padding: 15px;
+    max-width: 300px;
+    z-index: 1000;
+    pointer-events: none; /* Let clicks pass through if needed, but mainly to avoid flickering */
+    display: none;
+}
+
+.popover.visible {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Popover Content Styles */
+.popover-title {
+    font-family: var(--dnd-font-header);
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--dnd-accent);
+    border-bottom: 1px solid var(--dnd-border);
+    padding-bottom: 4px;
+}
+
+.popover-detail {
+    font-size: 0.9em;
+    margin-bottom: 4px;
+}
