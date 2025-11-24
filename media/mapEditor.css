@@ -1,11 +1,12 @@
 @import 'dnd-theme.css';
 
+/* ========== Layout ========== */
 body {
     padding: 0;
     margin: 0;
     height: 100vh;
     overflow: hidden;
-    background-color: #333; /* Dark background for map area */
+    background-color: #1a1a1a;
 }
 
 #map-container {
@@ -19,96 +20,133 @@ body {
 }
 
 #map-image {
-    max-width: none; /* Allow image to be full size */
+    max-width: none;
     display: block;
 }
 
+/* ========== Pins ========== */
 .pin {
     position: absolute;
-    width: 20px;
-    height: 20px;
-    background-color: red;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--dnd-accent) 0%, var(--dnd-accent-hover) 100%);
+    border-radius: var(--dnd-radius-full);
     cursor: pointer;
-    transform: translate(-50%, -50%); /* Center on coordinates */
-    border: 2px solid white;
+    transform: translate(-50%, -50%);
+    border: 3px solid white;
+    box-shadow: var(--dnd-shadow-md);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--dnd-text-xs);
+    font-weight: 600;
+    color: white;
+    transition: all var(--dnd-transition);
+}
+
+.pin:hover {
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: var(--dnd-shadow-lg);
 }
 
 .pin:hover::after {
     content: attr(title);
     position: absolute;
-    bottom: 100%;
+    bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
-    background: black;
+    background: rgba(0, 0, 0, 0.9);
     color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: var(--dnd-space-2) var(--dnd-space-3);
+    border-radius: var(--dnd-radius);
     white-space: nowrap;
     pointer-events: none;
     z-index: 10;
+    font-size: var(--dnd-text-sm);
+    font-weight: 500;
+    box-shadow: var(--dnd-shadow-md);
 }
 
-/* Toolbar */
+/* ========== Toolbar ========== */
 .toolbar {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: var(--dnd-space-4);
+    left: var(--dnd-space-4);
     z-index: 100;
     display: flex;
-    gap: 10px;
+    gap: var(--dnd-space-2);
     background: var(--dnd-card-bg);
-    padding: 10px;
-    border: 1px solid var(--dnd-border);
-    border-radius: var(--dnd-radius);
-    box-shadow: 0 2px 8px var(--dnd-shadow);
+    padding: var(--dnd-space-3);
+    border: 1px solid var(--dnd-border-light);
+    border-radius: var(--dnd-radius-lg);
+    box-shadow: var(--dnd-shadow-lg);
+}
+
+.toolbar .dnd-btn {
+    white-space: nowrap;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Pin Edit Popover */
+/* ========== Pin Edit Popover ========== */
 .pin-popover {
     position: absolute;
     background: var(--dnd-card-bg);
     border: 1px solid var(--dnd-border);
-    border-radius: var(--dnd-radius);
-    padding: 15px;
-    box-shadow: 0 4px 12px var(--dnd-shadow);
+    border-radius: var(--dnd-radius-lg);
+    padding: var(--dnd-space-5);
+    box-shadow: var(--dnd-shadow-xl);
     z-index: 200;
-    min-width: 200px;
+    min-width: 280px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--dnd-space-4);
+    animation: popoverFadeIn var(--dnd-transition);
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .pin-popover label {
-    font-weight: bold;
-    font-size: 0.9em;
-    color: var(--dnd-accent);
+    font-weight: 600;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--dnd-space-1);
 }
 
 .pin-popover input {
     width: 100%;
     box-sizing: border-box;
-    padding: 5px;
-    border: 1px solid var(--dnd-border);
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
 }
 
 .pin-popover .actions {
     display: flex;
     justify-content: space-between;
-    margin-top: 5px;
+    gap: var(--dnd-space-3);
+    margin-top: var(--dnd-space-2);
+}
+
+.pin-popover .actions .dnd-btn {
+    flex: 1;
 }
 
 .pin-popover .delete-btn {
-    background: #d32f2f;
+    background: #DC2626;
     color: white;
+}
+
+.pin-popover .delete-btn:hover {
+    background: #B91C1C;
 }

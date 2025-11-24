@@ -1,13 +1,14 @@
 @import 'dnd-theme.css';
 
+/* ========== Layout ========== */
 body {
-    padding: 20px;
+    padding: var(--dnd-space-6);
 }
 
 .container {
     display: flex;
-    gap: 40px;
-    max-width: 900px;
+    gap: var(--dnd-space-10);
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -15,62 +16,97 @@ body {
     flex: 1;
 }
 
+/* ========== Editor Pane ========== */
+.editor-pane h2, .preview-pane h2 {
+    font-size: var(--dnd-text-2xl);
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: var(--dnd-space-6);
+    color: var(--dnd-text);
+    border-bottom: 2px solid var(--dnd-border-light);
+    padding-bottom: var(--dnd-space-3);
+}
+
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: var(--dnd-space-5);
 }
 
 label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
+    margin-bottom: var(--dnd-space-2);
+    font-weight: 600;
     font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 input, select, textarea {
     width: 100%;
-    /* Styles inherited from theme */
 }
 
-/* Item Card Preview */
+textarea {
+    min-height: 140px;
+}
+
+/* ========== Item Card Preview ========== */
 .item-card {
-    border: 4px double var(--dnd-border);
-    border-radius: 8px;
+    border: 1px solid var(--dnd-border-light);
+    border-radius: var(--dnd-radius-lg);
     background: var(--dnd-card-bg);
     color: var(--dnd-text);
     overflow: hidden;
-    box-shadow: 0 4px 12px var(--dnd-shadow);
+    box-shadow: var(--dnd-shadow-md);
+    transition: all var(--dnd-transition);
+}
+
+.item-card:hover {
+    box-shadow: var(--dnd-shadow-lg);
 }
 
 .card-header {
-    background: var(--dnd-accent);
+    background: linear-gradient(135deg, var(--dnd-accent) 0%, var(--dnd-accent-hover) 100%);
     color: white;
-    padding: 10px;
+    padding: var(--dnd-space-4) var(--dnd-space-5);
     display: flex;
     justify-content: space-between;
-    font-weight: bold;
-    font-size: 1.2em;
+    align-items: center;
+    font-weight: 600;
+    font-size: var(--dnd-text-lg);
     font-family: var(--dnd-font-header);
-    text-shadow: 1px 1px 2px black;
+}
+
+.card-header span {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .card-body {
-    padding: 15px;
-    min-height: 100px;
+    padding: var(--dnd-space-5);
+    min-height: 160px;
 }
 
 .item-type {
-    color: var(--dnd-border);
+    color: var(--dnd-text-muted);
     font-style: italic;
+    font-size: var(--dnd-text-sm);
     margin-top: 0;
-    border-bottom: 1px solid var(--dnd-border);
-    padding-bottom: 5px;
+    margin-bottom: var(--dnd-space-3);
+    border-bottom: 1px solid var(--dnd-border-light);
+    padding-bottom: var(--dnd-space-2);
+}
+
+.card-body p {
+    line-height: 1.6;
+    color: var(--dnd-text);
 }
 
 .card-footer {
-    background: rgba(0,0,0,0.1);
-    padding: 5px 15px;
+    background: var(--dnd-bg-secondary);
+    padding: var(--dnd-space-3) var(--dnd-space-5);
     text-align: right;
-    font-size: 0.9em;
-    color: var(--dnd-text);
-    font-weight: bold;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    font-weight: 600;
+    border-top: 1px solid var(--dnd-border-light);
 }
