@@ -4,6 +4,7 @@ import { CharacterSheetProvider } from './editors/characterEditor';
 import { ItemEditorProvider } from './editors/itemEditor';
 import { NotesEditorProvider } from './editors/notesEditor';
 import { DndHoverProvider } from './providers/hoverProvider';
+import { PluginManagerProvider } from './views/pluginManager';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('D&D Campaign Manager is now active!');
@@ -22,9 +23,17 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
+    // Register Plugin Manager
+    const pluginManagerProvider = new PluginManagerProvider(context);
+    vscode.window.registerTreeDataProvider('dnd-plugin-manager', pluginManagerProvider);
+
     // Register Commands
     context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.createMap', () => {
         vscode.window.showInformationMessage('Create Map command triggered');
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.togglePlainText', () => {
+        pluginManagerProvider.togglePlainTextMode();
     }));
 }
 

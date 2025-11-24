@@ -8,6 +8,7 @@ const characterEditor_1 = require("./editors/characterEditor");
 const itemEditor_1 = require("./editors/itemEditor");
 const notesEditor_1 = require("./editors/notesEditor");
 const hoverProvider_1 = require("./providers/hoverProvider");
+const pluginManager_1 = require("./views/pluginManager");
 function activate(context) {
     console.log('D&D Campaign Manager is now active!');
     // Register Custom Editors
@@ -17,9 +18,15 @@ function activate(context) {
     context.subscriptions.push(notesEditor_1.NotesEditorProvider.register(context));
     // Register Hover Provider
     context.subscriptions.push(vscode.languages.registerHoverProvider([{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }], new hoverProvider_1.DndHoverProvider()));
+    // Register Plugin Manager
+    const pluginManagerProvider = new pluginManager_1.PluginManagerProvider(context);
+    vscode.window.registerTreeDataProvider('dnd-plugin-manager', pluginManagerProvider);
     // Register Commands
     context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.createMap', () => {
         vscode.window.showInformationMessage('Create Map command triggered');
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.togglePlainText', () => {
+        pluginManagerProvider.togglePlainTextMode();
     }));
 }
 function deactivate() { }

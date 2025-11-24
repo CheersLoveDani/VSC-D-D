@@ -11,7 +11,8 @@
   ],
   "activationEvents": [
     "onLanguage:dndnotes",
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onView:dnd-plugin-manager"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -85,8 +86,30 @@
       {
         "command": "dnd-campaign-manager.createCharacter",
         "title": "D&D: Create New Character"
+      },
+      {
+        "command": "dnd-campaign-manager.togglePlainText",
+        "title": "Toggle Plain Text Mode",
+        "category": "D&D Manager"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dnd-manager",
+          "title": "D&D Manager",
+          "icon": "media/d20-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dnd-manager": [
+        {
+          "id": "dnd-plugin-manager",
+          "name": "Plugin Manager"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
