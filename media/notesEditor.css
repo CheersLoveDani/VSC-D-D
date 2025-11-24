@@ -305,6 +305,18 @@ body {
     height: auto;
     border-radius: var(--dnd-radius);
     margin: var(--dnd-space-4) 0;
+    cursor: pointer;
+    transition: all var(--dnd-transition);
+}
+
+.ProseMirror img:hover {
+    opacity: 0.9;
+}
+
+.ProseMirror img.selected {
+    outline: 3px solid var(--dnd-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 1px var(--dnd-accent);
 }
 
 /* Tables */

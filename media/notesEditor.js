@@ -98,6 +98,8 @@ const globalWindow = window;
     /** @type {HTMLTextAreaElement | null} */
     let rawTextarea = null;
     let toolbarListenersSetup = false;
+    /** @type {HTMLImageElement | null} */
+    let selectedImage = null;
 
     // Initialize
     vscode.postMessage({ type: 'ready' });
@@ -258,10 +260,40 @@ const globalWindow = window;
             updateToolbarState();
         });
 
-        // Add context menu for link insertion
+        // Add context menu and image selection handlers
         const editorElement = document.querySelector('.ProseMirror');
         if (editorElement) {
+            // Handle image clicks for selection
+            editorElement.addEventListener('click', (e) => {
+                const target = /** @type {HTMLElement} */ (e.target);
+                
+                // Clear previous selection
+                if (selectedImage) {
+                    selectedImage.classList.remove('selected');
+                    selectedImage = null;
+                }
+                
+                // If clicked on an image, select it
+                if (target.tagName === 'IMG') {
+                    selectedImage = /** @type {HTMLImageElement} */ (target);
+                    selectedImage.classList.add('selected');
+                    e.stopPropagation();
+                }
+            });
+            
+            // Handle context menu
             editorElement.addEventListener('contextmenu', (e) => {
+                const target = /** @type {HTMLElement} */ (e.target);
+                
+                // Check if right-clicked on an image
+                if (target.tagName === 'IMG') {
+                    e.preventDefault();
+                    selectedImage = /** @type {HTMLImageElement} */ (target);
+                    selectedImage.classList.add('selected');
+                    showImageContextMenu(e.clientX, e.clientY);
+                    return;
+                }
+                
                 const selection = editor.state.selection;
                 const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
 
@@ -269,6 +301,14 @@ const globalWindow = window;
                 if (selectedText && selectedText.trim()) {
                     e.preventDefault();
                     showContextMenu(e.clientX, e.clientY);
+                }
+            });
+            
+            // Handle keyboard delete for selected images
+            editorElement.addEventListener('keydown', (e) => {
+                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedImage) {
+                    e.preventDefault();
+                    deleteSelectedImage();
                 }
             });
         }
@@ -716,6 +756,105 @@ const globalWindow = window;
     function hideContextMenu() {
         if (!contextMenu) return;
         contextMenu.classList.remove('visible');
+        
+        // Restore buttons to original state
+        if (ctxBold) ctxBold.style.display = 'flex';
+        if (ctxItalic) ctxItalic.style.display = 'flex';
+        if (ctxAddLink) {
+            ctxAddLink.textContent = '🔗 Add Link';
+            ctxAddLink.style.display = 'flex';
+            // Restore original onclick handler
+            ctxAddLink.onclick = () => {
+                hideContextMenu();
+                showLinkDialog();
+            };
+        }
+    }
+
+    function showImageContextMenu(x, y) {
+        if (!contextMenu) return;
+        
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        contextMenu.classList.add('visible');
+        
+        // Hide Bold and Italic buttons for image context menu
+        if (ctxBold) ctxBold.style.display = 'none';
+        if (ctxItalic) ctxItalic.style.display = 'none';
+        
+        // Change "Add Link" to "Edit Image"
+        if (ctxAddLink) {
+            ctxAddLink.textContent = '🖼 Edit Image';
+            ctxAddLink.style.display = 'block';
+            ctxAddLink.onclick = () => {
+                hideContextMenu();
+                editSelectedImage();
+            };
+        }
+    }
+
+    function editSelectedImage() {
+        if (!selectedImage || !editor) return;
+        
+        // Get current image attributes
+        const currentSrc = selectedImage.getAttribute('src') || '';
+        const currentAlt = selectedImage.getAttribute('alt') || '';
+        
+        // Pre-fill the image dialog
+        if (imageUrlInput && imageAltInput && imageDialog) {
+            imageUrlInput.value = currentSrc;
+            imageAltInput.value = currentAlt;
+            imageDialog.classList.add('visible');
+            imageUrlInput.focus();
+            imageUrlInput.select();
+            
+            // Override the insert button to update instead
+            if (imageInsertBtn) {
+                imageInsertBtn.onclick = () => {
+                    const newSrc = imageUrlInput.value.trim();
+                    const newAlt = imageAltInput.value.trim();
+                    
+                    if (newSrc && selectedImage) {
+                        selectedImage.setAttribute('src', newSrc);
+                        selectedImage.setAttribute('alt', newAlt);
+                        
+                        // Trigger editor update
+                        if (editor) {
+                            const html = editor.getHTML();
+                            state.content = convertHTMLToMarkdown(html);
+                            state.lastSavedContent = state.content;
+                            vscode.postMessage({
+                                type: 'updateData',
+                                text: state.content
+                            });
+                        }
+                    }
+                    
+                    hideImageDialog();
+                    // Restore normal insert behavior
+                    if (imageInsertBtn) {
+                        imageInsertBtn.onclick = insertImage;
+                    }
+                };
+            }
+        }
+    }
+
+    function deleteSelectedImage() {
+        if (!selectedImage || !editor) return;
+        
+        // Remove the image from the DOM
+        selectedImage.remove();
+        selectedImage = null;
+        
+        // Trigger editor update
+        const html = editor.getHTML();
+        state.content = convertHTMLToMarkdown(html);
+        state.lastSavedContent = state.content;
+        vscode.postMessage({
+            type: 'updateData',
+            text: state.content
+        });
     }
 
     function updateToolbarState() {
