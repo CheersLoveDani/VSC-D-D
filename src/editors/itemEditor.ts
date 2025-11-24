@@ -32,12 +32,29 @@ export class ItemEditorProvider implements vscode.CustomTextEditorProvider {
 			});
 		}
 
+		// Handle messages from the webview
+		webviewPanel.webview.onDidReceiveMessage(e => {
+			switch (e.type) {
+				case 'ready':
+					// Webview is ready, send initial data
+					updateWebview();
+					return;
+				case 'updateData':
+					this.updateDocument(document, e.data);
+					return;
+			}
+		});
+
 		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
 			if (e.document.uri.toString() === document.uri.toString()) {
 				updateWebview();
 			}
 		});
-		updateWebview();
+
+		// Clean up subscriptions when webview is disposed
+		webviewPanel.onDidDispose(() => {
+			changeDocumentSubscription.dispose();
+		});
 	}
 
 	private getHtmlForWebview(webview: vscode.Webview): string {

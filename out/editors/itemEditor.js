@@ -22,12 +22,27 @@ class ItemEditorProvider {
                 text: document.getText(),
             });
         }
+        // Handle messages from the webview
+        webviewPanel.webview.onDidReceiveMessage(e => {
+            switch (e.type) {
+                case 'ready':
+                    // Webview is ready, send initial data
+                    updateWebview();
+                    return;
+                case 'updateData':
+                    this.updateDocument(document, e.data);
+                    return;
+            }
+        });
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.toString() === document.uri.toString()) {
                 updateWebview();
             }
         });
-        updateWebview();
+        // Clean up subscriptions when webview is disposed
+        webviewPanel.onDidDispose(() => {
+            changeDocumentSubscription.dispose();
+        });
     }
     getHtmlForWebview(webview) {
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'itemEditor.js'));
