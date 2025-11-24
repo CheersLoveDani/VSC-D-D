@@ -101,21 +101,23 @@ const globalWindow = window;
 
     rawToggleBtn.addEventListener('click', () => {
         if (state.mode !== 'edit') return;
-        
+
         state.rawMode = !state.rawMode;
         rawToggleBtn.textContent = state.rawMode ? 'Rich Editor' : 'Raw Markdown';
         rawToggleBtn.classList.toggle('active', state.rawMode);
-        
+
         if (state.rawMode && editor) {
             // Switch to raw markdown
             state.content = editor.storage.markdown?.getMarkdown() || convertHTMLToMarkdown(editor.getHTML());
             editor.destroy();
             editor = null;
+            container.innerHTML = '';
             renderRawEditor();
         } else if (!state.rawMode && rawTextarea) {
             // Switch to rich editor
             state.content = rawTextarea.value;
             rawTextarea = null;
+            container.innerHTML = '';
             renderRichEditor();
         }
     });
