@@ -40,7 +40,7 @@ class NotesEditorProvider {
                     updateWebview();
                     return;
                 case 'updateData':
-                    this.updateDocument(document, e.data);
+                    this.updateDocument(document, e.text);
                     return;
                 case 'openFile':
                     this.openFile(document, e.path);
@@ -102,6 +102,7 @@ class NotesEditorProvider {
     }
     getHtmlForWebview(webview) {
         const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'notesEditor.js')));
+        const tiptapBundleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'tiptap-bundle.js')));
         const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'notesEditor.css')));
         return `
             <!DOCTYPE html>
@@ -115,10 +116,66 @@ class NotesEditorProvider {
             <body>
                 <div class="toolbar">
                     <button id="toggle-mode-btn" class="dnd-btn">Edit Note</button>
+                    <button id="raw-toggle-btn" class="dnd-btn" style="display: none;">Raw Markdown</button>
+                </div>
+                <div class="editor-toolbar">
+                    <!-- Text Formatting -->
+                    <div class="toolbar-group">
+                        <button id="btn-bold" class="toolbar-btn" title="Bold (Ctrl+B)"><b>B</b></button>
+                        <button id="btn-italic" class="toolbar-btn" title="Italic (Ctrl+I)"><i>I</i></button>
+                        <button id="btn-strike" class="toolbar-btn" title="Strikethrough"><s>S</s></button>
+                        <button id="btn-code" class="toolbar-btn" title="Inline Code">&lt;/&gt;</button>
+                        <button id="btn-highlight" class="toolbar-btn" title="Highlight">H</button>
+                    </div>
+                    
+                    <!-- Headings -->
+                    <div class="toolbar-group">
+                        <button id="btn-h1" class="toolbar-btn" title="Heading 1">H1</button>
+                        <button id="btn-h2" class="toolbar-btn" title="Heading 2">H2</button>
+                        <button id="btn-h3" class="toolbar-btn" title="Heading 3">H3</button>
+                        <button id="btn-h4" class="toolbar-btn" title="Heading 4">H4</button>
+                        <button id="btn-h5" class="toolbar-btn" title="Heading 5">H5</button>
+                        <button id="btn-h6" class="toolbar-btn" title="Heading 6">H6</button>
+                    </div>
+                    
+                    <!-- Lists -->
+                    <div class="toolbar-group">
+                        <button id="btn-bullet-list" class="toolbar-btn" title="Bullet List">• List</button>
+                        <button id="btn-ordered-list" class="toolbar-btn" title="Numbered List">1. List</button>
+                        <button id="btn-task-list" class="toolbar-btn" title="Task List">☑ Task</button>
+                    </div>
+                    
+                    <!-- Block Elements -->
+                    <div class="toolbar-group">
+                        <button id="btn-blockquote" class="toolbar-btn" title="Blockquote">" Quote</button>
+                        <button id="btn-code-block" class="toolbar-btn" title="Code Block">{ Code }</button>
+                        <button id="btn-hr" class="toolbar-btn" title="Horizontal Rule">—</button>
+                    </div>
+                    
+                    <!-- Links & Media -->
+                    <div class="toolbar-group">
+                        <button id="btn-link" class="toolbar-btn" title="Insert Link">🔗</button>
+                        <button id="btn-image" class="toolbar-btn" title="Insert Image">🖼</button>
+                    </div>
+                    
+                    <!-- Tables -->
+                    <div class="toolbar-group">
+                        <button id="btn-table" class="toolbar-btn" title="Insert Table">📊 Table</button>
+                    </div>
                 </div>
                 <div class="content-area" id="app"></div>
                 <div id="popover" class="popover"></div>
+                <script src="${tiptapBundleUri}"></script>
                 <script src="${scriptUri}"></script>
+                <script>
+                    // Show/hide raw toggle button based on edit mode
+                    const toggleBtn = document.getElementById('toggle-mode-btn');
+                    const rawToggleBtn = document.getElementById('raw-toggle-btn');
+                    toggleBtn.addEventListener('click', () => {
+                        const isEditMode = toggleBtn.textContent === 'View Note';
+                        rawToggleBtn.style.display = isEditMode ? 'inline-block' : 'none';
+                    });
+                </script>
             </body>
             </html>`;
     }
