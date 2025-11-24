@@ -56,6 +56,7 @@ const globalWindow = window;
     let editor = null;
     /** @type {HTMLTextAreaElement | null} */
     let rawTextarea = null;
+    let toolbarListenersSetup = false;
 
     // Initialize
     vscode.postMessage({ type: 'ready' });
@@ -208,8 +209,16 @@ const globalWindow = window;
             trySetMarkdownContent(state.content);
         }
 
+        // Listen to selection changes to update toolbar
+        editor.on('selectionUpdate', () => {
+            updateToolbarState();
+        });
+
         updateToolbarState();
-        setupToolbarListeners();
+        if (!toolbarListenersSetup) {
+            setupToolbarListeners();
+            toolbarListenersSetup = true;
+        }
     }
 
     /**
@@ -400,57 +409,58 @@ const globalWindow = window;
     function setupToolbarListeners() {
         // Text formatting
         document.getElementById('btn-bold')?.addEventListener('click', () => {
-            editor.chain().focus().toggleBold().run();
+            if (editor) editor.chain().focus().toggleBold().run();
         });
         document.getElementById('btn-italic')?.addEventListener('click', () => {
-            editor.chain().focus().toggleItalic().run();
+            if (editor) editor.chain().focus().toggleItalic().run();
         });
         document.getElementById('btn-strike')?.addEventListener('click', () => {
-            editor.chain().focus().toggleStrike().run();
+            if (editor) editor.chain().focus().toggleStrike().run();
         });
         document.getElementById('btn-code')?.addEventListener('click', () => {
-            editor.chain().focus().toggleCode().run();
+            if (editor) editor.chain().focus().toggleCode().run();
         });
         document.getElementById('btn-highlight')?.addEventListener('click', () => {
-            editor.chain().focus().toggleHighlight().run();
+            if (editor) editor.chain().focus().toggleHighlight().run();
         });
 
         // Headings
         for (let i = 1; i <= 6; i++) {
             document.getElementById(`btn-h${i}`)?.addEventListener('click', () => {
-                editor.chain().focus().toggleHeading({ level: i }).run();
+                if (editor) editor.chain().focus().toggleHeading({ level: i }).run();
             });
         }
 
         // Lists
         document.getElementById('btn-bullet-list')?.addEventListener('click', () => {
-            editor.chain().focus().toggleBulletList().run();
+            if (editor) editor.chain().focus().toggleBulletList().run();
         });
         document.getElementById('btn-ordered-list')?.addEventListener('click', () => {
-            editor.chain().focus().toggleOrderedList().run();
+            if (editor) editor.chain().focus().toggleOrderedList().run();
         });
         document.getElementById('btn-task-list')?.addEventListener('click', () => {
-            editor.chain().focus().toggleTaskList().run();
+            if (editor) editor.chain().focus().toggleTaskList().run();
         });
 
         // Block elements
         document.getElementById('btn-blockquote')?.addEventListener('click', () => {
-            editor.chain().focus().toggleBlockquote().run();
+            if (editor) editor.chain().focus().toggleBlockquote().run();
         });
         document.getElementById('btn-code-block')?.addEventListener('click', () => {
-            editor.chain().focus().toggleCodeBlock().run();
+            if (editor) editor.chain().focus().toggleCodeBlock().run();
         });
         document.getElementById('btn-hr')?.addEventListener('click', () => {
-            editor.chain().focus().setHorizontalRule().run();
+            if (editor) editor.chain().focus().setHorizontalRule().run();
         });
 
         // Tables
         document.getElementById('btn-table')?.addEventListener('click', () => {
-            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+            if (editor) editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
         });
 
         // Link
         document.getElementById('btn-link')?.addEventListener('click', () => {
+            if (!editor) return;
             const url = prompt('Enter URL:');
             if (url) {
                 editor.chain().focus().setLink({ href: url }).run();
@@ -459,15 +469,11 @@ const globalWindow = window;
 
         // Image
         document.getElementById('btn-image')?.addEventListener('click', () => {
+            if (!editor) return;
             const url = prompt('Enter image URL:');
             if (url) {
                 editor.chain().focus().setImage({ src: url }).run();
             }
-        });
-
-        // Listen to selection changes to update toolbar
-        editor.on('selectionUpdate', () => {
-            updateToolbarState();
         });
     }
 
