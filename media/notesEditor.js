@@ -449,7 +449,7 @@ const globalWindow = window;
      */
     function processInlineMarkdown(text) {
         return text
-            // Images
+            // Images (paths are already converted server-side)
             .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
             // Links
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')

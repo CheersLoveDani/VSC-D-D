@@ -1,0 +1,29 @@
+# Test Notes with Images
+
+## External Image Test
+
+Here's an image from the web:
+
+![](https://static.wikia.nocookie.net/eberron/images/c/c1/Eberron_map.jpg/revision/latest?cb=20150812192113)
+
+## Inline Markdown Test
+
+This is **bold** text and this is *italic* text.
+
+### List with Image
+
+- Item 1
+
+- Item 2
+
+-
+
+![Small icon](https://via.placeholder.com/150)
+
+## Code Block
+
+console.log("Hello World");
+
+## Links
+
+Check out this [sample item](./sample.dnditem).

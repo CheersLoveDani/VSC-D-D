@@ -21,21 +21,34 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
+        // Get workspace folder for loading local images
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+        const localResourceRoots = [
+            vscode.Uri.file(path.join(this.context.extensionPath, 'media'))
+        ];
+        
+        // Add workspace folder if available
+        if (workspaceFolder) {
+            localResourceRoots.push(workspaceFolder.uri);
+        }
+        
         webviewPanel.webview.options = {
             enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.file(path.join(this.context.extensionPath, 'media'))
-            ]
+            localResourceRoots: localResourceRoots
         };
 
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
-        function updateWebview() {
+        const updateWebview = () => {
+            const content = document.getText();
+            // Convert local image paths to webview URIs
+            const convertedContent = this.convertImagePaths(content, document.uri, webviewPanel.webview);
+            
             webviewPanel.webview.postMessage({
                 type: 'update',
-                text: document.getText(),
+                text: convertedContent,
             });
-        }
+        };
 
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.toString() === document.uri.toString()) {
@@ -122,6 +135,28 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
         }
     }
 
+    private convertImagePaths(markdown: string, documentUri: vscode.Uri, webview: vscode.Webview): string {
+        // Convert markdown image syntax ![alt](path) to use webview URIs for local paths
+        return markdown.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, imagePath) => {
+            // Skip if it's already an http/https/data URI
+            if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+                return match;
+            }
+            
+            try {
+                // Resolve relative path to absolute URI
+                const imageUri = vscode.Uri.joinPath(documentUri, '..', imagePath);
+                // Convert to webview URI
+                const webviewUri = webview.asWebviewUri(imageUri);
+                // Return the markdown with the converted URI
+                return `![${alt}](${webviewUri.toString()})`;
+            } catch (error) {
+                console.error(`Error converting image path: ${imagePath}`, error);
+                return match; // Return original if conversion fails
+            }
+        });
+    }
+
     private getHtmlForWebview(webview: vscode.Webview): string {
         const scriptUri = webview.asWebviewUri(vscode.Uri.file(
             path.join(this.context.extensionPath, 'media', 'notesEditor.js')
@@ -133,12 +168,16 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
             path.join(this.context.extensionPath, 'media', 'notesEditor.css')
         ));
 
+        // Generate a nonce for inline scripts
+        const nonce = this.getNonce();
+
         return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} https: data:;">
                 <link href="${styleUri}" rel="stylesheet" />
                 <title>D&D Notes</title>
             </head>
@@ -240,9 +279,9 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                     </div>
                 </div>
 
-                <script src="${tiptapBundleUri}"></script>
-                <script src="${scriptUri}"></script>
-                <script>
+                <script nonce="${nonce}" src="${tiptapBundleUri}"></script>
+                <script nonce="${nonce}" src="${scriptUri}"></script>
+                <script nonce="${nonce}">
                     // Show/hide raw toggle button based on edit mode
                     const toggleBtn = document.getElementById('toggle-mode-btn');
                     const rawToggleBtn = document.getElementById('raw-toggle-btn');
@@ -253,5 +292,14 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                 </script>
             </body>
             </html>`;
+    }
+
+    private getNonce(): string {
+        let text = '';
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < 32; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
     }
 }
