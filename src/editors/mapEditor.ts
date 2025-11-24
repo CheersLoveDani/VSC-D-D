@@ -71,9 +71,6 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
                 case 'update':
                     this.updateDocument(document, e.data);
                     return;
-                case 'editInPlainText':
-                    vscode.commands.executeCommand('workbench.action.toggleEditorType');
-                    return;
                 case 'selectImage':
                     this.selectImage(document);
                     return;
