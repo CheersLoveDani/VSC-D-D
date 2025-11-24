@@ -100,6 +100,10 @@ const globalWindow = window;
     let toolbarListenersSetup = false;
     /** @type {HTMLImageElement | null} */
     let selectedImage = null;
+    /** @type {boolean} */
+    let isImageContextMenu = false;
+    let isLinkContextMenu = false;
+    let selectedLink = null;
 
     // Initialize
     vscode.postMessage({ type: 'ready' });
@@ -233,7 +237,10 @@ const globalWindow = window;
                 globalWindow.TipTap.Highlight,
                 globalWindow.TipTap.Superscript,
                 globalWindow.TipTap.Subscript,
-                globalWindow.TipTap.Image,
+                globalWindow.TipTap.Image.configure({
+                    inline: true,
+                    allowBase64: true,
+                }),
                 // Link is already included in StarterKit or bundle, removing duplicate
             ],
             content: '', // Start empty to avoid conversion issues
@@ -290,7 +297,26 @@ const globalWindow = window;
                     e.preventDefault();
                     selectedImage = /** @type {HTMLImageElement} */ (target);
                     selectedImage.classList.add('selected');
-                    showImageContextMenu(e.clientX, e.clientY);
+                    
+                    // Check if image is inside a link
+                    const parentLink = target.closest('a');
+                    if (parentLink) {
+                        selectedLink = parentLink;
+                        showLinkContextMenu(e.clientX, e.clientY);
+                    } else {
+                        selectedLink = null;
+                        showImageContextMenu(e.clientX, e.clientY);
+                    }
+                    return;
+                }
+                
+                // Check if right-clicked on a link (text)
+                const link = target.closest('a');
+                if (link) {
+                    e.preventDefault();
+                    selectedLink = link;
+                    selectedImage = null; // Clear image selection if clicking text link
+                    showLinkContextMenu(e.clientX, e.clientY);
                     return;
                 }
                 
@@ -300,6 +326,7 @@ const globalWindow = window;
                 // Only show custom context menu if text is selected
                 if (selectedText && selectedText.trim()) {
                     e.preventDefault();
+                    selectedLink = null;
                     showContextMenu(e.clientX, e.clientY);
                 }
             });
@@ -560,7 +587,11 @@ const globalWindow = window;
         // Link
         document.getElementById('btn-link')?.addEventListener('click', () => {
             if (!editor) return;
-            showLinkDialog();
+            if (selectedImage) {
+                addLinkToImage();
+            } else {
+                showLinkDialog();
+            }
         });
 
         // Image
@@ -598,6 +629,12 @@ const globalWindow = window;
         linkDialog.classList.remove('visible');
         linkTextInput.value = '';
         linkUrlInput.value = '';
+        linkTextInput.disabled = false; // Re-enable in case it was disabled for image links
+        
+        // Restore normal insert behavior
+        if (linkInsertBtn) {
+            linkInsertBtn.onclick = insertLink;
+        }
     }
 
     function insertLink() {
@@ -661,7 +698,51 @@ const globalWindow = window;
 
         // Dialog event listeners
         linkCancelBtn.addEventListener('click', hideLinkDialog);
-        linkInsertBtn.addEventListener('click', insertLink);
+        linkInsertBtn.addEventListener('click', () => {
+            console.log('linkInsertBtn clicked', { isImageContextMenu, isLinkContextMenu, selectedImage });
+            
+            const linkUrl = linkUrlInput.value.trim();
+            console.log('Link URL:', linkUrl);
+            
+            if ((isImageContextMenu || (isLinkContextMenu && selectedImage)) && selectedImage) {
+                // Wrap image in link using TipTap commands
+                console.log('Link insert clicked for image');
+                
+                if (linkUrl && editor) {
+                    console.log('Applying link to image via TipTap');
+                    
+                    // Find the position of the image in the editor
+                    const pos = editor.view.posAtDOM(selectedImage, 0);
+                    console.log('Image position found:', pos);
+                    
+                    if (pos > -1) {
+                        // Select the image node
+                        const tr = editor.state.tr.setSelection(
+                            globalWindow.TipTap.TextSelection.create(editor.state.doc, pos, pos + 1)
+                        );
+                        editor.view.dispatch(tr);
+                        
+                        // Apply the link mark
+                        editor.chain().focus().setLink({ href: linkUrl }).run();
+                        console.log('Link mark applied to image');
+                    }
+                }
+                hideLinkDialog();
+            } else {
+                // Normal link insertion/editing for text
+                console.log('Calling insertLink for text');
+                
+                if (linkUrl) {
+                    // If we're editing an existing link, setLink will update it
+                    // If we're creating a new one, it will create it
+                    editor.chain().focus().setLink({ href: linkUrl }).run();
+                } else {
+                    // If URL is empty, remove link
+                    editor.chain().focus().unsetLink().run();
+                }
+                hideLinkDialog();
+            }
+        });
         linkUrlInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -716,13 +797,37 @@ const globalWindow = window;
 
         // Context menu event listeners
         ctxAddLink.addEventListener('click', () => {
+            console.log('ctxAddLink clicked', { isImageContextMenu, isLinkContextMenu });
+            // Check flags BEFORE hiding menu
+            const wasImageContext = isImageContextMenu;
+            const wasLinkContext = isLinkContextMenu;
             hideContextMenu();
-            showLinkDialog();
+            
+            if (wasImageContext) {
+                console.log('Calling editSelectedImage from ctxAddLink');
+                editSelectedImage();
+            } else if (wasLinkContext) {
+                console.log('Calling editLink from ctxAddLink');
+                editLink();
+            } else {
+                console.log('Calling showLinkDialog from ctxAddLink');
+                showLinkDialog();
+            }
         });
 
         ctxBold.addEventListener('click', () => {
+            console.log('ctxBold clicked', { isImageContextMenu, isLinkContextMenu });
+            // Check flags BEFORE hiding menu
+            const wasImageContext = isImageContextMenu;
             hideContextMenu();
-            if (editor) editor.chain().focus().toggleBold().run();
+            
+            if (wasImageContext) {
+                console.log('Calling addLinkToImage from ctxBold');
+                addLinkToImage();
+            } else {
+                console.log('Calling toggleBold from ctxBold');
+                if (editor) editor.chain().focus().toggleBold().run();
+            }
         });
 
         ctxItalic.addEventListener('click', () => {
@@ -754,42 +859,78 @@ const globalWindow = window;
     }
 
     function hideContextMenu() {
+        console.log('hideContextMenu called, resetting flags');
         if (!contextMenu) return;
         contextMenu.classList.remove('visible');
         
+        // Reset flags
+        isImageContextMenu = false;
+        isLinkContextMenu = false;
+        console.log('Flags reset');
+        
         // Restore buttons to original state
-        if (ctxBold) ctxBold.style.display = 'flex';
+        if (ctxBold) {
+            ctxBold.style.display = 'flex';
+            ctxBold.textContent = 'B';
+        }
         if (ctxItalic) ctxItalic.style.display = 'flex';
         if (ctxAddLink) {
             ctxAddLink.textContent = '🔗 Add Link';
             ctxAddLink.style.display = 'flex';
-            // Restore original onclick handler
-            ctxAddLink.onclick = () => {
-                hideContextMenu();
-                showLinkDialog();
-            };
         }
     }
 
     function showImageContextMenu(x, y) {
+        console.log('showImageContextMenu called at', { x, y });
         if (!contextMenu) return;
+        
+        // Set flag to indicate image context menu
+        isImageContextMenu = true;
+        isLinkContextMenu = false;
+        console.log('isImageContextMenu set to true');
         
         contextMenu.style.left = `${x}px`;
         contextMenu.style.top = `${y}px`;
         contextMenu.classList.add('visible');
         
-        // Hide Bold and Italic buttons for image context menu
-        if (ctxBold) ctxBold.style.display = 'none';
+        // Repurpose Bold button for "Add Link"
+        if (ctxBold) {
+            ctxBold.style.display = 'block';
+            ctxBold.textContent = '🔗 Add Link';
+            console.log('ctxBold updated to "Add Link"');
+        }
         if (ctxItalic) ctxItalic.style.display = 'none';
         
         // Change "Add Link" to "Edit Image"
         if (ctxAddLink) {
             ctxAddLink.textContent = '🖼 Edit Image';
             ctxAddLink.style.display = 'block';
-            ctxAddLink.onclick = () => {
-                hideContextMenu();
-                editSelectedImage();
-            };
+            console.log('ctxAddLink updated to "Edit Image"');
+        }
+    }
+
+    function showLinkContextMenu(x, y) {
+        console.log('showLinkContextMenu called at', { x, y });
+        if (!contextMenu) return;
+        
+        // Set flag to indicate link context menu
+        isLinkContextMenu = true;
+        isImageContextMenu = false;
+        console.log('isLinkContextMenu set to true');
+        
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        contextMenu.classList.add('visible');
+        
+        // Hide formatting buttons
+        if (ctxBold) ctxBold.style.display = 'none';
+        if (ctxItalic) ctxItalic.style.display = 'none';
+        
+        // Change "Add Link" to "Edit Link"
+        if (ctxAddLink) {
+            ctxAddLink.textContent = '🔗 Edit Link';
+            ctxAddLink.style.display = 'block';
+            console.log('ctxAddLink updated to "Edit Link"');
         }
     }
 
@@ -855,6 +996,75 @@ const globalWindow = window;
             type: 'updateData',
             text: state.content
         });
+    }
+
+    function editLink() {
+        console.log('editLink called', { selectedLink, editor });
+        if (!selectedLink || !editor) return;
+        
+        const href = selectedLink.getAttribute('href');
+        const text = selectedLink.textContent; // This might be empty for images, which is fine
+        
+        console.log('Link details:', { href, text });
+        
+        if (linkTextInput && linkUrlInput && linkDialog) {
+            // If it's an image link, we want to show the image markdown
+            if (selectedImage && selectedLink.contains(selectedImage)) {
+                const imageSrc = selectedImage.getAttribute('src') || '';
+                const imageAlt = selectedImage.getAttribute('alt') || '';
+                linkTextInput.value = `![${imageAlt}](${imageSrc})`;
+                linkTextInput.disabled = true;
+            } else {
+                linkTextInput.value = text || '';
+                linkTextInput.disabled = false;
+            }
+            
+            linkUrlInput.value = href || 'https://';
+            
+            linkDialog.classList.add('visible');
+            linkUrlInput.focus();
+            linkUrlInput.select();
+        }
+    }
+
+    function addLinkToImage() {
+        console.log('addLinkToImage called', { selectedImage, editor, linkDialog, linkTextInput, linkUrlInput });
+        
+        if (!selectedImage || !editor) {
+            console.log('Early return: no selectedImage or editor');
+            return;
+        }
+        
+        // Get current image attributes
+        const imageSrc = selectedImage.getAttribute('src') || '';
+        const imageAlt = selectedImage.getAttribute('alt') || '';
+        
+        // Check if image is already linked
+        const parentLink = selectedImage.closest('a');
+        const currentHref = parentLink ? parentLink.getAttribute('href') : 'https://';
+        
+        console.log('Image details:', { imageSrc, imageAlt, currentHref });
+        
+        // Show link dialog to get the URL
+        if (linkTextInput && linkUrlInput && linkDialog) {
+            console.log('Showing link dialog');
+            
+            // Pre-fill with full image markdown syntax
+            const imageMarkdown = `![${imageAlt}](${imageSrc})`;
+            linkTextInput.value = imageMarkdown;
+            linkTextInput.disabled = true;
+            linkUrlInput.value = currentHref;
+            
+            linkDialog.classList.add('visible');
+            linkUrlInput.focus();
+            linkUrlInput.select();
+            
+            // We need to override the default insert behavior for images
+            // The linkInsertBtn listener we added earlier handles the logic,
+            // but we need to make sure it uses TipTap commands now.
+        } else {
+            console.log('Missing dialog elements:', { linkTextInput, linkUrlInput, linkDialog });
+        }
     }
 
     function updateToolbarState() {
