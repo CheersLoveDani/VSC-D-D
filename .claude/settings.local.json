@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run compile:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node -e:*)",
+      "Bash(node \"./node_modules/typescript/lib/tsc.js\":*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -44,6 +44,47 @@ const globalWindow = window;
     const toolbar = /** @type {HTMLElement} */ (document.querySelector('.toolbar'));
     const editorToolbar = /** @type {HTMLElement} */ (document.querySelector('.editor-toolbar'));
 
+    // Context menu elements - will be initialized later
+    let contextMenu = /** @type {HTMLElement | null} */ (null);
+    let ctxAddLink = /** @type {HTMLElement | null} */ (null);
+    let ctxBold = /** @type {HTMLElement | null} */ (null);
+    let ctxItalic = /** @type {HTMLElement | null} */ (null);
+
+    // Dialog elements - will be initialized later
+    let linkDialog = /** @type {HTMLElement | null} */ (null);
+    let linkTextInput = /** @type {HTMLInputElement | null} */ (null);
+    let linkUrlInput = /** @type {HTMLInputElement | null} */ (null);
+    let linkInsertBtn = /** @type {HTMLElement | null} */ (null);
+    let linkCancelBtn = /** @type {HTMLElement | null} */ (null);
+
+    let imageDialog = /** @type {HTMLElement | null} */ (null);
+    let imageUrlInput = /** @type {HTMLInputElement | null} */ (null);
+    let imageAltInput = /** @type {HTMLInputElement | null} */ (null);
+    let imageInsertBtn = /** @type {HTMLElement | null} */ (null);
+    let imageCancelBtn = /** @type {HTMLElement | null} */ (null);
+
+    // Initialize dialog elements once DOM is ready
+    function initializeDialogElements() {
+        contextMenu = document.getElementById('context-menu');
+        ctxAddLink = document.getElementById('ctx-add-link');
+        ctxBold = document.getElementById('ctx-bold');
+        ctxItalic = document.getElementById('ctx-italic');
+
+        linkDialog = document.getElementById('link-dialog');
+        linkTextInput = /** @type {HTMLInputElement} */ (document.getElementById('link-text'));
+        linkUrlInput = /** @type {HTMLInputElement} */ (document.getElementById('link-url'));
+        linkInsertBtn = document.getElementById('link-insert');
+        linkCancelBtn = document.getElementById('link-cancel');
+
+        imageDialog = document.getElementById('image-dialog');
+        imageUrlInput = /** @type {HTMLInputElement} */ (document.getElementById('image-url'));
+        imageAltInput = /** @type {HTMLInputElement} */ (document.getElementById('image-alt'));
+        imageInsertBtn = document.getElementById('image-insert');
+        imageCancelBtn = document.getElementById('image-cancel');
+
+        setupDialogListeners();
+    }
+
     /** @type {{ content: string, mode: 'read' | 'edit', rawMode: boolean, lastSavedContent: string }} */
     let state = {
         content: '',
@@ -60,6 +101,9 @@ const globalWindow = window;
 
     // Initialize
     vscode.postMessage({ type: 'ready' });
+
+    // Initialize dialog elements after DOM is loaded
+    initializeDialogElements();
 
     window.addEventListener('message', event => {
         const message = event.data;
@@ -213,6 +257,21 @@ const globalWindow = window;
         editor.on('selectionUpdate', () => {
             updateToolbarState();
         });
+
+        // Add context menu for link insertion
+        const editorElement = document.querySelector('.ProseMirror');
+        if (editorElement) {
+            editorElement.addEventListener('contextmenu', (e) => {
+                const selection = editor.state.selection;
+                const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+
+                // Only show custom context menu if text is selected
+                if (selectedText && selectedText.trim()) {
+                    e.preventDefault();
+                    showContextMenu(e.clientX, e.clientY);
+                }
+            });
+        }
 
         updateToolbarState();
         if (!toolbarListenersSetup) {
@@ -461,20 +520,202 @@ const globalWindow = window;
         // Link
         document.getElementById('btn-link')?.addEventListener('click', () => {
             if (!editor) return;
-            const url = prompt('Enter URL:');
-            if (url) {
-                editor.chain().focus().setLink({ href: url }).run();
-            }
+            showLinkDialog();
         });
 
         // Image
         document.getElementById('btn-image')?.addEventListener('click', () => {
             if (!editor) return;
-            const url = prompt('Enter image URL:');
-            if (url) {
-                editor.chain().focus().setImage({ src: url }).run();
+            showImageDialog();
+        });
+    }
+
+    function showLinkDialog() {
+        if (!editor || !linkTextInput || !linkUrlInput || !linkDialog) return;
+
+        // Get current selection
+        const { state } = editor;
+        const { from, to } = state.selection;
+        const selectedText = state.doc.textBetween(from, to, ' ');
+
+        // Pre-fill text field if there's a selection
+        if (selectedText) {
+            linkTextInput.value = selectedText;
+            linkTextInput.disabled = true;
+        } else {
+            linkTextInput.value = '';
+            linkTextInput.disabled = false;
+        }
+        linkUrlInput.value = 'https://';
+
+        linkDialog.classList.add('visible');
+        linkUrlInput.focus();
+        linkUrlInput.select();
+    }
+
+    function hideLinkDialog() {
+        if (!linkDialog || !linkTextInput || !linkUrlInput) return;
+        linkDialog.classList.remove('visible');
+        linkTextInput.value = '';
+        linkUrlInput.value = '';
+    }
+
+    function insertLink() {
+        if (!editor || !linkTextInput || !linkUrlInput) return;
+
+        const text = linkTextInput.value.trim();
+        const url = linkUrlInput.value.trim();
+
+        if (!url) return;
+
+        const { state } = editor;
+        const { from, to } = state.selection;
+        const selectedText = state.doc.textBetween(from, to, ' ');
+
+        if (selectedText) {
+            // If there was selected text, apply link to it
+            editor.chain().focus().setLink({ href: url }).run();
+        } else if (text) {
+            // No selection, insert new link with text
+            editor.chain().focus()
+                .insertContent(`<a href="${url}">${text}</a>`)
+                .run();
+        }
+
+        hideLinkDialog();
+    }
+
+    function showImageDialog() {
+        if (!imageUrlInput || !imageAltInput || !imageDialog) return;
+        imageUrlInput.value = 'https://';
+        imageAltInput.value = '';
+        imageDialog.classList.add('visible');
+        imageUrlInput.focus();
+        imageUrlInput.select();
+    }
+
+    function hideImageDialog() {
+        if (!imageDialog || !imageUrlInput || !imageAltInput) return;
+        imageDialog.classList.remove('visible');
+        imageUrlInput.value = '';
+        imageAltInput.value = '';
+    }
+
+    function insertImage() {
+        if (!editor || !imageUrlInput || !imageAltInput) return;
+
+        const url = imageUrlInput.value.trim();
+        const alt = imageAltInput.value.trim();
+
+        if (!url) return;
+
+        editor.chain().focus().setImage({ src: url, alt: alt }).run();
+        hideImageDialog();
+    }
+
+    // Setup all dialog and context menu event listeners
+    function setupDialogListeners() {
+        if (!linkCancelBtn || !linkInsertBtn || !linkUrlInput || !linkTextInput) return;
+        if (!imageCancelBtn || !imageInsertBtn || !imageUrlInput || !imageAltInput) return;
+        if (!ctxAddLink || !ctxBold || !ctxItalic) return;
+
+        // Dialog event listeners
+        linkCancelBtn.addEventListener('click', hideLinkDialog);
+        linkInsertBtn.addEventListener('click', insertLink);
+        linkUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                insertLink();
+            } else if (e.key === 'Escape') {
+                hideLinkDialog();
             }
         });
+        linkTextInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (linkUrlInput) linkUrlInput.focus();
+            } else if (e.key === 'Escape') {
+                hideLinkDialog();
+            }
+        });
+
+        imageCancelBtn.addEventListener('click', hideImageDialog);
+        imageInsertBtn.addEventListener('click', insertImage);
+        imageUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                insertImage();
+            } else if (e.key === 'Escape') {
+                hideImageDialog();
+            }
+        });
+        imageAltInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                insertImage();
+            } else if (e.key === 'Escape') {
+                hideImageDialog();
+            }
+        });
+
+        // Close dialogs when clicking outside
+        if (linkDialog) {
+            linkDialog.addEventListener('click', (e) => {
+                if (e.target === linkDialog) {
+                    hideLinkDialog();
+                }
+            });
+        }
+        if (imageDialog) {
+            imageDialog.addEventListener('click', (e) => {
+                if (e.target === imageDialog) {
+                    hideImageDialog();
+                }
+            });
+        }
+
+        // Context menu event listeners
+        ctxAddLink.addEventListener('click', () => {
+            hideContextMenu();
+            showLinkDialog();
+        });
+
+        ctxBold.addEventListener('click', () => {
+            hideContextMenu();
+            if (editor) editor.chain().focus().toggleBold().run();
+        });
+
+        ctxItalic.addEventListener('click', () => {
+            hideContextMenu();
+            if (editor) editor.chain().focus().toggleItalic().run();
+        });
+
+        // Hide context menu on click anywhere else
+        document.addEventListener('click', (e) => {
+            if (contextMenu && !contextMenu.contains(e.target)) {
+                hideContextMenu();
+            }
+        });
+
+        // Hide context menu on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideContextMenu();
+            }
+        });
+    }
+
+    // Context menu functions
+    function showContextMenu(x, y) {
+        if (!contextMenu) return;
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        contextMenu.classList.add('visible');
+    }
+
+    function hideContextMenu() {
+        if (!contextMenu) return;
+        contextMenu.classList.remove('visible');
     }
 
     function updateToolbarState() {

@@ -488,3 +488,134 @@ body {
 .popover-detail:last-child {
     margin-bottom: 0;
 }
+
+/* ========== Context Menu ========== */
+.context-menu {
+    position: fixed;
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    box-shadow: var(--dnd-shadow-xl);
+    padding: var(--dnd-space-2);
+    min-width: 150px;
+    z-index: 1500;
+    display: none;
+}
+
+.context-menu.visible {
+    display: block;
+    animation: fadeIn 0.1s;
+}
+
+.context-menu-item {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--dnd-text);
+    padding: var(--dnd-space-2) var(--dnd-space-3);
+    text-align: left;
+    cursor: pointer;
+    font-size: var(--dnd-text-sm);
+    font-family: var(--dnd-font-body);
+    border-radius: var(--dnd-radius-sm);
+    transition: background var(--dnd-transition);
+    display: flex;
+    align-items: center;
+    gap: var(--dnd-space-2);
+}
+
+.context-menu-item:hover {
+    background: var(--dnd-bg-secondary);
+}
+
+.context-menu-item:active {
+    background: var(--dnd-accent);
+    color: white;
+}
+
+/* ========== Input Dialogs ========== */
+.input-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.input-dialog.visible {
+    display: flex;
+    animation: fadeIn var(--dnd-transition);
+}
+
+.input-dialog-content {
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-lg);
+    padding: var(--dnd-space-6);
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: var(--dnd-shadow-xl);
+}
+
+.input-dialog-title {
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-xl);
+    font-weight: 600;
+    margin: 0 0 var(--dnd-space-5) 0;
+    color: var(--dnd-text);
+    border-bottom: 2px solid var(--dnd-border-light);
+    padding-bottom: var(--dnd-space-3);
+}
+
+.input-dialog-field {
+    margin-bottom: var(--dnd-space-4);
+}
+
+.input-dialog-field label {
+    display: block;
+    font-size: var(--dnd-text-sm);
+    font-weight: 600;
+    margin-bottom: var(--dnd-space-2);
+    color: var(--dnd-text);
+}
+
+.input-dialog-field input {
+    width: 100%;
+    padding: var(--dnd-space-3);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    background: var(--dnd-bg-secondary);
+    color: var(--dnd-text);
+    font-size: var(--dnd-text-base);
+    font-family: var(--dnd-font-body);
+    box-sizing: border-box;
+    transition: border-color var(--dnd-transition);
+}
+
+.input-dialog-field input:focus {
+    outline: none;
+    border-color: var(--dnd-accent);
+}
+
+.input-dialog-buttons {
+    display: flex;
+    gap: var(--dnd-space-3);
+    justify-content: flex-end;
+    margin-top: var(--dnd-space-5);
+}
+
+.dnd-btn-primary {
+    background: var(--dnd-accent);
+    color: white;
+    border-color: var(--dnd-accent);
+}
+
+.dnd-btn-primary:hover {
+    background: var(--dnd-accent-hover);
+    border-color: var(--dnd-accent-hover);
+}

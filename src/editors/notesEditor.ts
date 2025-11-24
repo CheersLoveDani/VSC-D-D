@@ -194,6 +194,52 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                 </div>
                 <div class="content-area" id="app"></div>
                 <div id="popover" class="popover"></div>
+
+                <!-- Context Menu -->
+                <div id="context-menu" class="context-menu">
+                    <button id="ctx-add-link" class="context-menu-item">🔗 Add Link</button>
+                    <button id="ctx-bold" class="context-menu-item"><b>B</b> Bold</button>
+                    <button id="ctx-italic" class="context-menu-item"><i>I</i> Italic</button>
+                </div>
+
+                <!-- Link Input Dialog -->
+                <div id="link-dialog" class="input-dialog">
+                    <div class="input-dialog-content">
+                        <h3 class="input-dialog-title">Insert Link</h3>
+                        <div class="input-dialog-field">
+                            <label for="link-text">Text:</label>
+                            <input type="text" id="link-text" placeholder="Link text" />
+                        </div>
+                        <div class="input-dialog-field">
+                            <label for="link-url">URL:</label>
+                            <input type="text" id="link-url" placeholder="https://" />
+                        </div>
+                        <div class="input-dialog-buttons">
+                            <button id="link-cancel" class="dnd-btn">Cancel</button>
+                            <button id="link-insert" class="dnd-btn dnd-btn-primary">Insert</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Input Dialog -->
+                <div id="image-dialog" class="input-dialog">
+                    <div class="input-dialog-content">
+                        <h3 class="input-dialog-title">Insert Image</h3>
+                        <div class="input-dialog-field">
+                            <label for="image-url">Image URL:</label>
+                            <input type="text" id="image-url" placeholder="https://" />
+                        </div>
+                        <div class="input-dialog-field">
+                            <label for="image-alt">Alt Text:</label>
+                            <input type="text" id="image-alt" placeholder="Image description" />
+                        </div>
+                        <div class="input-dialog-buttons">
+                            <button id="image-cancel" class="dnd-btn">Cancel</button>
+                            <button id="image-insert" class="dnd-btn dnd-btn-primary">Insert</button>
+                        </div>
+                    </div>
+                </div>
+
                 <script src="${tiptapBundleUri}"></script>
                 <script src="${scriptUri}"></script>
                 <script>
