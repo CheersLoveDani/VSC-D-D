@@ -198,6 +198,11 @@
                 spellAttackEl.value = formatModifier(spellAttackBonus);
             }
         }
+
+        // Update attack calculations for all attack rows
+        document.querySelectorAll('.attack-row').forEach(row => {
+            updateAttackCalculations(/** @type {HTMLElement} */ (row));
+        });
     }
 
     // Initialize inputs
@@ -266,6 +271,10 @@
 
         // Update all calculated fields after loading state
         updateCalculatedFields();
+
+        // Load dynamic content
+        loadAttacks();
+        loadSpells();
     }
 
     function updateStateFromUI() {
@@ -310,6 +319,254 @@
             lastObj[lastKey] = value;
         }
     }
+
+    // ========== HP Healing/Damage ==========
+    const healBtn = document.getElementById('heal-btn');
+    const damageBtn = document.getElementById('damage-btn');
+    const hpAdjustInput = /** @type {HTMLInputElement | null} */ (document.getElementById('hp-adjust-amount'));
+
+    if (healBtn && damageBtn && hpAdjustInput) {
+        healBtn.addEventListener('click', () => {
+            const amount = parseInt(hpAdjustInput.value) || 0;
+            if (amount <= 0) return;
+
+            const currentHP = getNestedValue(state, 'hp.current') || 0;
+            const maxHP = getNestedValue(state, 'hp.max') || 0;
+            const newHP = Math.min(currentHP + amount, maxHP);
+
+            setNestedValue(state, 'hp.current', newHP);
+            // Update just the HP field, not the entire UI
+            const hpCurrentEl = /** @type {HTMLInputElement | null} */ (document.getElementById('hp.current'));
+            if (hpCurrentEl) hpCurrentEl.value = newHP.toString();
+            debouncedUpdate();
+            hpAdjustInput.value = '';
+        });
+
+        damageBtn.addEventListener('click', () => {
+            const amount = parseInt(hpAdjustInput.value) || 0;
+            if (amount <= 0) return;
+
+            const currentHP = getNestedValue(state, 'hp.current') || 0;
+            const maxHP = getNestedValue(state, 'hp.max') || 0;
+            const newHP = Math.max(currentHP - amount, -maxHP);
+
+            setNestedValue(state, 'hp.current', newHP);
+            // Update just the HP field, not the entire UI
+            const hpCurrentEl = /** @type {HTMLInputElement | null} */ (document.getElementById('hp.current'));
+            if (hpCurrentEl) hpCurrentEl.value = newHP.toString();
+            debouncedUpdate();
+            hpAdjustInput.value = '';
+        });
+    }
+
+    // ========== Dynamic Attacks ==========
+    let attackCounter = 0;
+    const attacksContainer = document.getElementById('attacks-container');
+    const addAttackBtn = document.getElementById('add-attack-btn');
+
+    /**
+     * Update attack bonus and damage bonus calculations for an attack row
+     * @param {HTMLElement} attackRow
+     */
+    function updateAttackCalculations(attackRow) {
+        const statSelect = /** @type {HTMLSelectElement | null} */ (attackRow.querySelector('[data-field="stat"]'));
+        if (!statSelect) return;
+
+        const selectedStat = statSelect.value;
+        const abilityScore = getNestedValue(state, `stats.${selectedStat}`) || 10;
+        const abilityMod = calculateModifier(abilityScore);
+        const level = getNestedValue(state, 'level') || 1;
+        const profBonus = calculateProficiencyBonus(level);
+
+        // Attack Bonus = Ability Modifier + Proficiency Bonus
+        const attackBonus = abilityMod + profBonus;
+        const attackBonusEl = attackRow.querySelector('[data-field="attackBonus"]');
+        if (attackBonusEl) {
+            attackBonusEl.textContent = formatModifier(attackBonus);
+        }
+
+        // Damage Bonus = Ability Modifier only (no proficiency)
+        const damageBonus = abilityMod;
+        const damageBonusEl = attackRow.querySelector('[data-field="damageBonus"]');
+        if (damageBonusEl) {
+            damageBonusEl.textContent = formatModifier(damageBonus);
+        }
+    }
+
+    /**
+     * @param {any} attackData
+     */
+    function createAttackRow(attackData = {}) {
+        const attackId = attackCounter++;
+        const div = document.createElement('div');
+        div.className = 'attack-row';
+        div.dataset.attackId = attackId.toString();
+
+        // @ts-ignore
+        div.innerHTML = `
+            <input type="text" placeholder="Name" value="${attackData.name || ''}" data-field="name" />
+            <select data-field="stat">
+                <option value="str" ${attackData.stat === 'str' ? 'selected' : ''}>STR</option>
+                <option value="dex" ${attackData.stat === 'dex' ? 'selected' : ''}>DEX</option>
+                <option value="con" ${attackData.stat === 'con' ? 'selected' : ''}>CON</option>
+                <option value="int" ${attackData.stat === 'int' ? 'selected' : ''}>INT</option>
+                <option value="wis" ${attackData.stat === 'wis' ? 'selected' : ''}>WIS</option>
+                <option value="cha" ${attackData.stat === 'cha' ? 'selected' : ''}>CHA</option>
+            </select>
+            <div class="attack-bonus-display" data-field="attackBonus">+0</div>
+            <input type="text" placeholder="Bonus Dmg" value="${attackData.bonusDamage || ''}" data-field="bonusDamage" />
+            <input type="text" placeholder="Damage/Type" value="${attackData.damage || ''}" data-field="damage" />
+            <div class="damage-bonus-display" data-field="damageBonus">+0</div>
+            <button type="button" class="delete-attack">×</button>
+        `;
+
+        // Add event listeners
+        div.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', () => {
+                updateAttackCalculations(div);
+                saveAttacks();
+            });
+            el.addEventListener('change', () => {
+                updateAttackCalculations(div);
+                saveAttacks();
+            });
+        });
+
+        div.querySelector('.delete-attack')?.addEventListener('click', () => {
+            div.remove();
+            saveAttacks();
+        });
+
+        // Calculate initial values
+        updateAttackCalculations(div);
+
+        return div;
+    }
+
+    function saveAttacks() {
+        /** @type {any[]} */
+        const attacks = [];
+        attacksContainer?.querySelectorAll('.attack-row').forEach(row => {
+            const attack = {
+                name: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="name"]'))?.value || '',
+                stat: /** @type {HTMLSelectElement} */ (row.querySelector('[data-field="stat"]'))?.value || 'str',
+                bonusDamage: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="bonusDamage"]'))?.value || '',
+                damage: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="damage"]'))?.value || ''
+            };
+            attacks.push(attack);
+        });
+        setNestedValue(state, 'attacks', attacks);
+        debouncedUpdate();
+    }
+
+    function loadAttacks() {
+        const attacks = getNestedValue(state, 'attacks') || [];
+        if (attacksContainer) {
+            attacksContainer.innerHTML = '';
+            attacks.forEach(/** @param {any} attack */ (attack) => {
+                attacksContainer.appendChild(createAttackRow(attack));
+            });
+        }
+    }
+
+    addAttackBtn?.addEventListener('click', () => {
+        if (attacksContainer) {
+            attacksContainer.appendChild(createAttackRow());
+            saveAttacks();
+        }
+    });
+
+    // ========== Dynamic Spells ==========
+    /** @type {Record<string, number>} */
+    let spellCounters = {};
+
+    /**
+     * @param {any} level
+     * @param {any} spellData
+     */
+    function createSpellEntry(level, spellData = {}) {
+        // @ts-ignore
+        if (!spellCounters[level]) spellCounters[level] = 0;
+        // @ts-ignore
+        const spellId = spellCounters[level]++;
+
+        const div = document.createElement('div');
+        div.className = 'spell-entry';
+        div.dataset.level = level;
+        div.dataset.spellId = spellId.toString();
+
+        // @ts-ignore
+        div.innerHTML = `
+            <input type="checkbox" ${spellData.prepared ? 'checked' : ''} data-field="prepared" title="Prepared" />
+            <input type="text" placeholder="Spell name" value="${spellData.name || ''}" data-field="name" />
+            <button type="button" class="delete-spell">×</button>
+        `;
+
+        // Add event listeners
+        div.querySelectorAll('input').forEach(el => {
+            const eventType = el.type === 'checkbox' ? 'change' : 'input';
+            el.addEventListener(eventType, () => saveSpells());
+        });
+
+        div.querySelector('.delete-spell')?.addEventListener('click', () => {
+            div.remove();
+            saveSpells();
+        });
+
+        return div;
+    }
+
+    function saveSpells() {
+        /** @type {Record<string, any[]>} */
+        const spellsByLevel = {};
+        for (let i = 0; i <= 9; i++) {
+            const container = document.getElementById(`spells-level${i}`);
+            /** @type {any[]} */
+            const spells = [];
+            container?.querySelectorAll('.spell-entry').forEach(entry => {
+                const spell = {
+                    name: /** @type {HTMLInputElement} */ (entry.querySelector('[data-field="name"]'))?.value || '',
+                    prepared: /** @type {HTMLInputElement} */ (entry.querySelector('[data-field="prepared"]'))?.checked || false
+                };
+                // Keep all spells including empty ones
+                spells.push(spell);
+            });
+            if (spells.length > 0) {
+                spellsByLevel[`level${i}`] = spells;
+            }
+        }
+        setNestedValue(state, 'spells', spellsByLevel);
+        debouncedUpdate();
+    }
+
+    function loadSpells() {
+        const spellsByLevel = getNestedValue(state, 'spells') || {};
+        for (let i = 0; i <= 9; i++) {
+            const container = document.getElementById(`spells-level${i}`);
+            if (container) {
+                container.innerHTML = '';
+                // @ts-ignore
+                const spells = spellsByLevel[`level${i}`] || [];
+                spells.forEach(/** @param {any} spell */ (spell) => {
+                    container.appendChild(createSpellEntry(i.toString(), spell));
+                });
+            }
+        }
+    }
+
+    // Add spell buttons
+    document.querySelectorAll('.add-spell-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const level = btn.getAttribute('data-level');
+            if (level) {
+                const container = document.getElementById(`spells-level${level}`);
+                if (container) {
+                    container.appendChild(createSpellEntry(level));
+                    saveSpells();
+                }
+            }
+        });
+    });
 
     // Signal that the webview is ready to receive data
     vscode.postMessage({ type: 'ready' });

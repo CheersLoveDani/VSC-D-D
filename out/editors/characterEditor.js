@@ -210,6 +210,13 @@ class CharacterSheetProvider {
                                             <input type="number" id="hp.temp" placeholder="0" />
                                         </div>
                                     </div>
+                                    <div class="hp-controls">
+                                        <div class="hp-controls-grid">
+                                            <input type="number" id="hp-adjust-amount" placeholder="Amount" min="0" />
+                                            <button class="heal-btn" id="heal-btn">Heal</button>
+                                            <button class="damage-btn" id="damage-btn">Damage</button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Hit Dice & Death Saves -->
@@ -238,23 +245,29 @@ class CharacterSheetProvider {
                                 <!-- Attacks & Spellcasting -->
                                 <div class="section">
                                     <h3 class="section-title">Attacks & Spellcasting</h3>
-                                    <textarea id="attacks" rows="8" placeholder="Weapon/Spell | Atk Bonus | Damage/Type"></textarea>
-                                </div>
-
-                                <!-- Equipment -->
-                                <div class="section">
-                                    <h3 class="section-title">Equipment</h3>
-                                    <textarea id="equipment" rows="8" placeholder="List your equipment and gear..."></textarea>
-                                    <div class="field-group">
-                                        <label>Gold (GP)</label>
-                                        <input type="number" id="gold" placeholder="0" />
+                                    <div class="attacks-grid" id="attacks-container">
+                                        <!-- Attacks will be added dynamically -->
                                     </div>
+                                    <button class="add-attack-btn" id="add-attack-btn">+ Add Attack</button>
                                 </div>
 
-                                <!-- Features & Traits -->
-                                <div class="section">
-                                    <h3 class="section-title">Features & Traits</h3>
-                                    <textarea id="traits" rows="6" placeholder="Class features, racial traits, feats..."></textarea>
+                                <!-- Grid Sections -->
+                                <div class="grid-sections">
+                                    <!-- Equipment -->
+                                    <div class="section">
+                                        <h3 class="section-title">Equipment</h3>
+                                        <textarea id="equipment" rows="8" placeholder="List your equipment and gear..."></textarea>
+                                        <div class="field-group">
+                                            <label>Gold (GP)</label>
+                                            <input type="number" id="gold" placeholder="0" />
+                                        </div>
+                                    </div>
+
+                                    <!-- Features & Traits -->
+                                    <div class="section">
+                                        <h3 class="section-title">Features & Traits</h3>
+                                        <textarea id="traits" rows="6" placeholder="Class features, racial traits, feats..."></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -266,30 +279,35 @@ class CharacterSheetProvider {
 
                         <div class="page2-grid">
                             <!-- Personality -->
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Personality Traits</h3>
                                 <textarea id="personalityTraits" rows="3" placeholder="Describe your character's personality traits..."></textarea>
                             </div>
 
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Ideals</h3>
-                                <textarea id="ideals" rows="2" placeholder="What beliefs drive your character?"></textarea>
+                                <textarea id="ideals" rows="3" placeholder="What beliefs drive your character?"></textarea>
                             </div>
 
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Bonds</h3>
-                                <textarea id="bonds" rows="2" placeholder="What connections are most important?"></textarea>
+                                <textarea id="bonds" rows="3" placeholder="What connections are most important?"></textarea>
                             </div>
 
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Flaws</h3>
-                                <textarea id="flaws" rows="2" placeholder="What weaknesses does your character have?"></textarea>
+                                <textarea id="flaws" rows="3" placeholder="What weaknesses does your character have?"></textarea>
                             </div>
 
                             <!-- Appearance & Backstory -->
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Appearance</h3>
-                                <textarea id="appearance" rows="4" placeholder="Physical description: age, height, weight, eyes, hair, skin..."></textarea>
+                                <textarea id="appearance" rows="5" placeholder="Physical description: age, height, weight, eyes, hair, skin..."></textarea>
+                            </div>
+
+                            <div class="section">
+                                <h3 class="section-title">Allies & Organizations</h3>
+                                <textarea id="allies" rows="5" placeholder="Important NPCs, factions, organizations..."></textarea>
                             </div>
 
                             <div class="section full-width">
@@ -297,22 +315,16 @@ class CharacterSheetProvider {
                                 <textarea id="backstory" rows="8" placeholder="Tell your character's story..."></textarea>
                             </div>
 
-                            <!-- Allies & Organizations -->
-                            <div class="section full-width">
-                                <h3 class="section-title">Allies & Organizations</h3>
-                                <textarea id="allies" rows="4" placeholder="Important NPCs, factions, organizations..."></textarea>
-                            </div>
-
                             <!-- Additional Features & Traits -->
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Additional Features & Traits</h3>
                                 <textarea id="additionalFeatures" rows="6" placeholder="Extra features, abilities, special traits..."></textarea>
                             </div>
 
                             <!-- Treasure -->
-                            <div class="section full-width">
+                            <div class="section">
                                 <h3 class="section-title">Treasure</h3>
-                                <textarea id="treasure" rows="4" placeholder="Magic items, special possessions, valuables..."></textarea>
+                                <textarea id="treasure" rows="6" placeholder="Magic items, special possessions, valuables..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -340,10 +352,10 @@ class CharacterSheetProvider {
                             </div>
                         </div>
 
-                        <!-- Spell Slots -->
+                        <!-- Spell Slots & Spells -->
                         <div class="section">
-                            <h3 class="section-title">Spell Slots</h3>
-                            <div class="spell-slots-grid">
+                            <h3 class="section-title">Spell Slots & Spells</h3>
+                            <div class="spell-slots-grid" id="spell-slots-container">
                                 ${this.renderSpellSlotLevel('Cantrips', '0')}
                                 ${this.renderSpellSlotLevel('1st Level', '1')}
                                 ${this.renderSpellSlotLevel('2nd Level', '2')}
@@ -355,16 +367,6 @@ class CharacterSheetProvider {
                                 ${this.renderSpellSlotLevel('8th Level', '8')}
                                 ${this.renderSpellSlotLevel('9th Level', '9')}
                             </div>
-                        </div>
-
-                        <!-- Spell List -->
-                        <div class="section">
-                            <h3 class="section-title">Spells</h3>
-                            <textarea id="spellList" rows="20" placeholder="List your spells by level. Format suggestion:
-Cantrips: Fire Bolt, Mage Hand, Prestidigitation
-1st Level (4 slots): Magic Missile, Shield, Detect Magic
-2nd Level (3 slots): Misty Step, Scorching Ray
-..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -398,10 +400,16 @@ Cantrips: Fire Bolt, Mage Hand, Prestidigitation
     }
     renderSpellSlotLevel(label, level) {
         return `
-        <div class="spell-slot-row">
-            <label>${label}</label>
-            <input type="number" id="spellSlots.level${level}.total" min="0" placeholder="Total" />
-            <input type="number" id="spellSlots.level${level}.expended" min="0" placeholder="Used" />
+        <div class="spell-slot-container">
+            <div class="spell-slot-row" data-level="${level}">
+                <label>${label}</label>
+                <input type="number" id="spellSlots.level${level}.total" min="0" placeholder="Total" />
+                <input type="number" id="spellSlots.level${level}.expended" min="0" placeholder="Used" />
+                <button type="button" class="add-spell-btn" data-level="${level}">+</button>
+            </div>
+            <div class="spells-for-level" id="spells-level${level}">
+                <!-- Spells for this level will be added dynamically -->
+            </div>
         </div>`;
     }
     updateDocument(document, data) {

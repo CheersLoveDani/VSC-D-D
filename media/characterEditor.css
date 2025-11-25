@@ -194,6 +194,7 @@ body {
 .ability-score input {
     font-size: var(--dnd-text-xl);
     width: 100%;
+    min-width: 50px;
     text-align: center;
     border: 1px solid var(--dnd-border-light);
     background: var(--dnd-card-bg);
@@ -339,6 +340,56 @@ body {
     gap: var(--dnd-space-3);
 }
 
+.hp-controls {
+    margin-top: var(--dnd-space-3);
+    padding: var(--dnd-space-3);
+    background: var(--dnd-bg-secondary);
+    border-radius: var(--dnd-radius-md);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.hp-controls-grid {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--dnd-space-2);
+    align-items: center;
+}
+
+.hp-controls input[type="number"] {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.hp-controls button {
+    padding: var(--dnd-space-2) var(--dnd-space-3);
+    font-size: var(--dnd-text-sm);
+    font-weight: 600;
+    border-radius: var(--dnd-radius-sm);
+    cursor: pointer;
+    transition: all var(--dnd-transition);
+    border: 1px solid var(--dnd-border);
+}
+
+.hp-controls button.heal-btn {
+    background: #22c55e;
+    color: white;
+    border-color: #16a34a;
+}
+
+.hp-controls button.heal-btn:hover {
+    background: #16a34a;
+}
+
+.hp-controls button.damage-btn {
+    background: #ef4444;
+    color: white;
+    border-color: #dc2626;
+}
+
+.hp-controls button.damage-btn:hover {
+    background: #dc2626;
+}
+
 .death-saves {
     margin-top: var(--dnd-space-3);
     padding: var(--dnd-space-3);
@@ -389,10 +440,90 @@ body {
     box-shadow: 0 0 0 2px var(--dnd-accent-soft);
 }
 
+/* ========== Attacks Section ========== */
+.attacks-grid {
+    display: grid;
+    gap: var(--dnd-space-2);
+}
+
+.attack-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 0.8fr 1fr 1.5fr 0.8fr auto;
+    gap: var(--dnd-space-2);
+    align-items: center;
+    padding: var(--dnd-space-2);
+    background: var(--dnd-bg-secondary);
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.attack-row input,
+.attack-row select {
+    font-size: var(--dnd-text-sm);
+    padding: var(--dnd-space-1) var(--dnd-space-2);
+}
+
+.attack-bonus-display,
+.damage-bonus-display {
+    font-size: var(--dnd-text-sm);
+    font-weight: 600;
+    color: var(--dnd-accent);
+    text-align: center;
+    padding: var(--dnd-space-1);
+    background: var(--dnd-bg);
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.attack-row button {
+    padding: var(--dnd-space-1);
+    background: var(--dnd-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-sm);
+    cursor: pointer;
+    color: var(--dnd-text-muted);
+    transition: all var(--dnd-transition);
+}
+
+.attack-row button:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #dc2626;
+}
+
+.add-attack-btn {
+    margin-top: var(--dnd-space-2);
+    padding: var(--dnd-space-2);
+    width: 100%;
+    background: var(--dnd-bg-secondary);
+    border: 1px dashed var(--dnd-border);
+    border-radius: var(--dnd-radius-md);
+    cursor: pointer;
+    color: var(--dnd-accent);
+    font-weight: 600;
+    transition: all var(--dnd-transition);
+}
+
+.add-attack-btn:hover {
+    background: var(--dnd-accent-soft);
+    border-style: solid;
+}
+
+/* ========== Grid Sections ========== */
+.grid-sections {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--dnd-space-4);
+}
+
+.grid-sections .section {
+    margin-bottom: 0;
+}
+
 /* ========== Page 2 Layout ========== */
 .page2-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--dnd-space-4);
 }
 
@@ -418,9 +549,15 @@ body {
     gap: var(--dnd-space-3);
 }
 
+.spell-slot-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dnd-space-2);
+}
+
 .spell-slot-row {
     display: grid;
-    grid-template-columns: 100px 1fr 1fr;
+    grid-template-columns: 100px 1fr 1fr auto;
     gap: var(--dnd-space-2);
     align-items: center;
     padding: var(--dnd-space-2);
@@ -439,4 +576,69 @@ body {
 .spell-slot-row input {
     text-align: center;
     font-variant-numeric: tabular-nums;
+}
+
+.spell-slot-row button {
+    padding: var(--dnd-space-1);
+    background: var(--dnd-accent);
+    color: white;
+    border: none;
+    border-radius: var(--dnd-radius-sm);
+    cursor: pointer;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--dnd-transition);
+}
+
+.spell-slot-row button:hover {
+    background: var(--dnd-accent-hover);
+}
+
+.spells-for-level {
+    margin-top: var(--dnd-space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--dnd-space-1);
+}
+
+.spell-entry {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--dnd-space-2);
+    align-items: center;
+    padding: var(--dnd-space-2);
+    background: var(--dnd-card-bg);
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.spell-entry input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.spell-entry input[type="text"] {
+    font-size: var(--dnd-text-sm);
+}
+
+.spell-entry button {
+    padding: var(--dnd-space-1);
+    background: var(--dnd-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-sm);
+    cursor: pointer;
+    color: var(--dnd-text-muted);
+    transition: all var(--dnd-transition);
+    width: 24px;
+    height: 24px;
+}
+
+.spell-entry button:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #dc2626;
 }
