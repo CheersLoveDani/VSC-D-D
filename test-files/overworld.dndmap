@@ -1,0 +1,13 @@
+{
+  "imagePath": "./Khorvaire Eberron.jpg",
+  "pins": [
+    {
+      "x": 100,
+      "y": 100,
+      "label": "Start Here",
+      "link": "./sample.dndchar",
+      "icon": "📍",
+      "id": "1"
+    }
+  ]
+}

@@ -16,16 +16,24 @@ class MapEditorProvider {
      * Called when our custom editor is opened.
      */
     async resolveCustomTextEditor(document, webviewPanel, _token) {
+        // Get workspace folder for loading local images
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+        const localResourceRoots = [
+            vscode.Uri.joinPath(this.context.extensionUri, 'media')
+        ];
+        // Add workspace folder if available
+        if (workspaceFolder) {
+            localResourceRoots.push(workspaceFolder.uri);
+        }
+        // Also add document directory as fallback
+        localResourceRoots.push(vscode.Uri.joinPath(document.uri, '..'));
         // Setup initial content for the webview
         webviewPanel.webview.options = {
             enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(this.context.extensionUri, 'media'),
-                vscode.Uri.joinPath(document.uri, '..')
-            ]
+            localResourceRoots: localResourceRoots
         };
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
-        function updateWebview() {
+        const updateWebview = () => {
             const text = document.getText();
             let resolvedImageUri = '';
             try {
@@ -42,7 +50,7 @@ class MapEditorProvider {
                 text: text,
                 resolvedImageUri: resolvedImageUri
             });
-        }
+        };
         // Hook up event handlers so that when the document changes, the webview is updated
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.toString() === document.uri.toString()) {
@@ -56,7 +64,11 @@ class MapEditorProvider {
         // Receive message from the webview.
         webviewPanel.webview.onDidReceiveMessage(e => {
             switch (e.type) {
-                case 'update':
+                case 'ready':
+                    // Wait for webview to be ready before sending data
+                    updateWebview();
+                    return;
+                case 'updateData':
                     this.updateDocument(document, e.data);
                     return;
                 case 'selectImage':
@@ -67,7 +79,6 @@ class MapEditorProvider {
                     return;
             }
         });
-        updateWebview();
     }
     /**
      * Get the static HTML used for the editor webviews.
@@ -87,10 +98,7 @@ class MapEditorProvider {
             </head>
             <body>
                 <div id="map-container">
-                    <div id="map-content">
-                        <img id="map-image" src="" alt="Map Image" />
-                        <div id="pins-layer"></div>
-                    </div>
+                    <canvas id="map-canvas"></canvas>
                 </div>
                 <!-- Toolbar is created by JS -->
                 <script src="${scriptUri}"></script>

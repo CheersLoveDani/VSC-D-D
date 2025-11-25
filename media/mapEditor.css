@@ -12,59 +12,26 @@ body {
 #map-container {
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-#map-image {
-    max-width: none;
+#map-canvas {
     display: block;
+    cursor: grab;
+    width: 100%;
+    height: 100%;
 }
 
-/* ========== Pins ========== */
-.pin {
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(135deg, var(--dnd-accent) 0%, var(--dnd-accent-hover) 100%);
-    border-radius: var(--dnd-radius-full);
-    cursor: pointer;
-    transform: translate(-50%, -50%);
-    border: 3px solid white;
-    box-shadow: var(--dnd-shadow-md);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: var(--dnd-text-xs);
-    font-weight: 600;
-    color: white;
-    transition: all var(--dnd-transition);
+#map-canvas.edit-mode {
+    cursor: crosshair;
 }
 
-.pin:hover {
-    transform: translate(-50%, -50%) scale(1.15);
-    box-shadow: var(--dnd-shadow-lg);
-}
-
-.pin:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: var(--dnd-space-2) var(--dnd-space-3);
-    border-radius: var(--dnd-radius);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 10;
-    font-size: var(--dnd-text-sm);
-    font-weight: 500;
-    box-shadow: var(--dnd-shadow-md);
+#map-canvas.dragging {
+    cursor: grabbing;
 }
 
 /* ========== Toolbar ========== */
