@@ -27,6 +27,8 @@
     let mapImage = new Image();
     let imageLoaded = false;
     let imageError = false;
+    let currentImageUri = '';
+    let isFirstLoad = true;
 
     // Pan/drag state
     let isDragging = false;
@@ -36,6 +38,16 @@
     let isEditMode = false;
     /** @type {HTMLElement | null} */
     let activePopover = null;
+    /** @type {number} */
+    let hoveredPinIndex = -1;
+    /** @type {HTMLElement | null} */
+    let previewPopover = null;
+    
+    // Animation state for smooth pin hover
+    let pinHoverScale = 1.0;
+    let targetPinHoverScale = 1.0;
+    /** @type {number | null} */
+    let animationFrameId = null;
 
     // Initialize UI
     createToolbar();
@@ -93,13 +105,16 @@
         // Mouse wheel for zoom
         canvas.addEventListener('wheel', handleWheel, { passive: false });
 
-        // Mouse events for pan
+        // Mouse events for pan and hover
         canvas.addEventListener('mousedown', handleMouseDown);
         canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('mouseup', handleMouseUp);
-        canvas.addEventListener('mouseleave', handleMouseUp);
+        canvas.addEventListener('mouseleave', handleMouseLeave);
 
-        // Click for pin placement/interaction
+        // Right-click for pin placement in edit mode
+        canvas.addEventListener('contextmenu', handleContextMenu);
+        
+        // Click for pin interaction
         canvas.addEventListener('click', handleCanvasClick);
     }
 
@@ -132,8 +147,7 @@
     }
 
     function handleMouseDown(/** @type {MouseEvent} */ e) {
-        if (isEditMode) return; // Don't pan in edit mode
-        
+        // Allow panning in both edit and view modes
         isDragging = true;
         lastX = e.clientX;
         lastY = e.clientY;
@@ -144,25 +158,109 @@
     }
 
     function handleMouseMove(/** @type {MouseEvent} */ e) {
-        if (!isDragging) return;
+        if (!canvas) return;
 
-        const deltaX = e.clientX - lastX;
-        const deltaY = e.clientY - lastY;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
 
-        viewport.translateX += deltaX;
-        viewport.translateY += deltaY;
+        // Handle dragging
+        if (isDragging) {
+            const deltaX = e.clientX - lastX;
+            const deltaY = e.clientY - lastY;
 
-        lastX = e.clientX;
-        lastY = e.clientY;
+            viewport.translateX += deltaX;
+            viewport.translateY += deltaY;
 
-        render();
+            lastX = e.clientX;
+            lastY = e.clientY;
+
+            render();
+            return;
+        }
+
+        // Check for pin hover (only in view mode)
+        if (!isEditMode) {
+            const pinIndex = findPinAtScreen(screenX, screenY);
+            
+            if (pinIndex !== hoveredPinIndex) {
+                hoveredPinIndex = pinIndex;
+                targetPinHoverScale = pinIndex !== -1 ? 1.3 : 1.0;
+                startAnimation();
+                
+                // Show/hide preview
+                if (pinIndex !== -1) {
+                    const pin = state.pins[pinIndex];
+                    if (pin.link) {
+                        showPreview(pin, e.clientX, e.clientY);
+                    } else {
+                        closePreview();
+                    }
+                } else {
+                    closePreview();
+                }
+            }
+        }
     }
 
     function handleMouseUp() {
         isDragging = false;
-        if (canvas && !isEditMode) {
-            canvas.style.cursor = 'grab';
+        if (canvas) {
+            canvas.style.cursor = isEditMode ? 'crosshair' : 'grab';
         }
+    }
+
+    function handleMouseLeave() {
+        isDragging = false;
+        hoveredPinIndex = -1;
+        targetPinHoverScale = 1.0;
+        closePreview();
+        if (canvas) {
+            canvas.style.cursor = isEditMode ? 'crosshair' : 'grab';
+        }
+        startAnimation();
+    }
+
+    function handleContextMenu(/** @type {MouseEvent} */ e) {
+        e.preventDefault();
+        
+        if (!isEditMode || !canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const world = screenToWorld(screenX, screenY);
+        
+        const newPin = {
+            id: Date.now().toString(),
+            x: Math.round(world.x),
+            y: Math.round(world.y),
+            label: 'New Pin',
+            icon: '📍',
+            link: ''
+        };
+
+        state.pins = state.pins || [];
+        state.pins.push(newPin);
+        
+        // Store viewport state before showing popover to prevent jumping
+        const savedViewport = {
+            scale: viewport.scale,
+            translateX: viewport.translateX,
+            translateY: viewport.translateY
+        };
+        
+        saveState();
+        
+        // Restore viewport after save to prevent any jumping
+        viewport.scale = savedViewport.scale;
+        viewport.translateX = savedViewport.translateX;
+        viewport.translateY = savedViewport.translateY;
+        
+        // Show edit popover for new pin
+        setTimeout(() => {
+            showPinPopover(newPin, state.pins.length - 1, e.clientX, e.clientY);
+        }, 50);
     }
 
     function handleCanvasClick(/** @type {MouseEvent} */ e) {
@@ -184,31 +282,28 @@
                     vscode.postMessage({ type: 'openFile', path: pin.link });
                 }
             }
-            return;
         }
+        // Note: Pin placement now handled by right-click (contextmenu event)
+    }
 
-        // If in edit mode and didn't click a pin, add new pin
-        if (isEditMode) {
-            const world = screenToWorld(screenX, screenY);
-            
-            const newPin = {
-                id: Date.now().toString(),
-                x: Math.round(world.x),
-                y: Math.round(world.y),
-                label: 'New Pin',
-                icon: '📍',
-                link: ''
-            };
-
-            state.pins = state.pins || [];
-            state.pins.push(newPin);
-            saveState();
-            
-            // Show edit popover for new pin
-            setTimeout(() => {
-                showPinPopover(newPin, state.pins.length - 1, e.clientX, e.clientY);
-            }, 50);
+    function startAnimation() {
+        if (animationFrameId) return; // Already animating
+        
+        function animate() {
+            // Smooth interpolation
+            const diff = targetPinHoverScale - pinHoverScale;
+            if (Math.abs(diff) > 0.01) {
+                pinHoverScale += diff * 0.2; // Ease factor
+                render();
+                animationFrameId = requestAnimationFrame(animate);
+            } else {
+                pinHoverScale = targetPinHoverScale;
+                render();
+                animationFrameId = null;
+            }
         }
+        
+        animationFrameId = requestAnimationFrame(animate);
     }
 
     function toggleEditMode() {
@@ -309,7 +404,13 @@
                     const resolvedImageUri = message.resolvedImageUri;
                     
                     if (resolvedImageUri) {
-                        loadImage(resolvedImageUri);
+                        // Only reload image if URI has changed
+                        if (resolvedImageUri !== currentImageUri) {
+                            loadImage(resolvedImageUri);
+                        } else {
+                            // Just re-render with updated state, don't reload image
+                            render();
+                        }
                     } else {
                         imageLoaded = false;
                         imageError = true;
@@ -319,12 +420,19 @@
                     console.error('Error parsing state:', e);
                 }
                 return;
+            case 'previewData':
+                // Display preview popover with file data
+                if (message.data) {
+                    displayPreview(message.data, message.x, message.y);
+                }
+                return;
         }
     });
 
     function loadImage(/** @type {string} */ uri) {
         imageLoaded = false;
         imageError = false;
+        currentImageUri = uri;
         
         mapImage = new Image();
         
@@ -333,10 +441,11 @@
             imageLoaded = true;
             imageError = false;
             
-            // Center image on first load
-            if (canvas) {
+            // Center image only on first load
+            if (isFirstLoad && canvas) {
                 viewport.translateX = (canvas.width - mapImage.width) / 2;
                 viewport.translateY = (canvas.height - mapImage.height) / 2;
+                isFirstLoad = false;
             }
             
             render();
@@ -395,8 +504,8 @@
 
         // Draw pins
         if (state.pins && Array.isArray(state.pins)) {
-            state.pins.forEach((pin) => {
-                drawPin(ctx, pin);
+            state.pins.forEach((pin, index) => {
+                drawPin(ctx, pin, index);
             });
         }
 
@@ -415,26 +524,35 @@
      * Draw a pin on the canvas
      * @param {CanvasRenderingContext2D} ctx 
      * @param {{x: number, y: number, label: string, icon: string}} pin 
+     * @param {number} index
      */
-    function drawPin(ctx, pin) {
+    function drawPin(ctx, pin, index) {
         const x = pin.x;
         const y = pin.y;
-        const size = 24;
+        const baseSize = 24;
+        const isHovered = index === hoveredPinIndex && !isEditMode;
+        // Use animated scale for smooth transition
+        const size = isHovered ? baseSize * pinHoverScale : baseSize;
         const radius = size / 2;
 
         // Draw pin background circle
         ctx.save();
         
-        // Shadow
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        ctx.shadowBlur = 4;
+        // Enhanced shadow for hover
+        if (isHovered) {
+            ctx.shadowColor = 'rgba(139, 92, 246, 0.5)';
+            ctx.shadowBlur = 12;
+        } else {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 4;
+        }
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 2;
         
         // Gradient background
         const gradient = ctx.createLinearGradient(x - radius, y - radius, x + radius, y + radius);
-        gradient.addColorStop(0, '#8B5CF6');
-        gradient.addColorStop(1, '#7C3AED');
+        gradient.addColorStop(0, isHovered ? '#A78BFA' : '#8B5CF6');
+        gradient.addColorStop(1, isHovered ? '#8B5CF6' : '#7C3AED');
         
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -443,19 +561,87 @@
         
         // White border
         ctx.strokeStyle = 'white';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = isHovered ? 4 : 3;
         ctx.stroke();
         
         ctx.restore();
 
         // Draw icon/emoji
         ctx.save();
-        ctx.font = '16px sans-serif';
+        ctx.font = isHovered ? '20px sans-serif' : '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = 'white';
         ctx.fillText(pin.icon || '📍', x, y);
         ctx.restore();
+    }
+
+    /**
+     * Show preview popover for a pin's linked file
+     * @param {{link: string, label: string}} pin
+     * @param {number} x
+     * @param {number} y
+     */
+    function showPreview(pin, x, y) {
+        closePreview();
+        
+        // Request preview data from backend
+        vscode.postMessage({ type: 'getPreview', path: pin.link, x: x, y: y });
+    }
+
+    /**
+     * Close the preview popover
+     */
+    function closePreview() {
+        if (previewPopover) {
+            previewPopover.remove();
+            previewPopover = null;
+        }
+    }
+
+    /**
+     * Display preview data in a popover
+     * @param {any} data
+     * @param {number} x
+     * @param {number} y
+     */
+    function displayPreview(data, x, y) {
+        closePreview();
+        
+        if (!data) return;
+        
+        const popover = document.createElement('div');
+        popover.className = 'preview-popover';
+        popover.style.position = 'fixed';
+        popover.style.left = `${x + 10}px`;
+        popover.style.top = `${y + 10}px`;
+        
+        let content = '';
+        
+        if (data.type === 'character') {
+            content = `
+                <div class="preview-header">Character</div>
+                <div class="preview-title">${data.name || 'Unnamed'}</div>
+                <div class="preview-detail">Class: ${data.class || 'Unknown'}</div>
+                <div class="preview-detail">HP: ${data.hp || 'Unknown'}</div>
+            `;
+        } else if (data.type === 'item') {
+            content = `
+                <div class="preview-header">Item</div>
+                <div class="preview-title">${data.name || 'Unnamed'}</div>
+                <div class="preview-detail">Type: ${data.itemType || 'Unknown'}</div>
+                <div class="preview-detail">Value: ${data.value || 'Unknown'}</div>
+            `;
+        } else if (data.type === 'map') {
+            content = `
+                <div class="preview-header">Map</div>
+                <div class="preview-detail">Pins: ${data.pinCount || 0}</div>
+            `;
+        }
+        
+        popover.innerHTML = content;
+        document.body.appendChild(popover);
+        previewPopover = popover;
     }
 
     /**
@@ -469,9 +655,12 @@
 
         const popover = document.createElement('div');
         popover.className = 'pin-popover';
-        popover.style.left = `${x}px`;
-        popover.style.top = `${y}px`;
-
+        popover.style.position = 'fixed';
+        
+        // Temporarily append to measure size
+        popover.style.visibility = 'hidden';
+        document.body.appendChild(popover);
+        
         popover.innerHTML = `
             <label>Label</label>
             <input type="text" id="pin-label" value="${pin.label || ''}">
@@ -484,8 +673,40 @@
                 <button class="dnd-btn delete-btn" id="pin-delete">Delete</button>
             </div>
         `;
+        
+        // Measure popover size
+        const rect = popover.getBoundingClientRect();
+        const popoverWidth = rect.width;
+        const popoverHeight = rect.height;
+        
+        // Constrain to viewport
+        let finalX = x;
+        let finalY = y;
+        
+        // Check right edge
+        if (finalX + popoverWidth > window.innerWidth) {
+            finalX = window.innerWidth - popoverWidth - 10;
+        }
+        
+        // Check bottom edge
+        if (finalY + popoverHeight > window.innerHeight) {
+            finalY = window.innerHeight - popoverHeight - 10;
+        }
+        
+        // Check left edge
+        if (finalX < 10) {
+            finalX = 10;
+        }
+        
+        // Check top edge
+        if (finalY < 10) {
+            finalY = 10;
+        }
+        
+        popover.style.left = `${finalX}px`;
+        popover.style.top = `${finalY}px`;
+        popover.style.visibility = 'visible';
 
-        document.body.appendChild(popover);
         activePopover = popover;
 
         // Bind events
