@@ -10,7 +10,9 @@
         // Core Stats
         'name', 'playerName', 'class', 'level', 'background', 'race', 'alignment', 'xp',
         'stats.str', 'stats.dex', 'stats.con', 'stats.int', 'stats.wis', 'stats.cha',
-        'hp.current', 'hp.max', 'hp.temp', 'ac', 'speed', 'hitDice', 'gold',
+        'hp.current', 'hp.max', 'hp.temp', 'ac', 'speed', 'hitDice',
+        // Money
+        'money.cp', 'money.sp', 'money.ep', 'money.gp', 'money.pp', 'money.total',
         'inspiration',
         // Death Saves
         'deathSaves.success1', 'deathSaves.success2', 'deathSaves.success3',
@@ -203,6 +205,20 @@
         document.querySelectorAll('.attack-row').forEach(row => {
             updateAttackCalculations(/** @type {HTMLElement} */ (row));
         });
+
+        // Calculate Total Money
+        const cp = getNestedValue(state, 'money.cp') || 0;
+        const sp = getNestedValue(state, 'money.sp') || 0;
+        const ep = getNestedValue(state, 'money.ep') || 0;
+        const gp = getNestedValue(state, 'money.gp') || 0;
+        const pp = getNestedValue(state, 'money.pp') || 0;
+
+        const totalGold = gp + (pp * 10) + (ep / 2) + (sp / 10) + (cp / 100);
+        
+        const totalMoneyEl = /** @type {HTMLInputElement | null} */ (document.getElementById('money.total'));
+        if (totalMoneyEl) {
+            totalMoneyEl.value = totalGold.toFixed(2) + ' GP';
+        }
     }
 
     // Initialize inputs

@@ -642,3 +642,60 @@ body {
     color: white;
     border-color: #dc2626;
 }
+
+/* ========== Money Section ========== */
+.money-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--dnd-space-2);
+    margin-bottom: var(--dnd-space-3);
+}
+
+.money-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dnd-space-1);
+    align-items: center;
+    background: var(--dnd-bg-secondary);
+    padding: var(--dnd-space-2);
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.money-item label {
+    font-size: var(--dnd-text-xs);
+    font-weight: 700;
+    color: var(--dnd-accent);
+}
+
+.money-item input {
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding: var(--dnd-space-1);
+}
+
+.money-total {
+    display: flex;
+    align-items: center;
+    gap: var(--dnd-space-3);
+    background: var(--dnd-bg-secondary);
+    padding: var(--dnd-space-2) var(--dnd-space-3);
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.money-total label {
+    font-weight: 700;
+    color: var(--dnd-accent);
+    white-space: nowrap;
+}
+
+.money-total input {
+    text-align: right;
+    font-weight: 700;
+    color: var(--dnd-accent);
+    border: none;
+    background: transparent;
+}

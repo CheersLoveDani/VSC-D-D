@@ -168,11 +168,7 @@ class CharacterSheetProvider {
                                     </div>
                                 </div>
 
-                                <!-- Other Proficiencies & Languages -->
-                                <div class="section">
-                                    <h3 class="section-title">Other Proficiencies & Languages</h3>
-                                    <textarea id="proficienciesAndLanguages" rows="6" placeholder="Armor, weapons, tools, languages..."></textarea>
-                                </div>
+
                             </div>
 
                             <!-- Right Column: Combat & Details -->
@@ -257,16 +253,49 @@ class CharacterSheetProvider {
                                     <div class="section">
                                         <h3 class="section-title">Equipment</h3>
                                         <textarea id="equipment" rows="8" placeholder="List your equipment and gear..."></textarea>
-                                        <div class="field-group">
-                                            <label>Gold (GP)</label>
-                                            <input type="number" id="gold" placeholder="0" />
-                                        </div>
                                     </div>
 
                                     <!-- Features & Traits -->
                                     <div class="section">
                                         <h3 class="section-title">Features & Traits</h3>
                                         <textarea id="traits" rows="6" placeholder="Class features, racial traits, feats..."></textarea>
+                                    </div>
+
+                                    <!-- Other Proficiencies & Languages -->
+                                    <div class="section">
+                                        <h3 class="section-title">Other Proficiencies & Languages</h3>
+                                        <textarea id="proficienciesAndLanguages" rows="6" placeholder="Armor, weapons, tools, languages..."></textarea>
+                                    </div>
+
+                                    <!-- Money -->
+                                    <div class="section">
+                                        <h3 class="section-title">Money</h3>
+                                        <div class="money-grid">
+                                            <div class="money-item">
+                                                <label>CP</label>
+                                                <input type="number" id="money.cp" placeholder="0" />
+                                            </div>
+                                            <div class="money-item">
+                                                <label>SP</label>
+                                                <input type="number" id="money.sp" placeholder="0" />
+                                            </div>
+                                            <div class="money-item">
+                                                <label>EP</label>
+                                                <input type="number" id="money.ep" placeholder="0" />
+                                            </div>
+                                            <div class="money-item">
+                                                <label>GP</label>
+                                                <input type="number" id="money.gp" placeholder="0" />
+                                            </div>
+                                            <div class="money-item">
+                                                <label>PP</label>
+                                                <input type="number" id="money.pp" placeholder="0" />
+                                            </div>
+                                        </div>
+                                        <div class="money-total">
+                                            <label>Total (GP)</label>
+                                            <input type="text" id="money.total" readonly />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
