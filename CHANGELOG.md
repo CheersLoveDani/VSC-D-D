@@ -23,6 +23,13 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.4] - 2025-11-25
+
+### Fixed
+- **Notes Editor Undo/Redo**: Fixed issue where Ctrl+Z would only work once before "jittering" and getting stuck
+  - Resolved feedback loop between TipTap editor and VSCode document sync that was resetting undo history
+  - Added proper state tracking to prevent stale document updates from overwriting editor content during undo/redo operations
+
 ## [0.0.3] - 2025-11-25
 
 ### Added
@@ -98,6 +105,7 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.1...v0.0.3
 [0.0.1]: https://github.com/CheersLoveDani/VSC-D-D/releases/tag/v0.0.1

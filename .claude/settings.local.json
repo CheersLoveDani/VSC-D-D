@@ -8,7 +8,8 @@
       "Bash(node \"./node_modules/typescript/lib/tsc.js\":*)",
       "Bash(node node_modules/typescript/bin/tsc:*)",
       "Bash(node build-webview.js:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

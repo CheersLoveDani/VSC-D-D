@@ -85,12 +85,14 @@ const globalWindow = window;
         setupDialogListeners();
     }
 
-    /** @type {{ content: string, mode: 'read' | 'edit', rawMode: boolean, lastSavedContent: string }} */
+    /** @type {{ content: string, mode: 'read' | 'edit', rawMode: boolean, lastSavedContent: string, pendingUpdate: boolean, isSettingContent: boolean }} */
     let state = {
         content: '',
         mode: 'read',
         rawMode: false,
-        lastSavedContent: ''
+        lastSavedContent: '',
+        pendingUpdate: false,      // True when we've sent an update to VSCode and are waiting for confirmation
+        isSettingContent: false    // True when we're programmatically setting editor content
     };
 
     /** @type {TipTapEditor | null} */
@@ -121,9 +123,37 @@ const globalWindow = window;
                 const currentContent = normalize(state.content);
                 const lastSaved = normalize(state.lastSavedContent);
 
+                // If we have a pending update, the editor is the source of truth
+                // Only accept updates that match what we sent
+                if (state.pendingUpdate) {
+                    if (newContent === currentContent || newContent === lastSaved) {
+                        state.pendingUpdate = false;
+                        return;
+                    }
+                    // VSCode sent something different - it might be stale, ignore it
+                    // The editor has the authoritative content
+                    return;
+                }
+
                 // Ignore if content hasn't changed OR if it matches what we just saved (echo)
-                if (newContent === currentContent || newContent === lastSaved) return;
-                
+                if (newContent === currentContent || newContent === lastSaved) {
+                    return;
+                }
+
+                // For the rich editor, check if TipTap already has the correct content
+                // This prevents resetting the editor (and losing undo history) when
+                // the document echoes back changes that originated from undo/redo
+                if (editor && !state.rawMode) {
+                    const editorContent = normalize(convertHTMLToMarkdown(editor.getHTML()));
+                    if (newContent === editorContent) {
+                        // TipTap already has this content (e.g., from undo/redo)
+                        // Just update state without resetting the editor
+                        state.content = message.text;
+                        state.lastSavedContent = message.text;
+                        return;
+                    }
+                }
+
                 state.content = message.text;
                 if (editor && !state.rawMode) {
                     // Only update if editor exists and we're in rich mode
@@ -251,9 +281,16 @@ const globalWindow = window;
             ],
             content: '', // Start empty to avoid conversion issues
             onUpdate: ({ editor }) => {
+                // Skip if this update was triggered by us setting content externally
+                if (state.isSettingContent) {
+                    return;
+                }
                 const html = editor.getHTML();
-                state.content = convertHTMLToMarkdown(html);
+                const newContent = convertHTMLToMarkdown(html);
+                state.content = newContent;
                 state.lastSavedContent = state.content;
+                // Mark that we're the source of truth - ignore incoming updates until VSCode confirms
+                state.pendingUpdate = true;
                 vscode.postMessage({
                     type: 'updateData',
                     text: state.content
@@ -367,15 +404,19 @@ const globalWindow = window;
     function trySetMarkdownContent(markdown) {
         if (!editor || !markdown) return;
 
+        // Set flag to prevent onUpdate from firing during programmatic content change
+        state.isSettingContent = true;
+
         // First, try to set it as HTML if it looks like it might have been converted
         // Otherwise, TipTap will treat it as plain text which is fine
         try {
             const html = simpleMarkdownToHTML(markdown);
             editor.commands.setContent(html);
         } catch (e) {
-            console.error('Error setting content:', e);
             // Fallback: just set as plain text
             editor.commands.setContent(`<p>${markdown}</p>`);
+        } finally {
+            state.isSettingContent = false;
         }
     }
 
