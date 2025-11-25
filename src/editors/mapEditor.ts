@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { getPreviewData } from '../utils/preview';
 
 export class MapEditorProvider implements vscode.CustomTextEditorProvider {
 
@@ -93,7 +94,7 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
                     this.openFile(document, e.path);
                     return;
                 case 'getPreview':
-                    const data = await this.getPreviewData(document, e.path);
+                    const data = await this.getPreviewData(document, e.path, webviewPanel.webview);
                     webviewPanel.webview.postMessage({
                         type: 'previewData',
                         data: data,
@@ -175,36 +176,7 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
         vscode.commands.executeCommand('vscode.open', targetUri);
     }
 
-    private async getPreviewData(currentDoc: vscode.TextDocument, relativePath: string): Promise<any> {
-        try {
-            const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
-            const content = await vscode.workspace.fs.readFile(targetUri);
-            const json = JSON.parse(Buffer.from(content).toString('utf8'));
-
-            if (relativePath.endsWith('.dnditem')) {
-                return {
-                    type: 'item',
-                    name: json.name,
-                    itemType: json.type,
-                    value: json.value,
-                    description: json.description
-                };
-            } else if (relativePath.endsWith('.dndchar')) {
-                return {
-                    type: 'character',
-                    name: json.name,
-                    class: json.class,
-                    hp: `${json.hp?.current}/${json.hp?.max}`
-                };
-            } else if (relativePath.endsWith('.dndmap')) {
-                return {
-                    type: 'map',
-                    pinCount: json.pins?.length || 0
-                };
-            }
-        } catch (e) {
-            console.error('Error fetching preview data', e);
-            return null;
-        }
+    private async getPreviewData(currentDoc: vscode.TextDocument, relativePath: string, webview: vscode.Webview): Promise<any> {
+        return getPreviewData(currentDoc, relativePath, webview);
     }
 }

@@ -620,23 +620,34 @@
         
         if (data.type === 'character') {
             content = `
-                <div class="preview-header">Character</div>
                 <div class="preview-title">${data.name || 'Unnamed'}</div>
-                <div class="preview-detail">Class: ${data.class || 'Unknown'}</div>
-                <div class="preview-detail">HP: ${data.hp || 'Unknown'}</div>
+                <div class="preview-detail"><b>Class:</b> ${data.class || 'Unknown'}</div>
+                <div class="preview-detail"><b>HP:</b> ${data.hp || 'Unknown'}</div>
             `;
         } else if (data.type === 'item') {
             content = `
-                <div class="preview-header">Item</div>
                 <div class="preview-title">${data.name || 'Unnamed'}</div>
-                <div class="preview-detail">Type: ${data.itemType || 'Unknown'}</div>
-                <div class="preview-detail">Value: ${data.value || 'Unknown'}</div>
+                <div class="preview-detail"><b>Type:</b> ${data.itemType || 'Unknown'}</div>
+                <div class="preview-detail"><b>Value:</b> ${data.value || 'Unknown'}</div>
             `;
         } else if (data.type === 'map') {
             content = `
-                <div class="preview-header">Map</div>
-                <div class="preview-detail">Pins: ${data.pinCount || 0}</div>
+                <div class="preview-title">Map</div>
+                ${data.imageSrc ? `<img src="${data.imageSrc}" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;">` : ''}
+                <div class="preview-detail"><b>Pins:</b> ${data.pinCount || 0}</div>
             `;
+        } else if (data.type === 'notes') {
+            content = `<div class="preview-title">${data.title || 'Note'}</div>`;
+            if (data.headers && data.headers.length > 0) {
+                content += '<div class="preview-detail" style="display: flex; flex-direction: column; gap: 4px;">';
+                data.headers.forEach(header => {
+                    const indent = (header.level - 1) * 12;
+                    content += `<div style="padding-left: ${indent}px; font-size: 12px;">• ${header.text}</div>`;
+                });
+                content += '</div>';
+            } else {
+                content += '<div class="preview-detail"><i>No headers found</i></div>';
+            }
         }
         
         popover.innerHTML = content;

@@ -1293,8 +1293,21 @@ const globalWindow = window;
         } else if (data.type === 'map') {
             html = `
                 <div class="popover-title">Map</div>
+                ${data.imageSrc ? `<img src="${data.imageSrc}" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;">` : ''}
                 <div class="popover-detail"><b>Pins:</b> ${data.pinCount}</div>
             `;
+        } else if (data.type === 'notes') {
+            html = `<div class="popover-title">${data.title || 'Note'}</div>`;
+            if (data.headers && data.headers.length > 0) {
+                html += '<div class="popover-detail" style="display: flex; flex-direction: column; gap: 4px;">';
+                data.headers.forEach(header => {
+                    const indent = (header.level - 1) * 12;
+                    html += `<div style="padding-left: ${indent}px; font-size: 12px;">• ${header.text}</div>`;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="popover-detail"><i>No headers found</i></div>';
+            }
         }
 
         popover.innerHTML = html;
