@@ -910,27 +910,50 @@ const globalWindow = window;
     }
 
     function showLinkContextMenu(x, y) {
-        console.log('showLinkContextMenu called at', { x, y });
+        console.log('showLinkContextMenu called at', { x, y, selectedImage });
         if (!contextMenu) return;
         
         // Set flag to indicate link context menu
         isLinkContextMenu = true;
-        isImageContextMenu = false;
-        console.log('isLinkContextMenu set to true');
         
         contextMenu.style.left = `${x}px`;
         contextMenu.style.top = `${y}px`;
         contextMenu.classList.add('visible');
         
-        // Hide formatting buttons
-        if (ctxBold) ctxBold.style.display = 'none';
-        if (ctxItalic) ctxItalic.style.display = 'none';
-        
-        // Change "Add Link" to "Edit Link"
-        if (ctxAddLink) {
-            ctxAddLink.textContent = '🔗 Edit Link';
-            ctxAddLink.style.display = 'block';
-            console.log('ctxAddLink updated to "Edit Link"');
+        if (selectedImage) {
+            // Linked Image: Show both options
+            isImageContextMenu = true;
+            console.log('isLinkContextMenu AND isImageContextMenu set to true');
+            
+            // ctxBold -> Edit Link (via addLinkToImage)
+            if (ctxBold) {
+                ctxBold.style.display = 'block';
+                ctxBold.textContent = '🔗 Edit Link';
+            }
+            
+            // ctxAddLink -> Edit Image (via editSelectedImage)
+            if (ctxAddLink) {
+                ctxAddLink.textContent = '🖼 Edit Image';
+                ctxAddLink.style.display = 'block';
+            }
+            
+            if (ctxItalic) ctxItalic.style.display = 'none';
+            
+        } else {
+            // Text Link: Show only Edit Link
+            isImageContextMenu = false;
+            console.log('isLinkContextMenu set to true');
+            
+            // Hide formatting buttons
+            if (ctxBold) ctxBold.style.display = 'none';
+            if (ctxItalic) ctxItalic.style.display = 'none';
+            
+            // Change "Add Link" to "Edit Link"
+            if (ctxAddLink) {
+                ctxAddLink.textContent = '🔗 Edit Link';
+                ctxAddLink.style.display = 'block';
+                console.log('ctxAddLink updated to "Edit Link"');
+            }
         }
     }
 
