@@ -256,9 +256,8 @@ body {
     transform: none;
 }
 
-/* Inline remove buttons for speed/sense */
-.remove-speed,
-.remove-sense {
+/* Inline remove buttons for speed/sense/skills/languages */
+.remove-inline {
     padding: 0 4px;
     font-size: 11px;
     line-height: 1;
@@ -276,8 +275,7 @@ body {
     letter-spacing: 0;
 }
 
-.remove-speed:hover,
-.remove-sense:hover {
+.remove-inline:hover {
     opacity: 1;
     background: var(--dnd-accent-soft);
     border-color: var(--dnd-accent);
@@ -339,7 +337,10 @@ body {
 
     .remove-skill,
     .remove-language,
-    .remove-feature {
+    .remove-feature,
+    .remove-inline,
+    .add-section-btn,
+    .add-inline-btn {
         display: none;
     }
 }

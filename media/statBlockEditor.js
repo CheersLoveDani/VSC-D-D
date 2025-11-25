@@ -42,7 +42,7 @@
                 truesight: 0,
                 passive_perception: 10
             },
-            languages: [],
+            languages: [], // Array of strings
             challengeRating: '1/8',
             xp: 25,
             proficiencyBonus: 2,
@@ -64,6 +64,46 @@
         return modifier >= 0 ? `+${modifier}` : `${modifier}`;
     }
 
+    // Migrate old data format to new format
+    function migrateData(data) {
+        // Migrate speed from object to array
+        if (data.speed && !Array.isArray(data.speed)) {
+            const speedArray = [];
+            if (data.speed.walk) speedArray.push({ name: 'walk', description: `${data.speed.walk} ft.` });
+            if (data.speed.fly) speedArray.push({ name: 'fly', description: `${data.speed.fly} ft.` });
+            if (data.speed.swim) speedArray.push({ name: 'swim', description: `${data.speed.swim} ft.` });
+            if (data.speed.burrow) speedArray.push({ name: 'burrow', description: `${data.speed.burrow} ft.` });
+            if (data.speed.climb) speedArray.push({ name: 'climb', description: `${data.speed.climb} ft.` });
+            data.speed = speedArray;
+        }
+
+        // Migrate skills from object to array
+        if (data.skills && !Array.isArray(data.skills)) {
+            data.skills = Object.entries(data.skills).map(([name, bonus]) => ({
+                name: name,
+                description: formatModifier(bonus)
+            }));
+        }
+
+        // Migrate senses from object to array
+        if (data.senses && !Array.isArray(data.senses)) {
+            const sensesArray = [];
+            if (data.senses.darkvision) sensesArray.push({ name: 'darkvision', description: `${data.senses.darkvision} ft.` });
+            if (data.senses.blindsight) sensesArray.push({ name: 'blindsight', description: `${data.senses.blindsight} ft.` });
+            if (data.senses.tremorsense) sensesArray.push({ name: 'tremorsense', description: `${data.senses.tremorsense} ft.` });
+            if (data.senses.truesight) sensesArray.push({ name: 'truesight', description: `${data.senses.truesight} ft.` });
+            if (data.senses.passive_perception) sensesArray.push({ name: 'passive Perception', description: `${data.senses.passive_perception}` });
+            data.senses = sensesArray;
+        }
+
+        // Migrate languages - keep as string array for single field
+        if (data.languages && data.languages.length > 0 && typeof data.languages[0] === 'object') {
+            data.languages = data.languages.map(lang => lang.name || lang);
+        }
+
+        return data;
+    }
+
     // Listen for messages from the extension
     window.addEventListener('message', event => {
         const message = event.data;
@@ -71,7 +111,8 @@
             case 'update':
                 try {
                     const parsed = JSON.parse(message.text);
-                    currentData = { ...getDefaultStatBlock(), ...parsed };
+                    const migrated = migrateData(parsed);
+                    currentData = { ...getDefaultStatBlock(), ...migrated };
                 } catch {
                     currentData = getDefaultStatBlock();
                 }
@@ -92,45 +133,29 @@
         const chaMod = calculateModifier(abilities.charisma);
 
         // Build speed string with editable sections
-        let speedParts = [];
-        if (currentData.speed.walk) speedParts.push(`<span contenteditable="true" data-speed="walk">${currentData.speed.walk}</span> ft.`);
-        if (currentData.speed.fly > 0) speedParts.push(`fly <span contenteditable="true" data-speed="fly">${currentData.speed.fly}</span> ft. <button class="remove-speed" data-speed="fly">×</button>`);
-        if (currentData.speed.swim > 0) speedParts.push(`swim <span contenteditable="true" data-speed="swim">${currentData.speed.swim}</span> ft. <button class="remove-speed" data-speed="swim">×</button>`);
-        if (currentData.speed.burrow > 0) speedParts.push(`burrow <span contenteditable="true" data-speed="burrow">${currentData.speed.burrow}</span> ft. <button class="remove-speed" data-speed="burrow">×</button>`);
-        if (currentData.speed.climb > 0) speedParts.push(`climb <span contenteditable="true" data-speed="climb">${currentData.speed.climb}</span> ft. <button class="remove-speed" data-speed="climb">×</button>`);
-        const speedStr = speedParts.join(', ');
+        const speedStr = currentData.speed.map((s, idx) =>
+            `<span contenteditable="true" data-section="speed" data-index="${idx}" data-part="name">${s.name}</span> <span contenteditable="true" data-section="speed" data-index="${idx}" data-part="description">${s.description}</span> <button class="remove-inline" data-section="speed" data-index="${idx}">×</button>`
+        ).join(', ') || '—';
 
         // Build senses string with editable sections
-        let sensesParts = [];
-        if (currentData.senses.darkvision > 0) sensesParts.push(`darkvision <span contenteditable="true" data-sense="darkvision">${currentData.senses.darkvision}</span> ft. <button class="remove-sense" data-sense="darkvision">×</button>`);
-        if (currentData.senses.blindsight > 0) sensesParts.push(`blindsight <span contenteditable="true" data-sense="blindsight">${currentData.senses.blindsight}</span> ft. <button class="remove-sense" data-sense="blindsight">×</button>`);
-        if (currentData.senses.tremorsense > 0) sensesParts.push(`tremorsense <span contenteditable="true" data-sense="tremorsense">${currentData.senses.tremorsense}</span> ft. <button class="remove-sense" data-sense="tremorsense">×</button>`);
-        if (currentData.senses.truesight > 0) sensesParts.push(`truesight <span contenteditable="true" data-sense="truesight">${currentData.senses.truesight}</span> ft. <button class="remove-sense" data-sense="truesight">×</button>`);
-        sensesParts.push(`passive Perception <span contenteditable="true" data-sense="passive_perception">${currentData.senses.passive_perception}</span>`);
-        const sensesStr = sensesParts.join(', ');
+        const sensesStr = currentData.senses.map((s, idx) =>
+            `<span contenteditable="true" data-section="senses" data-index="${idx}" data-part="name">${s.name}</span> <span contenteditable="true" data-section="senses" data-index="${idx}" data-part="description">${s.description}</span> <button class="remove-inline" data-section="senses" data-index="${idx}">×</button>`
+        ).join(', ') || '—';
 
         // Build skills string with editable values
-        let skillsHtml = '';
-        const skillEntries = Object.entries(currentData.skills).map(([skill, bonus]) =>
-            `<span class="skill-entry" style="position: relative; display: inline-block; margin-right: 8px;"><span class="skill-name" contenteditable="true" data-skill-name="${skill}">${skill}</span> <span contenteditable="true" data-skill="${skill}">${formatModifier(bonus)}</span> <button class="remove-skill" data-skill="${skill}">×</button></span>`
-        ).join(' ');
-        skillsHtml = `
+        const skillsHtml = `
             <div class="stat-row">
                 <span class="stat-label">Skills <button class="add-inline-btn" id="add-skill">+</button></span>
-                <span class="skills-list">${Object.keys(currentData.skills).length > 0 ? skillEntries : '—'}</span>
+                <span class="skills-list">${currentData.skills.map((s, idx) =>
+                    `<span contenteditable="true" data-section="skills" data-index="${idx}" data-part="name">${s.name}</span> <span contenteditable="true" data-section="skills" data-index="${idx}" data-part="description">${s.description}</span> <button class="remove-inline" data-section="skills" data-index="${idx}">×</button>`
+                ).join(', ') || '—'}</span>
             </div>
         `;
 
-        // Build languages string with editable list
-        let languagesHtml = '';
-        if (currentData.languages.length > 0) {
-            const langEntries = currentData.languages.map((lang, idx) =>
-                `<span class="language-entry"><span contenteditable="true" data-language-idx="${idx}">${lang}</span> <button class="remove-language" data-language-idx="${idx}">×</button></span>`
-            ).join(', ');
-            languagesHtml = langEntries;
-        } else {
-            languagesHtml = '—';
-        }
+        // Build languages string with editable list (single field)
+        const languagesHtml = currentData.languages.map((lang, idx) =>
+            `<span contenteditable="true" data-language-idx="${idx}">${lang}</span> <button class="remove-inline" data-section="languages" data-index="${idx}">×</button>`
+        ).join(', ') || '—';
 
         container.innerHTML = `
             <div class="stat-block-header">
@@ -346,12 +371,13 @@
             });
         });
 
-        // Handle speed editing
-        document.querySelectorAll('[data-speed]').forEach(element => {
+        // Handle inline editing for speed, skills, senses
+        document.querySelectorAll('[data-section][data-part]').forEach(element => {
             element.addEventListener('blur', (e) => {
-                const speedType = e.target.getAttribute('data-speed');
-                const value = parseInt(e.target.textContent) || 0;
-                currentData.speed[speedType] = value;
+                const section = e.target.getAttribute('data-section');
+                const index = parseInt(e.target.getAttribute('data-index'));
+                const part = e.target.getAttribute('data-part');
+                currentData[section][index][part] = e.target.textContent.trim();
                 saveAndUpdate();
             });
 
@@ -363,44 +389,8 @@
             });
         });
 
-        // Handle sense editing
-        document.querySelectorAll('[data-sense]').forEach(element => {
-            element.addEventListener('blur', (e) => {
-                const senseType = e.target.getAttribute('data-sense');
-                const value = parseInt(e.target.textContent) || 0;
-                currentData.senses[senseType] = value;
-                saveAndUpdate();
-            });
-
-            element.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    e.target.blur();
-                }
-            });
-        });
-
-        // Handle skill editing
-        document.querySelectorAll('[data-skill]:not(button)').forEach(element => {
-            element.addEventListener('blur', (e) => {
-                const skillName = e.target.getAttribute('data-skill');
-                const text = e.target.textContent.trim();
-                // Parse modifier (e.g., "+6" or "-2")
-                const value = parseInt(text.replace('+', '')) || 0;
-                currentData.skills[skillName] = value;
-                saveAndUpdate();
-            });
-
-            element.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    e.target.blur();
-                }
-            });
-        });
-
-        // Handle language editing
-        document.querySelectorAll('[data-language-idx]:not(button)').forEach(element => {
+        // Handle language editing (single field)
+        document.querySelectorAll('[data-language-idx]').forEach(element => {
             element.addEventListener('blur', (e) => {
                 const idx = parseInt(e.target.getAttribute('data-language-idx'));
                 currentData.languages[idx] = e.target.textContent.trim();
@@ -415,24 +405,8 @@
             });
         });
 
-        // Remove buttons
-        document.querySelectorAll('.remove-skill').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const skill = e.target.getAttribute('data-skill');
-                delete currentData.skills[skill];
-                saveAndUpdate();
-            });
-        });
-
-        document.querySelectorAll('.remove-language').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const idx = parseInt(e.target.getAttribute('data-language-idx'));
-                currentData.languages.splice(idx, 1);
-                saveAndUpdate();
-            });
-        });
-
-        document.querySelectorAll('.remove-feature').forEach(button => {
+        // Remove buttons for inline sections
+        document.querySelectorAll('.remove-inline').forEach(button => {
             button.addEventListener('click', (e) => {
                 const section = e.target.getAttribute('data-section');
                 const idx = parseInt(e.target.getAttribute('data-index'));
@@ -441,40 +415,13 @@
             });
         });
 
-        document.querySelectorAll('.remove-speed').forEach(button => {
+        // Remove buttons for feature sections
+        document.querySelectorAll('.remove-feature').forEach(button => {
             button.addEventListener('click', (e) => {
-                const speedType = e.target.getAttribute('data-speed');
-                currentData.speed[speedType] = 0;
+                const section = e.target.getAttribute('data-section');
+                const idx = parseInt(e.target.getAttribute('data-index'));
+                currentData[section].splice(idx, 1);
                 saveAndUpdate();
-            });
-        });
-
-        document.querySelectorAll('.remove-sense').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const senseType = e.target.getAttribute('data-sense');
-                currentData.senses[senseType] = 0;
-                saveAndUpdate();
-            });
-        });
-
-        // Handle skill name editing
-        document.querySelectorAll('[data-skill-name]').forEach(element => {
-            element.addEventListener('blur', (e) => {
-                const oldName = e.target.getAttribute('data-skill-name');
-                const newName = e.target.textContent.trim();
-                if (newName && newName !== oldName) {
-                    const value = currentData.skills[oldName];
-                    delete currentData.skills[oldName];
-                    currentData.skills[newName] = value;
-                    saveAndUpdate();
-                }
-            });
-
-            element.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    e.target.blur();
-                }
             });
         });
 
@@ -499,23 +446,23 @@
             saveAndUpdate();
         });
 
+        document.getElementById('add-speed')?.addEventListener('click', () => {
+            currentData.speed.push({ name: 'walk', description: '30 ft.' });
+            saveAndUpdate();
+        });
+
         document.getElementById('add-skill')?.addEventListener('click', () => {
-            currentData.skills['Stealth'] = 2;
+            currentData.skills.push({ name: 'Stealth', description: '+5' });
+            saveAndUpdate();
+        });
+
+        document.getElementById('add-sense')?.addEventListener('click', () => {
+            currentData.senses.push({ name: 'darkvision', description: '60 ft.' });
             saveAndUpdate();
         });
 
         document.getElementById('add-language')?.addEventListener('click', () => {
             currentData.languages.push('Common');
-            saveAndUpdate();
-        });
-
-        document.getElementById('add-sense')?.addEventListener('click', () => {
-            currentData.senses.darkvision = 60;
-            saveAndUpdate();
-        });
-
-        document.getElementById('add-speed')?.addEventListener('click', () => {
-            currentData.speed.fly = 30;
             saveAndUpdate();
         });
 
