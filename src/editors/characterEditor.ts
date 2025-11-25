@@ -72,92 +72,313 @@ export class CharacterSheetProvider implements vscode.CustomTextEditorProvider {
 			</head>
 			<body>
                 <div class="container">
-                    <!-- Stat Block Header -->
-                    <div class="stat-block-header">
-                        <input type="text" id="name" class="char-name-input" placeholder="Character Name" />
-                        <div class="char-meta">
-                            <input type="text" id="race" placeholder="Race" />
-                            <input type="text" id="class" placeholder="Class & Level" />
-                            <input type="text" id="alignment" placeholder="Alignment" />
+                    <!-- PAGE 1: Main Character Sheet -->
+                    <div class="page-section">
+                        <h2 class="page-title">Character Sheet - Page 1</h2>
+
+                        <!-- Header Info -->
+                        <div class="stat-block-header">
+                            <input type="text" id="name" class="char-name-input" placeholder="Character Name" />
+                            <div class="char-meta-grid">
+                                <div class="field-group">
+                                    <label>Player Name</label>
+                                    <input type="text" id="playerName" placeholder="Player Name" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Class & Level</label>
+                                    <input type="text" id="class" placeholder="e.g., Fighter 3" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Level</label>
+                                    <input type="number" id="level" min="1" max="20" value="1" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Background</label>
+                                    <input type="text" id="background" placeholder="Background" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Race</label>
+                                    <input type="text" id="race" placeholder="Race" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Alignment</label>
+                                    <input type="text" id="alignment" placeholder="Alignment" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Experience Points</label>
+                                    <input type="number" id="xp" placeholder="0" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="main-grid">
+                            <!-- Left Column: Ability Scores & Related Stats -->
+                            <div class="left-col">
+                                <!-- Ability Scores -->
+                                <div class="ability-scores">
+                                    ${this.renderAbilityScore('STR', 'stats.str')}
+                                    ${this.renderAbilityScore('DEX', 'stats.dex')}
+                                    ${this.renderAbilityScore('CON', 'stats.con')}
+                                    ${this.renderAbilityScore('INT', 'stats.int')}
+                                    ${this.renderAbilityScore('WIS', 'stats.wis')}
+                                    ${this.renderAbilityScore('CHA', 'stats.cha')}
+                                </div>
+
+                                <!-- Inspiration & Proficiency -->
+                                <div class="section">
+                                    <div class="field-group inline-field">
+                                        <label>Inspiration</label>
+                                        <input type="checkbox" id="inspiration" />
+                                    </div>
+                                    <div class="field-group">
+                                        <label>Proficiency Bonus</label>
+                                        <input type="text" id="proficiencyBonus" readonly />
+                                    </div>
+                                </div>
+
+                                <!-- Saving Throws -->
+                                <div class="section">
+                                    <h3 class="section-title">Saving Throws</h3>
+                                    <div class="saves-list">
+                                        ${this.renderSave('Strength', 'saves.str', 'stats.str')}
+                                        ${this.renderSave('Dexterity', 'saves.dex', 'stats.dex')}
+                                        ${this.renderSave('Constitution', 'saves.con', 'stats.con')}
+                                        ${this.renderSave('Intelligence', 'saves.int', 'stats.int')}
+                                        ${this.renderSave('Wisdom', 'saves.wis', 'stats.wis')}
+                                        ${this.renderSave('Charisma', 'saves.cha', 'stats.cha')}
+                                    </div>
+                                </div>
+
+                                <!-- Skills -->
+                                <div class="section">
+                                    <h3 class="section-title">Skills</h3>
+                                    <div class="skill-list">
+                                        ${this.renderSkill('Acrobatics', 'skills.acrobatics', 'dex')}
+                                        ${this.renderSkill('Animal Handling', 'skills.animal_handling', 'wis')}
+                                        ${this.renderSkill('Arcana', 'skills.arcana', 'int')}
+                                        ${this.renderSkill('Athletics', 'skills.athletics', 'str')}
+                                        ${this.renderSkill('Deception', 'skills.deception', 'cha')}
+                                        ${this.renderSkill('History', 'skills.history', 'int')}
+                                        ${this.renderSkill('Insight', 'skills.insight', 'wis')}
+                                        ${this.renderSkill('Intimidation', 'skills.intimidation', 'cha')}
+                                        ${this.renderSkill('Investigation', 'skills.investigation', 'int')}
+                                        ${this.renderSkill('Medicine', 'skills.medicine', 'wis')}
+                                        ${this.renderSkill('Nature', 'skills.nature', 'int')}
+                                        ${this.renderSkill('Perception', 'skills.perception', 'wis')}
+                                        ${this.renderSkill('Performance', 'skills.performance', 'cha')}
+                                        ${this.renderSkill('Persuasion', 'skills.persuasion', 'cha')}
+                                        ${this.renderSkill('Religion', 'skills.religion', 'int')}
+                                        ${this.renderSkill('Sleight of Hand', 'skills.sleight_of_hand', 'dex')}
+                                        ${this.renderSkill('Stealth', 'skills.stealth', 'dex')}
+                                        ${this.renderSkill('Survival', 'skills.survival', 'wis')}
+                                    </div>
+                                </div>
+
+                                <!-- Passive Perception -->
+                                <div class="section">
+                                    <div class="field-group">
+                                        <label>Passive Wisdom (Perception)</label>
+                                        <input type="text" id="passivePerception" readonly />
+                                    </div>
+                                </div>
+
+                                <!-- Other Proficiencies & Languages -->
+                                <div class="section">
+                                    <h3 class="section-title">Other Proficiencies & Languages</h3>
+                                    <textarea id="proficienciesAndLanguages" rows="6" placeholder="Armor, weapons, tools, languages..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Combat & Details -->
+                            <div class="right-col">
+                                <!-- Combat Stats -->
+                                <div class="combat-stats">
+                                    <div class="combat-stat">
+                                        <label>Armor Class</label>
+                                        <input type="number" id="ac" />
+                                    </div>
+                                    <div class="combat-stat">
+                                        <label>Initiative</label>
+                                        <input type="text" id="initiative" readonly />
+                                    </div>
+                                    <div class="combat-stat">
+                                        <label>Speed</label>
+                                        <input type="text" id="speed" placeholder="30 ft" />
+                                    </div>
+                                </div>
+
+                                <!-- Hit Points -->
+                                <div class="section">
+                                    <h3 class="section-title">Hit Points</h3>
+                                    <div class="hp-grid">
+                                        <div class="field-group">
+                                            <label>Maximum</label>
+                                            <input type="number" id="hp.max" />
+                                        </div>
+                                        <div class="field-group">
+                                            <label>Current</label>
+                                            <input type="number" id="hp.current" />
+                                        </div>
+                                        <div class="field-group">
+                                            <label>Temporary</label>
+                                            <input type="number" id="hp.temp" placeholder="0" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Hit Dice & Death Saves -->
+                                <div class="section">
+                                    <div class="field-group">
+                                        <label>Hit Dice</label>
+                                        <input type="text" id="hitDice" placeholder="e.g., 3d8" />
+                                    </div>
+                                    <h4>Death Saves</h4>
+                                    <div class="death-saves">
+                                        <div class="save-row">
+                                            <label>Successes</label>
+                                            <input type="checkbox" id="deathSaves.success1" />
+                                            <input type="checkbox" id="deathSaves.success2" />
+                                            <input type="checkbox" id="deathSaves.success3" />
+                                        </div>
+                                        <div class="save-row">
+                                            <label>Failures</label>
+                                            <input type="checkbox" id="deathSaves.failure1" />
+                                            <input type="checkbox" id="deathSaves.failure2" />
+                                            <input type="checkbox" id="deathSaves.failure3" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Attacks & Spellcasting -->
+                                <div class="section">
+                                    <h3 class="section-title">Attacks & Spellcasting</h3>
+                                    <textarea id="attacks" rows="8" placeholder="Weapon/Spell | Atk Bonus | Damage/Type"></textarea>
+                                </div>
+
+                                <!-- Equipment -->
+                                <div class="section">
+                                    <h3 class="section-title">Equipment</h3>
+                                    <textarea id="equipment" rows="8" placeholder="List your equipment and gear..."></textarea>
+                                    <div class="field-group">
+                                        <label>Gold (GP)</label>
+                                        <input type="number" id="gold" placeholder="0" />
+                                    </div>
+                                </div>
+
+                                <!-- Features & Traits -->
+                                <div class="section">
+                                    <h3 class="section-title">Features & Traits</h3>
+                                    <textarea id="traits" rows="6" placeholder="Class features, racial traits, feats..."></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="main-grid">
-                        <!-- Left Column: Ability Scores -->
-                        <div class="left-col">
-                            <div class="ability-scores">
-                                ${this.renderAbilityScore('STR', 'stats.str')}
-                                ${this.renderAbilityScore('DEX', 'stats.dex')}
-                                ${this.renderAbilityScore('CON', 'stats.con')}
-                                ${this.renderAbilityScore('INT', 'stats.int')}
-                                ${this.renderAbilityScore('WIS', 'stats.wis')}
-                                ${this.renderAbilityScore('CHA', 'stats.cha')}
+                    <!-- PAGE 2: Character Details -->
+                    <div class="page-section">
+                        <h2 class="page-title">Character Sheet - Page 2</h2>
+
+                        <div class="page2-grid">
+                            <!-- Personality -->
+                            <div class="section full-width">
+                                <h3 class="section-title">Personality Traits</h3>
+                                <textarea id="personalityTraits" rows="3" placeholder="Describe your character's personality traits..."></textarea>
+                            </div>
+
+                            <div class="section full-width">
+                                <h3 class="section-title">Ideals</h3>
+                                <textarea id="ideals" rows="2" placeholder="What beliefs drive your character?"></textarea>
+                            </div>
+
+                            <div class="section full-width">
+                                <h3 class="section-title">Bonds</h3>
+                                <textarea id="bonds" rows="2" placeholder="What connections are most important?"></textarea>
+                            </div>
+
+                            <div class="section full-width">
+                                <h3 class="section-title">Flaws</h3>
+                                <textarea id="flaws" rows="2" placeholder="What weaknesses does your character have?"></textarea>
+                            </div>
+
+                            <!-- Appearance & Backstory -->
+                            <div class="section full-width">
+                                <h3 class="section-title">Appearance</h3>
+                                <textarea id="appearance" rows="4" placeholder="Physical description: age, height, weight, eyes, hair, skin..."></textarea>
+                            </div>
+
+                            <div class="section full-width">
+                                <h3 class="section-title">Backstory</h3>
+                                <textarea id="backstory" rows="8" placeholder="Tell your character's story..."></textarea>
+                            </div>
+
+                            <!-- Allies & Organizations -->
+                            <div class="section full-width">
+                                <h3 class="section-title">Allies & Organizations</h3>
+                                <textarea id="allies" rows="4" placeholder="Important NPCs, factions, organizations..."></textarea>
+                            </div>
+
+                            <!-- Additional Features & Traits -->
+                            <div class="section full-width">
+                                <h3 class="section-title">Additional Features & Traits</h3>
+                                <textarea id="additionalFeatures" rows="6" placeholder="Extra features, abilities, special traits..."></textarea>
+                            </div>
+
+                            <!-- Treasure -->
+                            <div class="section full-width">
+                                <h3 class="section-title">Treasure</h3>
+                                <textarea id="treasure" rows="4" placeholder="Magic items, special possessions, valuables..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PAGE 3: Spellcasting -->
+                    <div class="page-section">
+                        <h2 class="page-title">Character Sheet - Page 3 (Spellcasting)</h2>
+
+                        <div class="spellcasting-header">
+                            <div class="field-group">
+                                <label>Spellcasting Class</label>
+                                <input type="text" id="spellcastingClass" placeholder="e.g., Wizard, Cleric" />
+                            </div>
+                            <div class="field-group">
+                                <label>Spellcasting Ability</label>
+                                <input type="text" id="spellcastingAbility" placeholder="e.g., INT, WIS, CHA" />
+                            </div>
+                            <div class="field-group">
+                                <label>Spell Save DC</label>
+                                <input type="text" id="spellSaveDC" readonly />
+                            </div>
+                            <div class="field-group">
+                                <label>Spell Attack Bonus</label>
+                                <input type="text" id="spellAttackBonus" readonly />
                             </div>
                         </div>
 
-                        <!-- Right Column: Combat & Details -->
-                        <div class="right-col">
-                            <div class="combat-stats">
-                                <div class="combat-stat">
-                                    <label>Armor Class</label>
-                                    <input type="number" id="ac" />
-                                </div>
-                                <div class="combat-stat">
-                                    <label>Initiative</label>
-                                    <input type="number" id="initiative" />
-                                </div>
-                                <div class="combat-stat">
-                                    <label>Speed</label>
-                                    <input type="text" id="speed" />
-                                </div>
-                                <div class="combat-stat">
-                                    <label>Hit Points</label>
-                                    <div style="display:flex; gap:5px;">
-                                        <input type="number" id="hp.current" placeholder="Cur" />
-                                        <span style="align-self:center">/</span>
-                                        <input type="number" id="hp.max" placeholder="Max" />
-                                    </div>
-                                </div>
+                        <!-- Spell Slots -->
+                        <div class="section">
+                            <h3 class="section-title">Spell Slots</h3>
+                            <div class="spell-slots-grid">
+                                ${this.renderSpellSlotLevel('Cantrips', '0')}
+                                ${this.renderSpellSlotLevel('1st Level', '1')}
+                                ${this.renderSpellSlotLevel('2nd Level', '2')}
+                                ${this.renderSpellSlotLevel('3rd Level', '3')}
+                                ${this.renderSpellSlotLevel('4th Level', '4')}
+                                ${this.renderSpellSlotLevel('5th Level', '5')}
+                                ${this.renderSpellSlotLevel('6th Level', '6')}
+                                ${this.renderSpellSlotLevel('7th Level', '7')}
+                                ${this.renderSpellSlotLevel('8th Level', '8')}
+                                ${this.renderSpellSlotLevel('9th Level', '9')}
                             </div>
+                        </div>
 
-                            <div class="section">
-                                <h3 class="section-title">Skills & Saves</h3>
-                                <div class="skill-list">
-                                    ${this.renderSkill('Acrobatics (Dex)', 'skills.acrobatics')}
-                                    ${this.renderSkill('Animal Handling (Wis)', 'skills.animal_handling')}
-                                    ${this.renderSkill('Arcana (Int)', 'skills.arcana')}
-                                    ${this.renderSkill('Athletics (Str)', 'skills.athletics')}
-                                    ${this.renderSkill('Deception (Cha)', 'skills.deception')}
-                                    ${this.renderSkill('History (Int)', 'skills.history')}
-                                    ${this.renderSkill('Insight (Wis)', 'skills.insight')}
-                                    ${this.renderSkill('Intimidation (Cha)', 'skills.intimidation')}
-                                    ${this.renderSkill('Investigation (Int)', 'skills.investigation')}
-                                    ${this.renderSkill('Medicine (Wis)', 'skills.medicine')}
-                                    ${this.renderSkill('Nature (Int)', 'skills.nature')}
-                                    ${this.renderSkill('Perception (Wis)', 'skills.perception')}
-                                    ${this.renderSkill('Performance (Cha)', 'skills.performance')}
-                                    ${this.renderSkill('Persuasion (Cha)', 'skills.persuasion')}
-                                    ${this.renderSkill('Religion (Int)', 'skills.religion')}
-                                    ${this.renderSkill('Sleight of Hand (Dex)', 'skills.sleight_of_hand')}
-                                    ${this.renderSkill('Stealth (Dex)', 'skills.stealth')}
-                                    ${this.renderSkill('Survival (Wis)', 'skills.survival')}
-                                </div>
-                            </div>
-
-                            <div class="section">
-                                <h3 class="section-title">Inventory</h3>
-                                <textarea id="inventory" rows="6"></textarea>
-                            </div>
-
-                            <div class="section">
-                                <h3 class="section-title">Features & Traits</h3>
-                                <textarea id="traits" rows="6"></textarea>
-                            </div>
-                            
-                            <div class="section">
-                                <h3 class="section-title">Notes</h3>
-                                <textarea id="notes" rows="6"></textarea>
-                            </div>
+                        <!-- Spell List -->
+                        <div class="section">
+                            <h3 class="section-title">Spells</h3>
+                            <textarea id="spellList" rows="20" placeholder="List your spells by level. Format suggestion:
+Cantrips: Fire Bolt, Mage Hand, Prestidigitation
+1st Level (4 slots): Magic Missile, Shield, Detect Magic
+2nd Level (3 slots): Misty Step, Scorching Ray
+..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -171,15 +392,34 @@ export class CharacterSheetProvider implements vscode.CustomTextEditorProvider {
         <div class="ability-score">
             <label>${label}</label>
             <input type="number" id="${id}" value="10" />
-            <!-- Modifier could be calculated in JS -->
+            <div class="modifier" id="${id}.modifier">+0</div>
         </div>`;
     }
 
-    private renderSkill(label: string, id: string): string {
+    private renderSave(label: string, id: string, statId: string): string {
+        return `
+        <div class="save-row">
+            <input type="checkbox" id="${id}.prof" />
+            <span class="save-value" id="${id}.value">+0</span>
+            <label>${label}</label>
+        </div>`;
+    }
+
+    private renderSkill(label: string, id: string, stat: string): string {
         return `
         <div class="skill-row">
             <input type="checkbox" id="${id}.prof" />
+            <span class="skill-value" id="${id}.value">+0</span>
+            <label>${label} (${stat.toUpperCase()})</label>
+        </div>`;
+    }
+
+    private renderSpellSlotLevel(label: string, level: string): string {
+        return `
+        <div class="spell-slot-row">
             <label>${label}</label>
+            <input type="number" id="spellSlots.level${level}.total" min="0" placeholder="Total" />
+            <input type="number" id="spellSlots.level${level}.expended" min="0" placeholder="Used" />
         </div>`;
     }
 
