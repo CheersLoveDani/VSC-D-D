@@ -5,6 +5,7 @@ import { ItemEditorProvider } from './editors/itemEditor';
 import { NotesEditorProvider } from './editors/notesEditor';
 import { StatBlockEditorProvider } from './editors/statBlockEditor';
 import { DndHoverProvider } from './providers/hoverProvider';
+import { DndLinkProvider } from './providers/linkProvider';
 import { PluginManagerProvider } from './views/pluginManager';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -22,6 +23,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerHoverProvider(
             [{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }],
             new DndHoverProvider()
+        )
+    );
+
+    // Register Document Link Provider
+    context.subscriptions.push(
+        vscode.languages.registerDocumentLinkProvider(
+            [{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }],
+            new DndLinkProvider()
         )
     );
 

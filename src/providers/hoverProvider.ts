@@ -22,7 +22,7 @@ export class DndHoverProvider implements vscode.HoverProvider {
         }
 
         const linkPath = match[2];
-        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap')) {
+        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap') && !linkPath.endsWith('.dndstat')) {
             return null;
         }
 
@@ -46,6 +46,8 @@ export class DndHoverProvider implements vscode.HoverProvider {
                 this.formatCharacterHover(markdown, data);
             } else if (linkPath.endsWith('.dndmap')) {
                 this.formatMapHover(markdown, data, linkPath);
+            } else if (linkPath.endsWith('.dndstat')) {
+                this.formatStatBlockHover(markdown, data);
             }
 
             return new vscode.Hover(markdown);
@@ -74,6 +76,38 @@ export class DndHoverProvider implements vscode.HoverProvider {
             // But we can try to show the path or a description
             md.appendMarkdown(`Image: ${data.imagePath}\n`);
             md.appendMarkdown(`**Pins**: ${data.pins ? data.pins.length : 0}`);
+        }
+    }
+
+    private formatStatBlockHover(md: vscode.MarkdownString, data: any) {
+        md.appendMarkdown(`### ${data.name || 'Unknown Creature'}\n`);
+        md.appendMarkdown(`*${data.size || 'Medium'} ${data.type || 'humanoid'}${data.subtype ? ` (${data.subtype})` : ''}, ${data.alignment || 'neutral'}*\n\n`);
+        md.appendMarkdown(`**AC** ${data.armorClass || 10} | **HP** ${data.hitPoints || 10} (${data.hitDice || '2d8'}) | **CR** ${data.challengeRating || '1/8'}\n\n`);
+
+        // Display speed
+        if (data.speed && Array.isArray(data.speed) && data.speed.length > 0) {
+            const speedStr = data.speed.map((s: any) => `${s.name} ${s.description}`).join(', ');
+            md.appendMarkdown(`**Speed**: ${speedStr}\n\n`);
+        }
+
+        // Display ability scores
+        if (data.abilityScores) {
+            const calcMod = (score: number) => {
+                const mod = Math.floor((score - 10) / 2);
+                return mod >= 0 ? `+${mod}` : `${mod}`;
+            };
+            md.appendMarkdown(`**STR** ${data.abilityScores.strength} (${calcMod(data.abilityScores.strength)}) | `);
+            md.appendMarkdown(`**DEX** ${data.abilityScores.dexterity} (${calcMod(data.abilityScores.dexterity)}) | `);
+            md.appendMarkdown(`**CON** ${data.abilityScores.constitution} (${calcMod(data.abilityScores.constitution)})\n`);
+            md.appendMarkdown(`**INT** ${data.abilityScores.intelligence} (${calcMod(data.abilityScores.intelligence)}) | `);
+            md.appendMarkdown(`**WIS** ${data.abilityScores.wisdom} (${calcMod(data.abilityScores.wisdom)}) | `);
+            md.appendMarkdown(`**CHA** ${data.abilityScores.charisma} (${calcMod(data.abilityScores.charisma)})\n\n`);
+        }
+
+        // Display traits
+        if (data.traits && data.traits.length > 0) {
+            md.appendMarkdown(`**Traits**: `);
+            md.appendMarkdown(data.traits.map((t: any) => t.name).join(', '));
         }
     }
 }

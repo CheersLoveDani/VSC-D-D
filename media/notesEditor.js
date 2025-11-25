@@ -1242,8 +1242,8 @@ const globalWindow = window;
             const href = link.getAttribute('href');
             
             // Check if it's a D&D file link (relative path)
-            if (href && (href.endsWith('.dndchar') || href.endsWith('.dnditem') || 
-                        href.endsWith('.dndmap') || href.endsWith('.dndnotes'))) {
+            if (href && (href.endsWith('.dndchar') || href.endsWith('.dnditem') ||
+                        href.endsWith('.dndmap') || href.endsWith('.dndnotes') || href.endsWith('.dndstat'))) {
                 link.addEventListener('mouseenter', (e) => {
                     vscode.postMessage({
                         type: 'getPreview',
@@ -1308,6 +1308,12 @@ const globalWindow = window;
             } else {
                 html += '<div class="popover-detail"><i>No headers found</i></div>';
             }
+        } else if (data.type === 'stat') {
+            html = `
+                <div class="popover-title">${data.name}</div>
+                <div class="popover-detail"><i>${data.size} ${data.creatureType}</i></div>
+                <div class="popover-detail"><b>HP:</b> ${data.hp} | <b>CR:</b> ${data.cr}</div>
+            `;
         }
 
         popover.innerHTML = html;

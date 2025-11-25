@@ -9,6 +9,7 @@ const itemEditor_1 = require("./editors/itemEditor");
 const notesEditor_1 = require("./editors/notesEditor");
 const statBlockEditor_1 = require("./editors/statBlockEditor");
 const hoverProvider_1 = require("./providers/hoverProvider");
+const linkProvider_1 = require("./providers/linkProvider");
 const pluginManager_1 = require("./views/pluginManager");
 function activate(context) {
     console.log('D&D Campaign Manager is now active!');
@@ -20,6 +21,8 @@ function activate(context) {
     context.subscriptions.push(statBlockEditor_1.StatBlockEditorProvider.register(context));
     // Register Hover Provider
     context.subscriptions.push(vscode.languages.registerHoverProvider([{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }], new hoverProvider_1.DndHoverProvider()));
+    // Register Document Link Provider
+    context.subscriptions.push(vscode.languages.registerDocumentLinkProvider([{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }], new linkProvider_1.DndLinkProvider()));
     // Register Plugin Manager
     const pluginManagerProvider = new pluginManager_1.PluginManagerProvider(context);
     vscode.window.registerTreeDataProvider('dnd-plugin-manager', pluginManagerProvider);

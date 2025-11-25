@@ -16,7 +16,7 @@ class DndHoverProvider {
             return null;
         }
         const linkPath = match[2];
-        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap')) {
+        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap') && !linkPath.endsWith('.dndstat')) {
             return null;
         }
         // Resolve absolute path
@@ -38,6 +38,9 @@ class DndHoverProvider {
             }
             else if (linkPath.endsWith('.dndmap')) {
                 this.formatMapHover(markdown, data, linkPath);
+            }
+            else if (linkPath.endsWith('.dndstat')) {
+                this.formatStatBlockHover(markdown, data);
             }
             return new vscode.Hover(markdown);
         }
@@ -63,6 +66,34 @@ class DndHoverProvider {
             // But we can try to show the path or a description
             md.appendMarkdown(`Image: ${data.imagePath}\n`);
             md.appendMarkdown(`**Pins**: ${data.pins ? data.pins.length : 0}`);
+        }
+    }
+    formatStatBlockHover(md, data) {
+        md.appendMarkdown(`### ${data.name || 'Unknown Creature'}\n`);
+        md.appendMarkdown(`*${data.size || 'Medium'} ${data.type || 'humanoid'}${data.subtype ? ` (${data.subtype})` : ''}, ${data.alignment || 'neutral'}*\n\n`);
+        md.appendMarkdown(`**AC** ${data.armorClass || 10} | **HP** ${data.hitPoints || 10} (${data.hitDice || '2d8'}) | **CR** ${data.challengeRating || '1/8'}\n\n`);
+        // Display speed
+        if (data.speed && Array.isArray(data.speed) && data.speed.length > 0) {
+            const speedStr = data.speed.map((s) => `${s.name} ${s.description}`).join(', ');
+            md.appendMarkdown(`**Speed**: ${speedStr}\n\n`);
+        }
+        // Display ability scores
+        if (data.abilityScores) {
+            const calcMod = (score) => {
+                const mod = Math.floor((score - 10) / 2);
+                return mod >= 0 ? `+${mod}` : `${mod}`;
+            };
+            md.appendMarkdown(`**STR** ${data.abilityScores.strength} (${calcMod(data.abilityScores.strength)}) | `);
+            md.appendMarkdown(`**DEX** ${data.abilityScores.dexterity} (${calcMod(data.abilityScores.dexterity)}) | `);
+            md.appendMarkdown(`**CON** ${data.abilityScores.constitution} (${calcMod(data.abilityScores.constitution)})\n`);
+            md.appendMarkdown(`**INT** ${data.abilityScores.intelligence} (${calcMod(data.abilityScores.intelligence)}) | `);
+            md.appendMarkdown(`**WIS** ${data.abilityScores.wisdom} (${calcMod(data.abilityScores.wisdom)}) | `);
+            md.appendMarkdown(`**CHA** ${data.abilityScores.charisma} (${calcMod(data.abilityScores.charisma)})\n\n`);
+        }
+        // Display traits
+        if (data.traits && data.traits.length > 0) {
+            md.appendMarkdown(`**Traits**: `);
+            md.appendMarkdown(data.traits.map((t) => t.name).join(', '));
         }
     }
 }

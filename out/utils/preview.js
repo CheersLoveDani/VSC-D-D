@@ -69,6 +69,16 @@ async function getPreviewData(currentDoc, relativePath, webview) {
                 imageSrc: imageSrc
             };
         }
+        else if (relativePath.endsWith('.dndstat')) {
+            return {
+                type: 'stat',
+                name: json.name,
+                size: json.size,
+                creatureType: json.type,
+                cr: json.challengeRating,
+                hp: json.hitPoints
+            };
+        }
     }
     catch (e) {
         console.error('Error fetching preview data', e);
