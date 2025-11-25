@@ -10,6 +10,11 @@ body {
     gap: var(--dnd-space-10);
     max-width: 1200px;
     margin: 0 auto;
+    background: var(--dnd-card-bg);
+    padding: var(--dnd-space-6);
+    border-radius: var(--dnd-radius-lg);
+    box-shadow: var(--dnd-shadow-md);
+    border: 1px solid var(--dnd-border-light);
 }
 
 .editor-pane, .preview-pane {

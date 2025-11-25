@@ -164,7 +164,13 @@ class NotesEditorProvider {
                     
                     <!-- Tables -->
                     <div class="toolbar-group">
-                        <button id="btn-table" class="toolbar-btn" title="Insert Table">📊 Table</button>
+                        <div class="table-picker-container">
+                            <button id="btn-table" class="toolbar-btn" title="Insert Table">📊 Table</button>
+                            <div id="table-picker" class="table-picker">
+                                <div class="table-picker-grid" id="table-picker-grid"></div>
+                                <div class="table-picker-label" id="table-picker-label">1x1 Table</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="content-area" id="app"></div>
@@ -175,6 +181,17 @@ class NotesEditorProvider {
                     <button id="ctx-add-link" class="context-menu-item">🔗 Add Link</button>
                     <button id="ctx-bold" class="context-menu-item"><b>B</b> Bold</button>
                     <button id="ctx-italic" class="context-menu-item"><i>I</i> Italic</button>
+                </div>
+
+                <!-- Table Context Menu -->
+                <div id="table-context-menu" class="context-menu">
+                    <button id="ctx-table-insert-row-above" class="context-menu-item">⬆ Insert Row Above</button>
+                    <button id="ctx-table-insert-row-below" class="context-menu-item">⬇ Insert Row Below</button>
+                    <button id="ctx-table-insert-col-left" class="context-menu-item">⬅ Insert Column Left</button>
+                    <button id="ctx-table-insert-col-right" class="context-menu-item">➡ Insert Column Right</button>
+                    <button id="ctx-table-delete-row" class="context-menu-item">❌ Delete Row</button>
+                    <button id="ctx-table-delete-col" class="context-menu-item">❌ Delete Column</button>
+                    <button id="ctx-table-delete-table" class="context-menu-item">🗑 Delete Table</button>
                 </div>
 
                 <!-- Link Input Dialog -->

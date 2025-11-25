@@ -319,36 +319,60 @@ body {
     box-shadow: 0 0 0 1px var(--dnd-accent);
 }
 
-/* Tables */
+/* Tables - D&D Style */
 .ProseMirror table {
     border-collapse: collapse;
     table-layout: fixed;
     width: 100%;
-    margin: var(--dnd-space-4) 0;
+    margin: var(--dnd-space-6) 0;
     overflow: hidden;
-    border: 1px solid var(--dnd-border);
+    border: 2px solid var(--dnd-border-strong);
     border-radius: var(--dnd-radius);
+    background: var(--dnd-table-bg);
+    box-shadow: var(--dnd-shadow-md);
+    font-family: var(--dnd-font-body);
 }
 
 .ProseMirror table td,
 .ProseMirror table th {
-    min-width: 1em;
-    border: 1px solid var(--dnd-border);
+    min-width: 100px;
+    width: auto;
+    border: 1px solid var(--dnd-border-light);
     padding: var(--dnd-space-3) var(--dnd-space-4);
     vertical-align: top;
     box-sizing: border-box;
     position: relative;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .ProseMirror table th {
     font-weight: 700;
-    text-align: left;
-    background-color: var(--dnd-bg-secondary);
+    text-align: center;
+    background: var(--dnd-table-header-bg);
+    color: var(--dnd-table-header-text);
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-base);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--dnd-border-strong);
+}
+
+.ProseMirror table tbody tr:nth-child(odd) {
+    background: var(--dnd-table-row-odd);
+}
+
+.ProseMirror table tbody tr:nth-child(even) {
+    background: var(--dnd-table-row-even);
+}
+
+.ProseMirror table tbody tr:hover {
+    background: var(--dnd-bg-hover);
 }
 
 .ProseMirror table .selectedCell {
     background-color: var(--dnd-accent);
-    opacity: 0.1;
+    opacity: 0.3;
 }
 
 /* Placeholder */
@@ -447,6 +471,51 @@ body {
 .markdown-preview pre code {
     background: transparent;
     padding: 0;
+}
+
+/* Tables - D&D Style */
+.markdown-preview table {
+    border-collapse: collapse;
+    table-layout: auto;
+    width: 100%;
+    margin: var(--dnd-space-6) 0;
+    overflow: hidden;
+    border: 2px solid var(--dnd-border-strong);
+    border-radius: var(--dnd-radius);
+    background: var(--dnd-table-bg);
+    box-shadow: var(--dnd-shadow-md);
+    font-family: var(--dnd-font-body);
+}
+
+.markdown-preview table td,
+.markdown-preview table th {
+    border: 1px solid var(--dnd-border-light);
+    padding: var(--dnd-space-3) var(--dnd-space-4);
+    vertical-align: top;
+}
+
+.markdown-preview table th {
+    font-weight: 700;
+    text-align: center;
+    background: var(--dnd-table-header-bg);
+    color: var(--dnd-table-header-text);
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-base);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--dnd-border-strong);
+}
+
+.markdown-preview table tbody tr:nth-child(odd) {
+    background: var(--dnd-table-row-odd);
+}
+
+.markdown-preview table tbody tr:nth-child(even) {
+    background: var(--dnd-table-row-even);
+}
+
+.markdown-preview table tbody tr:hover {
+    background: var(--dnd-bg-hover);
 }
 
 /* ========== Hover Popover ========== */
@@ -630,4 +699,58 @@ body {
 .dnd-btn-primary:hover {
     background: var(--dnd-accent-hover);
     border-color: var(--dnd-accent-hover);
+}
+
+/* ========== Table Size Picker ========== */
+.table-picker-container {
+    position: relative;
+}
+
+.table-picker {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: var(--dnd-space-2);
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius);
+    box-shadow: var(--dnd-shadow-lg);
+    padding: var(--dnd-space-3);
+    z-index: 1000;
+    display: none;
+}
+
+.table-picker.visible {
+    display: block;
+    animation: fadeIn var(--dnd-transition);
+}
+
+.table-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 20px);
+    grid-template-rows: repeat(10, 20px);
+    gap: 2px;
+    margin-bottom: var(--dnd-space-2);
+}
+
+.table-picker-cell {
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--dnd-border-light);
+    background: var(--dnd-bg-secondary);
+    cursor: pointer;
+    transition: all var(--dnd-transition-fast);
+}
+
+.table-picker-cell:hover,
+.table-picker-cell.highlighted {
+    background: var(--dnd-accent);
+    border-color: var(--dnd-accent);
+}
+
+.table-picker-label {
+    text-align: center;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    font-weight: 500;
 }

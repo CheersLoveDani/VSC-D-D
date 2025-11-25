@@ -143,6 +143,12 @@ const globalWindow = window;
     });
 
     toggleBtn.addEventListener('click', () => {
+        // If switching FROM edit mode TO read mode, we need to save the content first
+        if (state.mode === 'edit' && editor) {
+            const html = editor.getHTML();
+            state.content = convertHTMLToMarkdown(html);
+        }
+
         state.mode = state.mode === 'read' ? 'edit' : 'read';
         toggleBtn.textContent = state.mode === 'read' ? 'Edit Note' : 'View Note';
         editorToolbar.style.display = state.mode === 'edit' ? 'flex' : 'none';
@@ -310,6 +316,14 @@ const globalWindow = window;
                     return;
                 }
                 
+                // Check if right-clicked on a table cell
+                const tableCell = target.closest('td, th');
+                if (tableCell) {
+                    e.preventDefault();
+                    showTableContextMenu(e.clientX, e.clientY);
+                    return;
+                }
+                
                 // Check if right-clicked on a link (text)
                 const link = target.closest('a');
                 if (link) {
@@ -352,7 +366,7 @@ const globalWindow = window;
      */
     function trySetMarkdownContent(markdown) {
         if (!editor || !markdown) return;
-        
+
         // First, try to set it as HTML if it looks like it might have been converted
         // Otherwise, TipTap will treat it as plain text which is fine
         try {
@@ -380,6 +394,8 @@ const globalWindow = window;
         let inTaskList = false;
         let inCodeBlock = false;
         let codeBlockContent = '';
+        let inTable = false;
+        let tableRows = [];
         
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
@@ -478,9 +494,32 @@ const globalWindow = window;
             else if (trimmed.startsWith('>')) {
                 html += `<blockquote><p>${processInlineMarkdown(trimmed.substring(1).trim())}</p></blockquote>`;
             }
+            // Tables - detect lines with pipe characters
+            else if (trimmed.includes('|')) {
+                // Start collecting table rows
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(trimmed);
+                
+                // Check if next line exists and is not a table row
+                const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+                const isNextLineTable = nextLine.includes('|');
+                
+                // If next line is not a table row, process the collected table
+                if (!isNextLineTable) {
+                    html += parseTable(tableRows);
+                    inTable = false;
+                    tableRows = [];
+                }
+            }
             // Horizontal rule
             else if (trimmed === '---' || trimmed === '***') {
-                html += '<hr>';
+                // Only treat as HR if not in a table context
+                if (!inTable) {
+                    html += '<hr>';
+                }
             }
             // Regular paragraph
             else {
@@ -510,6 +549,60 @@ const globalWindow = window;
     }
 
     /**
+     * Parse markdown table rows into HTML table
+     * @param {string[]} rows
+     * @returns {string}
+     */
+    function parseTable(rows) {
+        if (rows.length === 0) return '';
+
+        let tableHTML = '<table>';
+        let hasHeader = false;
+        let headerRow = '';
+        let bodyRows = [];
+
+        // Check if second row is a separator (|---|---|)
+        if (rows.length > 1 && /^[\s|:-]+$/.test(rows[1].replace(/\|/g, ''))) {
+            hasHeader = true;
+            headerRow = rows[0];
+            bodyRows = rows.slice(2); // Skip header and separator
+        } else {
+            bodyRows = rows;
+        }
+
+        // Parse header if present
+        if (hasHeader && headerRow) {
+            const headers = headerRow.split('|').map(h => h.trim()).filter(h => h);
+            tableHTML += '<thead><tr>';
+            headers.forEach(header => {
+                const processed = processInlineMarkdown(header);
+                tableHTML += `<th><p>${processed}</p></th>`;
+            });
+            tableHTML += '</tr></thead>';
+        }
+
+        // Parse body rows
+        if (bodyRows.length > 0) {
+            tableHTML += '<tbody>';
+            bodyRows.forEach((row) => {
+                const cells = row.split('|').map(c => c.trim()).filter(c => c);
+                if (cells.length > 0) {
+                    tableHTML += '<tr>';
+                    cells.forEach((cell) => {
+                        const processed = processInlineMarkdown(cell);
+                        tableHTML += `<td><p>${processed}</p></td>`;
+                    });
+                    tableHTML += '</tr>';
+                }
+            });
+            tableHTML += '</tbody>';
+        }
+
+        tableHTML += '</table>';
+        return tableHTML;
+    }
+
+    /**
      * Process inline markdown (bold, italic, links, etc.)
      * @param {string} text
      * @returns {string}
@@ -530,6 +623,259 @@ const globalWindow = window;
             .replace(/~~(.+?)~~/g, '<s>$1</s>')
             // Inline code
             .replace(/`(.+?)`/g, '<code>$1</code>');
+    }
+
+    /**
+     * Convert HTML back to Markdown
+     * @param {string} html
+     * @returns {string}
+     */
+    function convertHTMLToMarkdown(html) {
+        if (!html) return '';
+
+        // Create a temporary div to parse HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        let markdown = '';
+
+        // Process each child node
+        for (const node of tempDiv.childNodes) {
+            markdown += convertNodeToMarkdown(node);
+        }
+
+        // Clean up excessive newlines (more than 2 consecutive newlines)
+        markdown = markdown.replace(/\n{3,}/g, '\n\n');
+
+        return markdown.trim();
+    }
+    
+    /**
+     * Convert a DOM node to markdown
+     * @param {Node} node
+     * @returns {string}
+     */
+    function convertNodeToMarkdown(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            return node.textContent || '';
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return '';
+        }
+
+        const element = /** @type {HTMLElement} */ (node);
+        const tagName = element.tagName.toLowerCase();
+        
+        switch (tagName) {
+            case 'h1':
+            case 'h2':
+            case 'h3':
+            case 'h4':
+            case 'h5':
+            case 'h6':
+                const level = parseInt(tagName[1]);
+                return '#'.repeat(level) + ' ' + element.textContent + '\n\n';
+            
+            case 'p':
+                // Only add content if paragraph is not empty
+                const pText = element.textContent?.trim() || '';
+                if (!pText) return '';
+                return pText + '\n\n';
+            
+            case 'strong':
+            case 'b':
+                return '**' + element.textContent + '**';
+            
+            case 'em':
+            case 'i':
+                return '*' + element.textContent + '*';
+            
+            case 's':
+                return '~~' + element.textContent + '~~';
+            
+            case 'code':
+                return '`' + element.textContent + '`';
+            
+            case 'pre':
+                const codeElement = element.querySelector('code');
+                if (codeElement) {
+                    return '```\n' + codeElement.textContent + '\n```\n\n';
+                }
+                return '```\n' + element.textContent + '\n```\n\n';
+            
+            case 'blockquote':
+                const lines = element.textContent?.split('\n') || [];
+                return lines.map(line => '> ' + line).join('\n') + '\n\n';
+            
+            case 'ul':
+                let ulMarkdown = '';
+                for (const li of element.children) {
+                    if (li.tagName.toLowerCase() === 'li') {
+                        const hasCheckbox = li.querySelector('input[type="checkbox"]');
+                        if (hasCheckbox) {
+                            const checked = hasCheckbox.checked;
+                            ulMarkdown += `- [${checked ? 'x' : ' '}] ${li.textContent}\n`;
+                        } else {
+                            ulMarkdown += '- ' + li.textContent + '\n';
+                        }
+                    }
+                }
+                return ulMarkdown + '\n';
+            
+            case 'ol':
+                let olMarkdown = '';
+                let index = 1;
+                for (const li of element.children) {
+                    if (li.tagName.toLowerCase() === 'li') {
+                        olMarkdown += `${index}. ${li.textContent}\n`;
+                        index++;
+                    }
+                }
+                return olMarkdown + '\n';
+            
+            case 'a':
+                const href = element.getAttribute('href') || '';
+                return `[${element.textContent}](${href})`;
+            
+            case 'img':
+                const src = element.getAttribute('src') || '';
+                const alt = element.getAttribute('alt') || '';
+                return `![${alt}](${src})`;
+            
+            case 'hr':
+                return '---\n\n';
+            
+            case 'table':
+                return convertTableToMarkdown(element);
+            
+            default:
+                // For other elements, just return their text content
+                let childMarkdown = '';
+                for (const child of element.childNodes) {
+                    childMarkdown += convertNodeToMarkdown(child);
+                }
+                return childMarkdown;
+        }
+    }
+    
+    /**
+     * Convert HTML table to markdown table
+     * @param {HTMLElement} table
+     * @returns {string}
+     */
+    function convertTableToMarkdown(table) {
+        let markdown = '\n';
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+
+        /**
+         * Process inline markdown within a cell
+         * @param {HTMLElement} cell
+         * @returns {string}
+         */
+        const processCellContent = (cell) => {
+            let content = '';
+
+            // Helper function to process inline elements within a paragraph
+            const processInlineElements = (parentNode) => {
+                let inlineContent = '';
+                for (const node of parentNode.childNodes) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        inlineContent += node.textContent || '';
+                    } else if (node.nodeType === Node.ELEMENT_NODE) {
+                        const element = /** @type {HTMLElement} */ (node);
+                        switch (element.tagName.toLowerCase()) {
+                            case 'strong':
+                            case 'b':
+                                inlineContent += '**' + (element.textContent || '') + '**';
+                                break;
+                            case 'em':
+                            case 'i':
+                                inlineContent += '*' + (element.textContent || '') + '*';
+                                break;
+                            case 'code':
+                                inlineContent += '`' + (element.textContent || '') + '`';
+                                break;
+                            case 'a':
+                                const href = element.getAttribute('href') || '';
+                                inlineContent += '[' + (element.textContent || '') + '](' + href + ')';
+                                break;
+                            case 'br':
+                                inlineContent += ' ';
+                                break;
+                            default:
+                                inlineContent += element.textContent || '';
+                        }
+                    }
+                }
+                return inlineContent;
+            };
+
+            // Process each child node in the cell
+            for (const node of cell.childNodes) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent || '';
+                    if (text.trim()) {
+                        content += text;
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const element = /** @type {HTMLElement} */ (node);
+
+                    // Handle paragraph tags specially - process their inline content
+                    if (element.tagName.toLowerCase() === 'p') {
+                        const pContent = processInlineElements(element);
+                        content += pContent;
+                    } else {
+                        // For other elements, use the same inline processing
+                        const otherContent = processInlineElements(element);
+                        content += otherContent;
+                    }
+                }
+            }
+
+            const finalContent = content.trim().replace(/\s+/g, ' ');
+            return finalContent;
+        };
+
+        // Process header
+        let hasProcessedHeader = false;
+        if (thead) {
+            const headerRow = thead.querySelector('tr');
+            if (headerRow) {
+                const headers = Array.from(headerRow.querySelectorAll('th, td'));
+                const headerContent = headers.map(th => processCellContent(th));
+                markdown += '| ' + headerContent.join(' | ') + ' |\n';
+                markdown += '|' + headers.map(() => '---').join('|') + '|\n';
+                hasProcessedHeader = true;
+            }
+        }
+
+        // Process body
+        if (tbody) {
+            const rows = tbody.querySelectorAll('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = Array.from(row.querySelectorAll('td, th'));
+
+                // Check if this is a header row (contains th elements) and we haven't processed a header yet
+                const hasThCells = cells.some(cell => cell.tagName.toLowerCase() === 'th');
+
+                if (!hasProcessedHeader && hasThCells) {
+                    const headerContent = cells.map(th => processCellContent(th));
+                    markdown += '| ' + headerContent.join(' | ') + ' |\n';
+                    markdown += '|' + cells.map(() => '---').join('|') + '|\n';
+                    hasProcessedHeader = true;
+                } else {
+                    // Regular data row
+                    const cellContent = cells.map(td => processCellContent(td));
+                    markdown += '| ' + cellContent.join(' | ') + ' |\n';
+                }
+            }
+        }
+
+        return markdown + '\n';
     }
 
     function setupToolbarListeners() {
@@ -579,10 +925,80 @@ const globalWindow = window;
             if (editor) editor.chain().focus().setHorizontalRule().run();
         });
 
-        // Tables
-        document.getElementById('btn-table')?.addEventListener('click', () => {
-            if (editor) editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+        // Tables - Size Picker
+        const tableBtn = document.getElementById('btn-table');
+        const tablePicker = document.getElementById('table-picker');
+        const tablePickerGrid = document.getElementById('table-picker-grid');
+        const tablePickerLabel = document.getElementById('table-picker-label');
+        
+        // Create 10x10 grid
+        for (let row = 0; row < 10; row++) {
+            for (let col = 0; col < 10; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'table-picker-cell';
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                tablePickerGrid.appendChild(cell);
+            }
+        }
+        
+        // Toggle picker visibility
+        tableBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tablePicker.classList.toggle('visible');
         });
+        
+        // Handle cell hover
+        tablePickerGrid?.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('table-picker-cell')) {
+                const hoveredRow = parseInt(e.target.dataset.row);
+                const hoveredCol = parseInt(e.target.dataset.col);
+                
+                // Highlight all cells up to hovered cell
+                const cells = tablePickerGrid.querySelectorAll('.table-picker-cell');
+                cells.forEach(cell => {
+                    const cellRow = parseInt(cell.dataset.row);
+                    const cellCol = parseInt(cell.dataset.col);
+                    
+                    if (cellRow <= hoveredRow && cellCol <= hoveredCol) {
+                        cell.classList.add('highlighted');
+                    } else {
+                        cell.classList.remove('highlighted');
+                    }
+                });
+                
+                // Update label
+                tablePickerLabel.textContent = `${hoveredCol + 1}x${hoveredRow + 1} Table`;
+            }
+        });
+        
+        // Handle cell click
+        tablePickerGrid?.addEventListener('click', (e) => {
+            if (e.target.classList.contains('table-picker-cell')) {
+                const rows = parseInt(e.target.dataset.row) + 1;
+                const cols = parseInt(e.target.dataset.col) + 1;
+                
+                if (editor) {
+                    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+                }
+                
+                // Hide picker
+                tablePicker.classList.remove('visible');
+                
+                // Reset highlights
+                const cells = tablePickerGrid.querySelectorAll('.table-picker-cell');
+                cells.forEach(cell => cell.classList.remove('highlighted'));
+                tablePickerLabel.textContent = '1x1 Table';
+            }
+        });
+        
+        // Close picker when clicking outside
+        document.addEventListener('click', (e) => {
+            if (tablePicker && !tablePicker.contains(e.target) && e.target !== tableBtn) {
+                tablePicker.classList.remove('visible');
+            }
+        });
+
 
         // Link
         document.getElementById('btn-link')?.addEventListener('click', () => {
@@ -957,6 +1373,152 @@ const globalWindow = window;
         }
     }
 
+    // Table context menu functions
+    function showTableContextMenu(x, y) {
+        const tableContextMenu = document.getElementById('table-context-menu');
+        if (!tableContextMenu) return;
+        
+        // Hide other context menus
+        hideContextMenu();
+        
+        tableContextMenu.style.left = `${x}px`;
+        tableContextMenu.style.top = `${y}px`;
+        tableContextMenu.classList.add('visible');
+        
+        // Setup table context menu listeners if not already done
+        if (!tableContextMenu.dataset.listenersSetup) {
+            document.getElementById('ctx-table-insert-row-above')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addRowBefore().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-insert-row-below')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addRowAfter().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-insert-col-left')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addColumnBefore().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-insert-col-right')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addColumnAfter().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-delete-row')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().deleteRow().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-delete-col')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().deleteColumn().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-delete-table')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().deleteTable().run();
+                hideTableContextMenu();
+            });
+            
+            // Hide on click outside
+            document.addEventListener('click', (e) => {
+                if (tableContextMenu && !tableContextMenu.contains(e.target)) {
+                    hideTableContextMenu();
+                }
+            });
+            
+            // Hide on escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideTableContextMenu();
+                }
+            });
+            
+            tableContextMenu.dataset.listenersSetup = 'true';
+        }
+    }
+    
+    function hideTableContextMenu() {
+        const tableContextMenu = document.getElementById('table-context-menu');
+        if (!tableContextMenu) return;
+        tableContextMenu.classList.remove('visible');
+    }
+
+    // Table context menu functions
+    function showTableContextMenu(x, y) {
+        const tableContextMenu = document.getElementById('table-context-menu');
+        if (!tableContextMenu) return;
+        
+        // Hide other context menus
+        hideContextMenu();
+        
+        tableContextMenu.style.left = `${x}px`;
+        tableContextMenu.style.top = `${y}px`;
+        tableContextMenu.classList.add('visible');
+        
+        // Setup table context menu listeners if not already done
+        if (!tableContextMenu.dataset.listenersSetup) {
+            document.getElementById('ctx-table-insert-row-above')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addRowBefore().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-insert-row-below')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addRowAfter().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-insert-col-left')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addColumnBefore().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-insert-col-right')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().addColumnAfter().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-delete-row')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().deleteRow().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-delete-col')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().deleteColumn().run();
+                hideTableContextMenu();
+            });
+            
+            document.getElementById('ctx-table-delete-table')?.addEventListener('click', () => {
+                if (editor) editor.chain().focus().deleteTable().run();
+                hideTableContextMenu();
+            });
+            
+            // Hide on click outside
+            document.addEventListener('click', (e) => {
+                if (tableContextMenu && !tableContextMenu.contains(e.target)) {
+                    hideTableContextMenu();
+                }
+            });
+            
+            // Hide on escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideTableContextMenu();
+                }
+            });
+            
+            tableContextMenu.dataset.listenersSetup = 'true';
+        }
+    }
+    
+    function hideTableContextMenu() {
+        const tableContextMenu = document.getElementById('table-context-menu');
+        if (!tableContextMenu) return;
+        tableContextMenu.classList.remove('visible');
+    }
+
     function editSelectedImage() {
         if (!selectedImage || !editor) return;
         
@@ -1175,63 +1737,6 @@ const globalWindow = window;
         return '<p>' + html + '</p>';
     }
 
-    /**
-     * Simple HTML to Markdown converter
-     * @param {string} html 
-     */
-    function convertHTMLToMarkdown(html) {
-        if (!html) return '';
-        
-        let markdown = html
-            // Headers
-            .replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n')
-            .replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n')
-            .replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n')
-            .replace(/<h4>(.*?)<\/h4>/gi, '#### $1\n\n')
-            .replace(/<h5>(.*?)<\/h5>/gi, '##### $1\n\n')
-            .replace(/<h6>(.*?)<\/h6>/gi, '###### $1\n\n')
-            // Bold and italic
-            .replace(/<strong><em>(.*?)<\/em><\/strong>/gi, '***$1***')
-            .replace(/<em><strong>(.*?)<\/strong><\/em>/gi, '***$1***')
-            .replace(/<strong>(.*?)<\/strong>/gi, '**$1**')
-            .replace(/<b>(.*?)<\/b>/gi, '**$1**')
-            .replace(/<em>(.*?)<\/em>/gi, '*$1*')
-            .replace(/<i>(.*?)<\/i>/gi, '*$1*')
-            // Strikethrough
-            .replace(/<s>(.*?)<\/s>/gi, '~~$1~~')
-            // Code
-            .replace(/<code>(.*?)<\/code>/gi, '`$1`')
-            // Code blocks
-            .replace(/<pre><code>(.*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n')
-            // Lists
-            .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
-            .replace(/<ul[^>]*>/gi, '')
-            .replace(/<\/ul>/gi, '\n')
-            .replace(/<ol[^>]*>/gi, '')
-            .replace(/<\/ol>/gi, '\n')
-            // Blockquote
-            .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, (match, content) => {
-                return content.replace(/<p>/gi, '> ').replace(/<\/p>/gi, '\n');
-            })
-            // Horizontal rule
-            .replace(/<hr\s*\/?>/gi, '---\n\n')
-            // Links
-            .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
-            // Images
-            .replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, '![$2]($1)')
-            .replace(/<img[^>]*src="([^"]*)"[^>]*\/?>/gi, '![]($1)')
-            // Paragraphs and breaks
-            .replace(/<p[^>]*>/gi, '')
-            .replace(/<\/p>/gi, '\n\n')
-            .replace(/<br\s*\/?>/gi, '\n')
-            // Remove remaining HTML tags
-            .replace(/<[^>]+>/g, '')
-            // Clean up extra newlines
-            .replace(/\n{3,}/g, '\n\n')
-            .trim();
-        
-        return markdown;
-    }
 
     /**
      * @param {HTMLElement} container 
