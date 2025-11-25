@@ -1,18 +1,42 @@
 {
-  "name": "dnd-campaign-manager",
-  "displayName": "D&D Campaign Manager",
+  "name": "critcode",
+  "displayName": "CritCode",
   "description": "A VS Code extension for planning D&D campaigns with Maps, Character Sheets, and Item Databases.",
   "version": "0.0.1",
+  "publisher": "DaniFullerton",
+  "author": {
+    "name": "Dani Fullerton"
+  },
+  "license": "CC-BY-4.0",
+  "icon": "extension/icon.png",
+  "galleryBanner": {
+    "color": "#8B0000",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/critcode"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/critcode/issues"
+  },
+  "homepage": "https://github.com/yourusername/critcode#readme",
+  "keywords": [
+    "dnd",
+    "dungeons and dragons",
+    "rpg",
+    "campaign",
+    "tabletop",
+    "game master",
+    "dm tools",
+    "character sheet",
+    "map editor"
+  ],
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
     "Other"
-  ],
-  "activationEvents": [
-    "onLanguage:dndnotes",
-    "onLanguage:markdown",
-    "onView:dnd-plugin-manager"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -123,13 +147,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile && npm run build:webview",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "node \"./node_modules/typescript/lib/tsc.js\" -p ./",
+    "watch": "node \"./node_modules/typescript/lib/tsc.js\" -watch -p ./",
     "build:webview": "node build-webview.js",
     "watch:webview": "node build-webview.js --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
