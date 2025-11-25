@@ -25,6 +25,14 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 
 ## [0.0.4] - 2025-11-25
 
+### Added
+- **Notes Editor Table Support**: Full table editing capabilities in the notes editor
+  - Interactive table size picker in toolbar (up to 10x10 grid)
+  - Table context menu with row/column operations (insert above/below, insert left/right, delete row/column/table)
+  - D&D-styled tables with header styling, alternating row colors, and hover effects
+  - Markdown table parsing and rendering in preview mode
+  - Tables properly convert to/from markdown format
+
 ### Fixed
 - **Notes Editor Undo/Redo**: Fixed issue where Ctrl+Z would only work once before "jittering" and getting stuck
   - Resolved feedback loop between TipTap editor and VSCode document sync that was resetting undo history
