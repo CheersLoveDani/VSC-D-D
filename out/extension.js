@@ -7,6 +7,7 @@ const mapEditor_1 = require("./editors/mapEditor");
 const characterEditor_1 = require("./editors/characterEditor");
 const itemEditor_1 = require("./editors/itemEditor");
 const notesEditor_1 = require("./editors/notesEditor");
+const statBlockEditor_1 = require("./editors/statBlockEditor");
 const hoverProvider_1 = require("./providers/hoverProvider");
 const pluginManager_1 = require("./views/pluginManager");
 function activate(context) {
@@ -16,6 +17,7 @@ function activate(context) {
     context.subscriptions.push(characterEditor_1.CharacterSheetProvider.register(context));
     context.subscriptions.push(itemEditor_1.ItemEditorProvider.register(context));
     context.subscriptions.push(notesEditor_1.NotesEditorProvider.register(context));
+    context.subscriptions.push(statBlockEditor_1.StatBlockEditorProvider.register(context));
     // Register Hover Provider
     context.subscriptions.push(vscode.languages.registerHoverProvider([{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }], new hoverProvider_1.DndHoverProvider()));
     // Register Plugin Manager

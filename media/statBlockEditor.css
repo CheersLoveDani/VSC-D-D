@@ -1,0 +1,345 @@
+@import 'dnd-theme.css';
+
+/* ========== Layout ========== */
+body {
+    padding: var(--dnd-space-4);
+    background: var(--dnd-bg);
+}
+
+#stat-block-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--dnd-card-bg);
+    padding: var(--dnd-space-4);
+    border-radius: var(--dnd-radius-lg);
+    box-shadow: var(--dnd-shadow-md);
+    border: 1px solid var(--dnd-border-light);
+}
+
+#stat-block {
+    font-size: var(--dnd-text-sm);
+    line-height: 1.6;
+    font-family: var(--dnd-font-body);
+}
+
+/* ========== Header ========== */
+.stat-block-header h1 {
+    margin: 0 0 var(--dnd-space-1) 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dnd-accent);
+    font-family: var(--dnd-font-header);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.creature-type {
+    margin: 0 0 var(--dnd-space-3) 0;
+    font-style: italic;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    font-family: var(--dnd-font-serif);
+}
+
+/* ========== Dividers ========== */
+.divider {
+    fill: var(--dnd-accent);
+    stroke: var(--dnd-accent);
+    margin: var(--dnd-space-2) 0;
+    opacity: 0.6;
+}
+
+/* ========== Stat Sections ========== */
+.stat-block-section {
+    margin: var(--dnd-space-2) 0;
+}
+
+.stat-row {
+    margin: var(--dnd-space-1) 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--dnd-space-1);
+    align-items: baseline;
+}
+
+.stat-label {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dnd-text-muted);
+    font-family: var(--dnd-font-header);
+}
+
+.stat-label::after {
+    content: ' ';
+}
+
+.armor-type,
+.hit-dice,
+.xp {
+    font-style: italic;
+    color: var(--dnd-text-subtle);
+    font-family: var(--dnd-font-serif);
+}
+
+/* ========== Ability Scores ========== */
+.ability-scores {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    margin: var(--dnd-space-3) 0;
+    gap: var(--dnd-space-2);
+}
+
+.ability-score {
+    flex: 1;
+    background: var(--dnd-bg-secondary);
+    padding: var(--dnd-space-2) var(--dnd-space-1);
+    border-radius: var(--dnd-radius);
+    border: 1px solid var(--dnd-border-light);
+    transition: all var(--dnd-transition);
+}
+
+.ability-score:hover {
+    border-color: var(--dnd-border);
+    background: var(--dnd-bg-hover);
+}
+
+.ability-name {
+    font-weight: 700;
+    font-size: 10px;
+    margin-bottom: var(--dnd-space-1);
+    color: var(--dnd-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: var(--dnd-font-header);
+}
+
+.ability-value {
+    font-size: var(--dnd-text-lg);
+    font-weight: 700;
+    margin: var(--dnd-space-1) 0;
+    color: var(--dnd-text);
+}
+
+.ability-modifier {
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-subtle);
+    font-weight: 500;
+}
+
+/* ========== Features & Actions ========== */
+.feature {
+    margin: var(--dnd-space-1) 0;
+    position: relative;
+}
+
+.feature p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.feature-name {
+    font-weight: 600;
+    font-style: italic;
+    color: var(--dnd-accent);
+    font-family: var(--dnd-font-serif);
+}
+
+.feature-text {
+    font-weight: normal;
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-body);
+}
+
+/* ========== Actions Header ========== */
+.actions-header {
+    margin: var(--dnd-space-4) 0 var(--dnd-space-2) 0;
+    padding-bottom: var(--dnd-space-1);
+    border-bottom: 2px solid var(--dnd-border-light);
+}
+
+.actions-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dnd-accent);
+    font-family: var(--dnd-font-header);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.empty-section {
+    font-style: italic;
+    color: var(--dnd-text-subtle);
+    margin: var(--dnd-space-2) 0;
+    font-size: var(--dnd-text-sm);
+}
+
+/* ========== Buttons ========== */
+/* Add section buttons (in headers) */
+.add-section-btn {
+    padding: 2px 8px;
+    font-size: var(--dnd-text-sm);
+    line-height: 1;
+    margin-left: var(--dnd-space-2);
+    background: var(--dnd-accent);
+    color: white;
+    border: 1px solid var(--dnd-accent);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--dnd-radius-sm);
+    transition: all var(--dnd-transition);
+    font-family: var(--dnd-font-body);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.add-section-btn:hover {
+    background: var(--dnd-accent-hover);
+    border-color: var(--dnd-accent-hover);
+    transform: none;
+}
+
+/* Add inline buttons (in stat labels) */
+.add-inline-btn {
+    padding: 0px 6px;
+    font-size: 12px;
+    line-height: 1;
+    margin-left: var(--dnd-space-1);
+    background: var(--dnd-bg-secondary);
+    color: var(--dnd-accent);
+    border: 1px solid var(--dnd-border-light);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--dnd-radius-sm);
+    transition: all var(--dnd-transition);
+    font-family: var(--dnd-font-body);
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.7;
+}
+
+.add-inline-btn:hover {
+    opacity: 1;
+    background: var(--dnd-accent-soft);
+    border-color: var(--dnd-accent);
+    transform: none;
+}
+
+/* Small remove buttons */
+.remove-skill,
+.remove-language,
+.remove-feature {
+    padding: 0 var(--dnd-space-2);
+    font-size: var(--dnd-text-sm);
+    line-height: 1;
+    margin-left: var(--dnd-space-2);
+    background: var(--dnd-bg-secondary);
+    color: var(--dnd-accent);
+    border: 1px solid var(--dnd-border-light);
+    opacity: 0.6;
+    transition: opacity var(--dnd-transition);
+    box-shadow: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.remove-skill:hover,
+.remove-language:hover,
+.remove-feature:hover {
+    opacity: 1;
+    background: var(--dnd-accent-soft);
+    border-color: var(--dnd-accent);
+    transform: none;
+}
+
+/* Inline remove buttons for speed/sense */
+.remove-speed,
+.remove-sense {
+    padding: 0 4px;
+    font-size: 11px;
+    line-height: 1;
+    margin-left: 4px;
+    background: var(--dnd-bg-secondary);
+    color: var(--dnd-accent);
+    border: 1px solid var(--dnd-border-light);
+    opacity: 0.6;
+    transition: opacity var(--dnd-transition);
+    box-shadow: none;
+    cursor: pointer;
+    border-radius: var(--dnd-radius-sm);
+    font-family: var(--dnd-font-body);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.remove-speed:hover,
+.remove-sense:hover {
+    opacity: 1;
+    background: var(--dnd-accent-soft);
+    border-color: var(--dnd-accent);
+    transform: none;
+}
+
+.skill-entry,
+.language-entry {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dnd-space-1);
+    margin-right: var(--dnd-space-2);
+}
+
+.skill-name {
+    font-weight: normal;
+}
+
+/* ========== Contenteditable Styling ========== */
+[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    padding: var(--dnd-space-1) var(--dnd-space-2);
+    border-radius: var(--dnd-radius-sm);
+    transition: background-color var(--dnd-transition);
+    min-width: 20px;
+    display: inline-block;
+}
+
+[contenteditable="true"]:hover {
+    background-color: var(--dnd-bg-hover);
+}
+
+[contenteditable="true"]:focus {
+    background-color: var(--dnd-bg-secondary);
+    box-shadow: 0 0 0 2px var(--dnd-accent-soft);
+}
+
+/* ========== Print Styles ========== */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    #stat-block-container {
+        box-shadow: none;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+
+    .button-bar {
+        display: none;
+    }
+
+    [contenteditable="true"] {
+        cursor: default;
+    }
+
+    .remove-skill,
+    .remove-language,
+    .remove-feature {
+        display: none;
+    }
+}

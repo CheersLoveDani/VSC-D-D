@@ -76,6 +76,16 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "dnd.statBlockEditor",
+        "displayName": "D&D Stat Block",
+        "selector": [
+          {
+            "filenamePattern": "*.dndstat"
+          }
+        ],
+        "priority": "default"
       }
     ],
     "commands": [

@@ -3,6 +3,7 @@ import { MapEditorProvider } from './editors/mapEditor';
 import { CharacterSheetProvider } from './editors/characterEditor';
 import { ItemEditorProvider } from './editors/itemEditor';
 import { NotesEditorProvider } from './editors/notesEditor';
+import { StatBlockEditorProvider } from './editors/statBlockEditor';
 import { DndHoverProvider } from './providers/hoverProvider';
 import { PluginManagerProvider } from './views/pluginManager';
 
@@ -14,6 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(CharacterSheetProvider.register(context));
 	context.subscriptions.push(ItemEditorProvider.register(context));
     context.subscriptions.push(NotesEditorProvider.register(context));
+	context.subscriptions.push(StatBlockEditorProvider.register(context));
 
     // Register Hover Provider
     context.subscriptions.push(

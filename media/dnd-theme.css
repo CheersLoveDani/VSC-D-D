@@ -3,11 +3,14 @@
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
 
 :root {
     /* ========== Typography ========== */
-    --dnd-font-header: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --dnd-font-header: 'Cinzel', 'Georgia', serif;
     --dnd-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --dnd-font-serif: 'Crimson Text', 'Georgia', 'Times New Roman', serif;
     --dnd-font-mono: 'Consolas', 'Courier New', monospace;
     
     /* Font Sizes */
@@ -190,52 +193,59 @@ textarea {
 }
 
 /* ========== Buttons ========== */
-.dnd-btn {
+.dnd-btn,
+button {
     background: var(--dnd-accent);
     color: white;
-    border: none;
-    padding: var(--dnd-space-2) var(--dnd-space-4);
-    border-radius: var(--dnd-radius);
+    border: 2px solid var(--dnd-accent);
+    padding: var(--dnd-space-2) var(--dnd-space-5);
+    border-radius: var(--dnd-radius-sm);
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     font-size: var(--dnd-text-sm);
-    font-family: inherit;
+    font-family: var(--dnd-font-header);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all var(--dnd-transition);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--dnd-space-2);
-    box-shadow: var(--dnd-shadow-sm);
+    box-shadow: none;
 }
 
-.dnd-btn:hover {
+.dnd-btn:hover,
+button:hover {
     background: var(--dnd-accent-hover);
-    box-shadow: var(--dnd-shadow);
-    transform: translateY(-1px);
+    border-color: var(--dnd-accent-hover);
+    transform: none;
 }
 
-.dnd-btn:active {
-    transform: translateY(0);
-    box-shadow: var(--dnd-shadow-sm);
+.dnd-btn:active,
+button:active {
+    transform: scale(0.98);
+    opacity: 0.9;
 }
 
 .dnd-btn.secondary {
-    background: var(--dnd-bg-secondary);
-    color: var(--dnd-text);
-    border: 1px solid var(--dnd-border-light);
+    background: transparent;
+    color: var(--dnd-accent);
+    border: 2px solid var(--dnd-accent);
 }
 
 .dnd-btn.secondary:hover {
-    background: var(--dnd-bg-hover);
-    border-color: var(--dnd-border);
+    background: var(--dnd-accent-soft);
+    border-color: var(--dnd-accent-hover);
 }
 
 .dnd-btn.danger {
     background: #DC2626;
+    border-color: #DC2626;
 }
 
 .dnd-btn.danger:hover {
     background: #B91C1C;
+    border-color: #B91C1C;
 }
 
 /* ========== Cards ========== */
