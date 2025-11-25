@@ -2,7 +2,7 @@
   "name": "critcode",
   "displayName": "CritCode",
   "description": "A VS Code extension for planning D&D campaigns with Maps, Character Sheets, and Item Databases.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "DaniFullerton",
   "author": {
     "name": "Dani Fullerton"
@@ -15,12 +15,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/critcode"
+    "url": "https://github.com/CheersLoveDani/VSC-D-D"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/critcode/issues"
+    "url": "https://github.com/CheersLoveDani/VSC-D-D/issues"
   },
-  "homepage": "https://github.com/yourusername/critcode#readme",
+  "homepage": "https://github.com/CheersLoveDani/VSC-D-D#readme",
   "keywords": [
     "dnd",
     "dungeons and dragons",
@@ -124,6 +124,11 @@
       {
         "command": "dnd-campaign-manager.togglePlainText",
         "title": "Toggle Plain Text Mode",
+        "category": "D&D Manager"
+      },
+      {
+        "command": "dnd-campaign-manager.createSetupFiles",
+        "title": "Create Setup Files",
         "category": "D&D Manager"
       }
     ],

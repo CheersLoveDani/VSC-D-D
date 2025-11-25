@@ -46,6 +46,10 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.togglePlainText', () => {
         pluginManagerProvider.togglePlainTextMode();
     }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.createSetupFiles', () => {
+        pluginManagerProvider.createSetupFiles();
+    }));
 }
 
 export function deactivate() {}

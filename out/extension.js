@@ -33,6 +33,9 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.togglePlainText', () => {
         pluginManagerProvider.togglePlainTextMode();
     }));
+    context.subscriptions.push(vscode.commands.registerCommand('dnd-campaign-manager.createSetupFiles', () => {
+        pluginManagerProvider.createSetupFiles();
+    }));
 }
 function deactivate() { }
 //# sourceMappingURL=extension.js.map
