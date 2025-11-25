@@ -444,35 +444,49 @@ body {
 .attacks-grid {
     display: grid;
     gap: var(--dnd-space-2);
+    overflow-x: auto;
 }
 
 .attack-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 0.8fr 1fr 1.5fr 0.8fr auto;
+    grid-template-columns: minmax(120px, 2fr) minmax(60px, 1fr) minmax(60px, 0.8fr) minmax(80px, 1fr) minmax(100px, 1.5fr) minmax(80px, 1fr) minmax(60px, 0.8fr) auto;
     gap: var(--dnd-space-2);
     align-items: center;
     padding: var(--dnd-space-2);
     background: var(--dnd-bg-secondary);
     border-radius: var(--dnd-radius-sm);
     border: 1px solid var(--dnd-border-light);
+    min-width: 0;
 }
 
 .attack-row input,
 .attack-row select {
     font-size: var(--dnd-text-sm);
     padding: var(--dnd-space-1) var(--dnd-space-2);
+    min-width: 0;
+    width: 100%;
 }
 
 .attack-bonus-display,
 .damage-bonus-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--dnd-space-1);
     font-size: var(--dnd-text-sm);
     font-weight: 600;
     color: var(--dnd-accent);
-    text-align: center;
     padding: var(--dnd-space-1);
     background: var(--dnd-bg);
     border-radius: var(--dnd-radius-sm);
     border: 1px solid var(--dnd-border-light);
+}
+
+.attack-bonus-display svg,
+.damage-bonus-display svg {
+    width: 16px;
+    height: 16px;
+    color: var(--dnd-accent);
 }
 
 .attack-row button {

@@ -258,9 +258,17 @@
                     // Only update state if it's different to avoid cursor jumping
                     const newState = JSON.parse(text);
                     state = newState;
-                    
+
+                    // Check if we're editing any input or if focus is inside an attack row
+                    const activeElement = document.activeElement;
+                    const isEditingInput = activeElement && (
+                        inputs.includes(activeElement.id) ||
+                        activeElement.closest('.attack-row') ||
+                        activeElement.closest('.spell-entry')
+                    );
+
                     // Only update UI if we are NOT currently editing
-                    if (!document.activeElement || !inputs.includes(document.activeElement.id)) {
+                    if (!isEditingInput) {
                          updateUIFromState();
                     }
                 } catch {
@@ -336,6 +344,12 @@
         }
     }
 
+
+    // Icons
+    const d20Icon = `<svg viewBox="0 0 3334 3334" version="1.1" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;"><path d="M1666.667,173.611l-1295.257,746.528l0,1493.056l1295.257,746.528l1295.257,-746.528l0,-1493.056l-1295.257,-746.528Z" style="fill:none;fill-rule:nonzero;stroke:currentColor;stroke-width:166.67px;"/><path d="M1666.667,173.611l-855,906.042l-440.257,1333.542l1295.257,185.035l1295.257,-185.035l-440.257,-1333.542l-855,-906.042Z" style="fill:none;fill-rule:nonzero;stroke:currentColor;stroke-width:166.67px;"/><path d="M1666.667,2598.229l-855,-1518.576l1710,0l-855,1518.576Z" style="fill:none;fill-rule:nonzero;stroke:currentColor;stroke-width:166.67px;"/><path d="M1666.667,2598.229l0,561.493" style="fill:none;fill-rule:nonzero;stroke:currentColor;stroke-width:166.67px;"/><path d="M811.667,1079.653l-440.257,-159.514" style="fill:none;fill-rule:nonzero;stroke:currentColor;stroke-width:166.67px;"/><path d="M2521.667,1079.653l440.257,-159.514" style="fill:none;fill-rule:nonzero;stroke:currentColor;stroke-width:166.67px;"/></svg>`;
+    
+    const swordIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>`;
+
     // ========== HP Healing/Damage ==========
     const healBtn = document.getElementById('heal-btn');
     const damageBtn = document.getElementById('damage-btn');
@@ -398,14 +412,17 @@
         const attackBonus = abilityMod + profBonus;
         const attackBonusEl = attackRow.querySelector('[data-field="attackBonus"]');
         if (attackBonusEl) {
-            attackBonusEl.textContent = formatModifier(attackBonus);
+            attackBonusEl.innerHTML = `${d20Icon} <span>${formatModifier(attackBonus)}</span>`;
         }
 
-        // Damage Bonus = Ability Modifier only (no proficiency)
-        const damageBonus = abilityMod;
+        // Damage Bonus = Ability Modifier + Bonus Damage
+        const bonusDamageInput = /** @type {HTMLInputElement | null} */ (attackRow.querySelector('[data-field="bonusDamage"]'));
+        const extraDamage = bonusDamageInput ? (parseInt(bonusDamageInput.value) || 0) : 0;
+        const damageBonus = abilityMod + extraDamage;
+        
         const damageBonusEl = attackRow.querySelector('[data-field="damageBonus"]');
         if (damageBonusEl) {
-            damageBonusEl.textContent = formatModifier(damageBonus);
+            damageBonusEl.innerHTML = `${swordIcon} <span>${formatModifier(damageBonus)}</span>`;
         }
     }
 
@@ -429,10 +446,11 @@
                 <option value="wis" ${attackData.stat === 'wis' ? 'selected' : ''}>WIS</option>
                 <option value="cha" ${attackData.stat === 'cha' ? 'selected' : ''}>CHA</option>
             </select>
-            <div class="attack-bonus-display" data-field="attackBonus">+0</div>
+            <div class="attack-bonus-display" data-field="attackBonus">${d20Icon} <span>+0</span></div>
             <input type="text" placeholder="Bonus Dmg" value="${attackData.bonusDamage || ''}" data-field="bonusDamage" />
             <input type="text" placeholder="Damage/Type" value="${attackData.damage || ''}" data-field="damage" />
-            <div class="damage-bonus-display" data-field="damageBonus">+0</div>
+            <input type="text" placeholder="Dice (e.g. 2d6)" value="${attackData.dice || ''}" data-field="dice" />
+            <div class="damage-bonus-display" data-field="damageBonus">${swordIcon} <span>+0</span></div>
             <button type="button" class="delete-attack">×</button>
         `;
 
@@ -467,6 +485,7 @@
                 name: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="name"]'))?.value || '',
                 stat: /** @type {HTMLSelectElement} */ (row.querySelector('[data-field="stat"]'))?.value || 'str',
                 bonusDamage: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="bonusDamage"]'))?.value || '',
+                dice: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="dice"]'))?.value || '',
                 damage: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="damage"]'))?.value || ''
             };
             attacks.push(attack);
@@ -477,7 +496,48 @@
 
     function loadAttacks() {
         const attacks = getNestedValue(state, 'attacks') || [];
-        if (attacksContainer) {
+        if (!attacksContainer) return;
+
+        // Get existing attack rows
+        const existingRows = Array.from(attacksContainer.querySelectorAll('.attack-row'));
+
+        // If the counts match, update existing rows instead of recreating
+        if (existingRows.length === attacks.length) {
+            existingRows.forEach((row, index) => {
+                const attack = attacks[index];
+                if (!attack) return;
+
+                // Update each field only if not currently focused
+                const nameInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="name"]'));
+                if (nameInput && document.activeElement !== nameInput) {
+                    nameInput.value = attack.name || '';
+                }
+
+                const statSelect = /** @type {HTMLSelectElement | null} */ (row.querySelector('[data-field="stat"]'));
+                if (statSelect && document.activeElement !== statSelect) {
+                    statSelect.value = attack.stat || 'str';
+                }
+
+                const bonusDamageInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="bonusDamage"]'));
+                if (bonusDamageInput && document.activeElement !== bonusDamageInput) {
+                    bonusDamageInput.value = attack.bonusDamage || '';
+                }
+
+                const diceInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="dice"]'));
+                if (diceInput && document.activeElement !== diceInput) {
+                    diceInput.value = attack.dice || '';
+                }
+
+                const damageInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="damage"]'));
+                if (damageInput && document.activeElement !== damageInput) {
+                    damageInput.value = attack.damage || '';
+                }
+
+                // Update calculations
+                updateAttackCalculations(/** @type {HTMLElement} */ (row));
+            });
+        } else {
+            // Count doesn't match, rebuild all
             attacksContainer.innerHTML = '';
             attacks.forEach(/** @param {any} attack */ (attack) => {
                 attacksContainer.appendChild(createAttackRow(attack));
@@ -559,10 +619,31 @@
         const spellsByLevel = getNestedValue(state, 'spells') || {};
         for (let i = 0; i <= 9; i++) {
             const container = document.getElementById(`spells-level${i}`);
-            if (container) {
+            if (!container) continue;
+
+            // @ts-ignore
+            const spells = spellsByLevel[`level${i}`] || [];
+            const existingEntries = Array.from(container.querySelectorAll('.spell-entry'));
+
+            // If counts match, update existing entries instead of recreating
+            if (existingEntries.length === spells.length) {
+                existingEntries.forEach((entry, index) => {
+                    const spell = spells[index];
+                    if (!spell) return;
+
+                    const nameInput = /** @type {HTMLInputElement | null} */ (entry.querySelector('[data-field="name"]'));
+                    if (nameInput && document.activeElement !== nameInput) {
+                        nameInput.value = spell.name || '';
+                    }
+
+                    const preparedCheckbox = /** @type {HTMLInputElement | null} */ (entry.querySelector('[data-field="prepared"]'));
+                    if (preparedCheckbox && document.activeElement !== preparedCheckbox) {
+                        preparedCheckbox.checked = spell.prepared || false;
+                    }
+                });
+            } else {
+                // Count doesn't match, rebuild all
                 container.innerHTML = '';
-                // @ts-ignore
-                const spells = spellsByLevel[`level${i}`] || [];
                 spells.forEach(/** @param {any} spell */ (spell) => {
                     container.appendChild(createSpellEntry(i.toString(), spell));
                 });
