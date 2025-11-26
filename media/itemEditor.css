@@ -8,7 +8,7 @@ body {
 .container {
     display: flex;
     gap: var(--dnd-space-10);
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     background: var(--dnd-card-bg);
     padding: var(--dnd-space-6);
@@ -17,8 +17,15 @@ body {
     border: 1px solid var(--dnd-border-light);
 }
 
-.editor-pane, .preview-pane {
+.editor-pane {
     flex: 1;
+    min-width: 400px;
+}
+
+.preview-pane {
+    flex: 1;
+    min-width: 350px;
+    max-width: 450px;
 }
 
 /* ========== Editor Pane ========== */
@@ -32,8 +39,38 @@ body {
     padding-bottom: var(--dnd-space-3);
 }
 
+.form-row {
+    display: flex;
+    gap: var(--dnd-space-4);
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-row .form-group-small {
+    flex: 0 0 auto;
+    min-width: 120px;
+}
+
 .form-group {
-    margin-bottom: var(--dnd-space-5);
+    margin-bottom: var(--dnd-space-4);
+}
+
+.form-section {
+    margin-top: var(--dnd-space-6);
+    padding: var(--dnd-space-4);
+    background: var(--dnd-bg-secondary);
+    border-radius: var(--dnd-radius-md);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.form-section h3 {
+    margin-top: 0;
+    margin-bottom: var(--dnd-space-4);
+    font-size: var(--dnd-text-lg);
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-header);
 }
 
 label {
@@ -52,7 +89,34 @@ input, select, textarea {
 }
 
 textarea {
-    min-height: 140px;
+    min-height: 100px;
+}
+
+.checkbox-row {
+    display: flex;
+    gap: var(--dnd-space-4);
+    margin-bottom: var(--dnd-space-2);
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dnd-space-2);
+    font-weight: 500;
+    font-size: var(--dnd-text-base);
+    color: var(--dnd-text);
+    text-transform: none;
+    cursor: pointer;
+}
+
+.checkbox-label.inline {
+    margin-bottom: 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
 }
 
 /* ========== Item Card Preview ========== */
@@ -71,7 +135,7 @@ textarea {
 }
 
 .card-header {
-    background: linear-gradient(135deg, var(--dnd-accent) 0%, var(--dnd-accent-hover) 100%);
+    background: linear-gradient(135deg, #4a6741 0%, #5d8a52 100%);
     color: white;
     padding: var(--dnd-space-4) var(--dnd-space-5);
     display: flex;
@@ -86,30 +150,107 @@ textarea {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.card-body {
-    padding: var(--dnd-space-5);
-    min-height: 160px;
+.item-rarity {
+    font-size: var(--dnd-text-sm);
+    background: rgba(255, 255, 255, 0.2);
+    padding: var(--dnd-space-1) var(--dnd-space-3);
+    border-radius: var(--dnd-radius-full);
 }
 
-.item-type {
-    color: var(--dnd-text-muted);
+/* Rarity color variations */
+.rarity-common {
+    background: rgba(150, 150, 150, 0.3);
+}
+
+.rarity-uncommon {
+    background: rgba(30, 255, 0, 0.3);
+}
+
+.rarity-rare {
+    background: rgba(0, 112, 221, 0.4);
+}
+
+.rarity-very-rare {
+    background: rgba(163, 53, 238, 0.4);
+}
+
+.rarity-legendary {
+    background: rgba(255, 128, 0, 0.4);
+}
+
+.rarity-artifact {
+    background: linear-gradient(135deg, rgba(255, 128, 0, 0.5), rgba(255, 215, 0, 0.5));
+}
+
+.card-subheader {
+    background: var(--dnd-bg-secondary);
+    padding: var(--dnd-space-2) var(--dnd-space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-style: italic;
     font-size: var(--dnd-text-sm);
-    margin-top: 0;
-    margin-bottom: var(--dnd-space-3);
+    color: var(--dnd-text-muted);
     border-bottom: 1px solid var(--dnd-border-light);
-    padding-bottom: var(--dnd-space-2);
 }
 
-.card-body p {
-    line-height: 1.6;
+.item-tag {
+    display: inline-block;
+    background: var(--dnd-accent);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: var(--dnd-radius-full);
+    margin-left: var(--dnd-space-2);
+    font-style: normal;
+    text-transform: lowercase;
+}
+
+.card-body {
+    padding: var(--dnd-space-5);
+}
+
+.item-stats {
+    border-bottom: 1px solid var(--dnd-border-light);
+    padding-bottom: var(--dnd-space-4);
+    margin-bottom: var(--dnd-space-4);
+}
+
+.stat-row {
+    display: flex;
+    margin-bottom: var(--dnd-space-2);
+}
+
+.stat-row:last-child {
+    margin-bottom: 0;
+}
+
+.stat-label {
+    font-weight: 600;
+    color: var(--dnd-text-muted);
+    min-width: 120px;
+    font-size: var(--dnd-text-sm);
+}
+
+.stat-row span:last-child {
     color: var(--dnd-text);
+    font-size: var(--dnd-text-sm);
+}
+
+.item-description {
+    line-height: 1.6;
+}
+
+.item-description p {
+    margin: 0;
+    white-space: pre-wrap;
 }
 
 .card-footer {
     background: var(--dnd-bg-secondary);
     padding: var(--dnd-space-3) var(--dnd-space-5);
-    text-align: right;
+    display: flex;
+    justify-content: space-between;
     font-size: var(--dnd-text-sm);
     color: var(--dnd-text-muted);
     font-weight: 600;

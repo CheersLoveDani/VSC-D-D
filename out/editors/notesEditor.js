@@ -194,11 +194,20 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 fileContent = {
                     name: item.name,
                     type: item.type,
-                    rarity: item.rarity || '',
+                    subtype: item.subtype || '',
+                    rarity: item.rarity || 'Common',
+                    magic: item.magic || false,
                     attunement: item.attunement || false,
-                    description: item.description || '',
-                    value: 0,
-                    weight: 0
+                    attunementRequirement: item.attunementRequirement || '',
+                    weight: item.weight || 0,
+                    value: item.value || '',
+                    damage: item.damage,
+                    armorClass: item.armorClass,
+                    stealthDisadvantage: item.stealthDisadvantage || false,
+                    strengthRequirement: item.strengthRequirement,
+                    properties: item.properties || [],
+                    range: item.range,
+                    description: item.description || ''
                 };
             }
         }

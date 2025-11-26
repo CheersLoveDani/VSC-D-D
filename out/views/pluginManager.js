@@ -185,10 +185,16 @@ class PluginManagerProvider {
             // Create example item file
             const exampleItem = {
                 name: "Potion of Healing",
-                type: "potion",
-                value: 50,
+                type: "Potion",
+                subtype: "",
+                rarity: "Common",
+                magic: true,
+                attunement: false,
+                attunementRequirement: "",
                 weight: 0.5,
-                description: "Restores 2d4 + 2 hit points when consumed."
+                value: "50 gp",
+                properties: [],
+                description: "You regain 2d4 + 2 hit points when you drink this potion. The potion's red liquid glimmers when agitated."
             };
             // Create example map file
             const exampleMap = {

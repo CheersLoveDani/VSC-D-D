@@ -23,6 +23,39 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.8] - 2025-11-26
+
+### Added
+- **Enhanced Item Editor**: Completely redesigned item editor with comprehensive D&D item support
+  - Full weapon stats: damage dice, damage type, two-handed damage, range, properties
+  - Full armor stats: base AC, Dex bonus, max Dex bonus, strength requirement, stealth disadvantage
+  - Item properties: magic item flag, attunement requirement, rarity, weight, value
+  - Live preview card with D&D-styled formatting
+  - Dynamic form sections that show/hide based on item type
+- **SRD Items Database**: Bundled 599 SRD 5e items (equipment + magic items) for compendium
+  - Items fetched from D&D 5e API and normalized to consistent format
+  - Includes weapons, armor, adventuring gear, and magic items
+
+### Improved
+- **Item Interface**: Expanded Item interface with full D&D 5e item properties
+  - Added: `subtype`, `magic`, `attunement`, `attunementRequirement`, `weight`, `value`
+  - Added: `damage` object (dice, type, twoHanded)
+  - Added: `armorClass` object (base, dexBonus, maxBonus)
+  - Added: `stealthDisadvantage`, `strengthRequirement`
+  - Added: `properties` array, `range` object (normal, long)
+- **XML Compendium Import**: Enhanced Fight Club 5e XML parsing for items
+  - Added comprehensive item type mapping (M, R, A, LA, MA, HA, S, W, WD, RD, ST, RG, P, SC, G)
+  - Added damage type abbreviation mapping (S, P, B, F, C, L, N, R, T, A, FC, PS, PY)
+  - Added weapon property abbreviation mapping (A, F, H, L, LD, R, S, T, 2H, V, M)
+  - Added stealth disadvantage and strength requirement parsing from XML
+  - SRD items now take priority over XML imports to preserve higher-quality data
+  - Fallback damage extraction from `<roll>` tags when `<dmg1>` is not present
+- **Compendium Click-to-Open**: Item files created from compendium now include all item properties
+
+### Fixed
+- **Item Properties Display**: Fixed properties array displaying incorrectly in editor (now shows as comma-separated string)
+- **XML Type Mapping**: Fixed XML items showing abbreviated types (e.g., "M" instead of "Weapon")
+
 ## [0.0.7] - 2025-11-26
 
 ### Added
@@ -194,7 +227,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.4...v0.0.5

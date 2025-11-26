@@ -16,7 +16,9 @@
       "Bash(node:*)",
       "Bash(ls:*)",
       "Bash(head:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(git -C \"E:/development/VSC-D&D\" log --oneline 494228c..HEAD)",
+      "Bash(git -C \"E:/development/VSC-D&D\" diff --stat)"
     ],
     "deny": [],
     "ask": []
