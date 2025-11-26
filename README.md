@@ -24,6 +24,15 @@ The notes editor is powered by TipTap and includes:
 - Highlighting, subscript, and superscript
 - Custom D&D theme for immersive editing
 
+### D&D 5e Compendium Integration
+
+CritCode includes a built-in compendium system with 319 SRD 5.1 spells:
+
+- **Spell Autocomplete**: Type in spell fields on character sheets to search and select spells
+- **Spell Tooltips**: Hover over spell names to see full details (level, school, components, description, etc.)
+- **Import Additional Content**: Import Fight Club 5e XML compendium files for monsters, items, and non-SRD spells
+- **Reference in Notes**: Use `@spell[Fireball]`, `@monster[Goblin]`, or `@item[Longsword]` syntax in notes to create hoverable references
+
 ### Activity Bar Integration
 
 Access all your D&D campaign files quickly through the dedicated D&D Manager view in the activity bar.
@@ -90,6 +99,23 @@ This extension contributes the following settings:
 - Custom file associations for `.dndmap`, `.dndchar`, `.dnditem`, `.dndnotes`, and `.dndstat` files
 - D&D Manager view in the activity bar
 
+### Compendium Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `dnd.compendium.enableHoverPreviews` | `true` | Show spell/item details when hovering over names |
+| `dnd.compendium.enableAutocomplete` | `true` | Enable autocomplete suggestions for spells and items |
+| `dnd.compendium.importedPath` | `""` | Path to an imported XML compendium file (Fight Club 5e format) |
+
+### Importing a Compendium
+
+1. Open Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
+2. Run `D&D Manager: Import Compendium (XML)`
+3. Select your Fight Club 5e XML compendium file
+4. The extension will import all spells, monsters, and items
+
+To check your compendium stats, run `D&D Manager: Show Compendium Stats`
+
 ## Known Issues
 
 Please report issues on the [GitHub repository](https://github.com/yourusername/critcode/issues).
@@ -97,6 +123,24 @@ Please report issues on the [GitHub repository](https://github.com/yourusername/
 ## Release Notes
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+### 0.0.5
+
+- D&D 5e Compendium integration with 319 bundled SRD spells
+- Spell autocomplete and tooltips in character sheets
+- Compendium references in notes (`@spell[Name]`, `@monster[Name]`, `@item[Name]`)
+- Import Fight Club 5e XML compendium files
+
+### 0.0.4
+
+- Table support in notes editor
+- Fixed undo/redo in notes editor
+
+### 0.0.3
+
+- Setup files command for quick start
+- Preview system for linked files
+- UI/UX improvements
 
 ### 0.0.1
 

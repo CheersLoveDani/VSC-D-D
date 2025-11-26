@@ -1,3 +1,7 @@
 /node_modules
 /package-lock.json
 /test-files
+
+# User-imported compendium files (not distributable)
+*.compendium.xml
+Complete_Compendium*.xml

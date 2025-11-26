@@ -556,6 +556,257 @@
     /** @type {Record<string, number>} */
     let spellCounters = {};
 
+    // ========== Spell Tooltip and Autocomplete ==========
+
+    // Create tooltip element
+    const spellTooltip = document.createElement('div');
+    spellTooltip.className = 'spell-tooltip';
+    spellTooltip.style.cssText = `
+        position: fixed;
+        background: var(--vscode-editor-background, #1e1e1e);
+        border: 1px solid var(--vscode-panel-border, #454545);
+        border-radius: 4px;
+        padding: 12px;
+        max-width: 400px;
+        z-index: 10000;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        font-size: 12px;
+        line-height: 1.4;
+    `;
+    document.body.appendChild(spellTooltip);
+
+    // Create autocomplete dropdown
+    const autocompleteDropdown = document.createElement('div');
+    autocompleteDropdown.className = 'spell-autocomplete';
+    autocompleteDropdown.style.cssText = `
+        position: fixed;
+        background: var(--vscode-dropdown-background, #3c3c3c);
+        border: 1px solid var(--vscode-dropdown-border, #454545);
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 10001;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    `;
+    document.body.appendChild(autocompleteDropdown);
+
+    /** @type {HTMLInputElement | null} */
+    let activeSpellInput = null;
+    let autocompleteRequestId = 0;
+    /** @type {Record<string, any>} */
+    const spellInfoCache = {};
+
+    /**
+     * Show spell tooltip near an element
+     * @param {HTMLElement} element
+     * @param {any} spellInfo
+     */
+    function showSpellTooltip(element, spellInfo) {
+        const rect = element.getBoundingClientRect();
+
+        let levelText = spellInfo.level === 0 ? 'Cantrip' : `Level ${spellInfo.level}`;
+        let tags = [];
+        if (spellInfo.concentration) tags.push('Concentration');
+        if (spellInfo.ritual) tags.push('Ritual');
+
+        let html = `
+            <div style="font-weight: bold; font-size: 14px; color: var(--vscode-textLink-foreground, #3794ff); margin-bottom: 8px;">
+                ${spellInfo.name}
+            </div>
+            <div style="font-style: italic; color: var(--vscode-descriptionForeground, #999); margin-bottom: 8px;">
+                ${levelText} ${spellInfo.school}${tags.length ? ' (' + tags.join(', ') + ')' : ''}
+            </div>
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-bottom: 8px;">
+                <span style="color: var(--vscode-descriptionForeground, #999);">Casting Time:</span>
+                <span>${spellInfo.castingTime}</span>
+                <span style="color: var(--vscode-descriptionForeground, #999);">Range:</span>
+                <span>${spellInfo.range}</span>
+                <span style="color: var(--vscode-descriptionForeground, #999);">Components:</span>
+                <span>${spellInfo.components}</span>
+                <span style="color: var(--vscode-descriptionForeground, #999);">Duration:</span>
+                <span>${spellInfo.duration}</span>
+            </div>
+            <div style="border-top: 1px solid var(--vscode-panel-border, #454545); padding-top: 8px; max-height: 150px; overflow-y: auto;">
+                ${spellInfo.description.substring(0, 500)}${spellInfo.description.length > 500 ? '...' : ''}
+            </div>
+        `;
+
+        if (spellInfo.higherLevels) {
+            html += `
+                <div style="margin-top: 8px; font-style: italic; color: var(--vscode-descriptionForeground, #999);">
+                    <strong>At Higher Levels:</strong> ${spellInfo.higherLevels.substring(0, 200)}${spellInfo.higherLevels.length > 200 ? '...' : ''}
+                </div>
+            `;
+        }
+
+        spellTooltip.innerHTML = html;
+        spellTooltip.style.display = 'block';
+
+        // Position tooltip
+        let left = rect.left;
+        let top = rect.bottom + 5;
+
+        // Adjust if off-screen
+        if (left + 400 > window.innerWidth) {
+            left = window.innerWidth - 410;
+        }
+        if (top + spellTooltip.offsetHeight > window.innerHeight) {
+            top = rect.top - spellTooltip.offsetHeight - 5;
+        }
+
+        spellTooltip.style.left = left + 'px';
+        spellTooltip.style.top = top + 'px';
+    }
+
+    function hideSpellTooltip() {
+        spellTooltip.style.display = 'none';
+    }
+
+    /**
+     * Show autocomplete dropdown
+     * @param {HTMLInputElement} input
+     * @param {any[]} results
+     */
+    function showAutocomplete(input, results) {
+        if (results.length === 0) {
+            hideAutocomplete();
+            return;
+        }
+
+        const rect = input.getBoundingClientRect();
+
+        autocompleteDropdown.innerHTML = results.map((spell, index) => `
+            <div class="autocomplete-item" data-index="${index}" data-name="${spell.name}" style="
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid var(--vscode-panel-border, #333);
+            ">
+                <div style="font-weight: 500;">${spell.name}</div>
+                <div style="font-size: 11px; color: var(--vscode-descriptionForeground, #999);">
+                    ${spell.level === 0 ? 'Cantrip' : 'Level ' + spell.level} ${spell.school}
+                </div>
+            </div>
+        `).join('');
+
+        autocompleteDropdown.style.display = 'block';
+        autocompleteDropdown.style.left = rect.left + 'px';
+        autocompleteDropdown.style.top = rect.bottom + 2 + 'px';
+        autocompleteDropdown.style.width = Math.max(rect.width, 250) + 'px';
+
+        // Add click handlers
+        autocompleteDropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const name = item.getAttribute('data-name');
+                if (name && activeSpellInput) {
+                    activeSpellInput.value = name;
+                    activeSpellInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    hideAutocomplete();
+                    saveSpells();
+                }
+            });
+
+            item.addEventListener('mouseenter', () => {
+                // @ts-ignore
+                item.style.background = 'var(--vscode-list-hoverBackground, #2a2d2e)';
+            });
+            item.addEventListener('mouseleave', () => {
+                // @ts-ignore
+                item.style.background = 'transparent';
+            });
+        });
+    }
+
+    function hideAutocomplete() {
+        autocompleteDropdown.style.display = 'none';
+    }
+
+    /**
+     * Request spell info from extension
+     * @param {string} name
+     * @param {function} callback
+     */
+    function requestSpellInfo(name, callback) {
+        if (!name || name.trim().length === 0) return;
+
+        // Check cache first
+        const cacheKey = name.toLowerCase();
+        if (spellInfoCache[cacheKey]) {
+            callback(spellInfoCache[cacheKey]);
+            return;
+        }
+
+        const requestId = ++autocompleteRequestId;
+
+        // Listen for response
+        const handler = (/** @type {MessageEvent} */ event) => {
+            const message = event.data;
+            if (message.type === 'spellInfo' && message.requestId === requestId) {
+                window.removeEventListener('message', handler);
+                if (message.found) {
+                    spellInfoCache[cacheKey] = message.info;
+                    callback(message.info);
+                }
+            }
+        };
+        window.addEventListener('message', handler);
+
+        vscode.postMessage({
+            type: 'getSpellInfo',
+            requestId: requestId,
+            name: name
+        });
+    }
+
+    /**
+     * Request spell search from extension
+     * @param {string} query
+     * @param {function} callback
+     */
+    function searchSpells(query, callback) {
+        if (!query || query.trim().length < 2) {
+            callback([]);
+            return;
+        }
+
+        const requestId = ++autocompleteRequestId;
+
+        const handler = (/** @type {MessageEvent} */ event) => {
+            const message = event.data;
+            if (message.type === 'spellSearchResults' && message.requestId === requestId) {
+                window.removeEventListener('message', handler);
+                callback(message.results);
+            }
+        };
+        window.addEventListener('message', handler);
+
+        vscode.postMessage({
+            type: 'searchSpells',
+            requestId: requestId,
+            query: query
+        });
+    }
+
+    // Debounced search
+    /** @type {any} */
+    let searchTimeout;
+    function debouncedSearch(/** @type {HTMLInputElement} */ input) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = input.value.trim();
+            if (query.length >= 2) {
+                searchSpells(query, (/** @type {any[]} */ results) => {
+                    if (document.activeElement === input) {
+                        showAutocomplete(input, results);
+                    }
+                });
+            } else {
+                hideAutocomplete();
+            }
+        }, 150);
+    }
+
     /**
      * @param {any} level
      * @param {any} spellData
@@ -574,15 +825,103 @@
         // @ts-ignore
         div.innerHTML = `
             <input type="checkbox" ${spellData.prepared ? 'checked' : ''} data-field="prepared" title="Prepared" />
-            <input type="text" placeholder="Spell name" value="${spellData.name || ''}" data-field="name" />
+            <input type="text" placeholder="Spell name" value="${spellData.name || ''}" data-field="name" class="spell-name-input" />
             <button type="button" class="delete-spell">×</button>
         `;
+
+        const nameInput = /** @type {HTMLInputElement} */ (div.querySelector('[data-field="name"]'));
 
         // Add event listeners
         div.querySelectorAll('input').forEach(el => {
             const eventType = el.type === 'checkbox' ? 'change' : 'input';
             el.addEventListener(eventType, () => saveSpells());
         });
+
+        // Autocomplete on typing
+        if (nameInput) {
+            nameInput.addEventListener('input', () => {
+                activeSpellInput = nameInput;
+                debouncedSearch(nameInput);
+            });
+
+            nameInput.addEventListener('focus', () => {
+                activeSpellInput = nameInput;
+                if (nameInput.value.trim().length >= 2) {
+                    debouncedSearch(nameInput);
+                }
+            });
+
+            nameInput.addEventListener('blur', () => {
+                // Delay to allow click on autocomplete
+                setTimeout(() => {
+                    if (activeSpellInput === nameInput) {
+                        hideAutocomplete();
+                    }
+                }, 200);
+            });
+
+            // Show tooltip on hover if spell exists
+            nameInput.addEventListener('mouseenter', () => {
+                const spellName = nameInput.value.trim();
+                if (spellName) {
+                    requestSpellInfo(spellName, (/** @type {any} */ info) => {
+                        if (info) {
+                            showSpellTooltip(nameInput, info);
+                        }
+                    });
+                }
+            });
+
+            nameInput.addEventListener('mouseleave', () => {
+                hideSpellTooltip();
+            });
+
+            // Keyboard navigation for autocomplete
+            nameInput.addEventListener('keydown', (e) => {
+                if (autocompleteDropdown.style.display === 'none') return;
+
+                const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+                const selected = autocompleteDropdown.querySelector('.autocomplete-item.selected');
+                let selectedIndex = selected ? parseInt(selected.getAttribute('data-index') || '-1') : -1;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                    e.preventDefault();
+                    const item = items[selectedIndex];
+                    const name = item?.getAttribute('data-name');
+                    if (name) {
+                        nameInput.value = name;
+                        nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        hideAutocomplete();
+                        saveSpells();
+                    }
+                    return;
+                } else if (e.key === 'Escape') {
+                    hideAutocomplete();
+                    return;
+                } else {
+                    return;
+                }
+
+                // Update selection
+                items.forEach((item, i) => {
+                    if (i === selectedIndex) {
+                        item.classList.add('selected');
+                        // @ts-ignore
+                        item.style.background = 'var(--vscode-list-activeSelectionBackground, #094771)';
+                    } else {
+                        item.classList.remove('selected');
+                        // @ts-ignore
+                        item.style.background = 'transparent';
+                    }
+                });
+            });
+        }
 
         div.querySelector('.delete-spell')?.addEventListener('click', () => {
             div.remove();

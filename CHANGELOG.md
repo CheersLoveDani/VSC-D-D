@@ -23,6 +23,36 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.5] - 2025-11-26
+
+### Added
+- **Compendium System**: Integrated D&D 5e spell, monster, and item database
+  - Bundled SRD 5.1 data with 319 spells included out-of-the-box (free to distribute)
+  - Import additional content from Fight Club 5e XML compendium files
+  - New commands: `Import Compendium (XML)` and `Show Compendium Stats`
+  - Compendium data persists across sessions via VSCode settings
+- **Spell Autocomplete in Character Sheets**: Type in spell name fields to search and select from the compendium
+  - Fuzzy search matching as you type
+  - Dropdown shows spell name, level, and school
+  - Keyboard navigation (Arrow keys, Enter, Escape)
+- **Spell Tooltips in Character Sheets**: Hover over any spell name to see full details
+  - Displays level, school, casting time, range, components, duration
+  - Shows spell description with truncation for long text
+  - Includes "At Higher Levels" information when available
+  - Shows concentration and ritual tags
+- **Compendium References in Notes**: Reference spells, monsters, and items in `.dndnotes` and markdown files
+  - Syntax: `@spell[Fireball]`, `@monster[Goblin]`, `@item[Longsword]`
+  - Hover over references to see full compendium entry details
+  - Works with both SRD data and imported compendium content
+- **Compendium Settings**: New configuration options under `D&D Campaign Manager`
+  - `dnd.compendium.enableHoverPreviews`: Toggle hover tooltips (default: true)
+  - `dnd.compendium.enableAutocomplete`: Toggle autocomplete suggestions (default: true)
+  - `dnd.compendium.importedPath`: Path to user's imported XML compendium
+
+### Improved
+- **Extension Architecture**: Added CompendiumService singleton for centralized data management
+- **Hover Provider**: Extended to support compendium references alongside existing file link hovers
+
 ## [0.0.4] - 2025-11-25
 
 ### Added
@@ -113,7 +143,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.4...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.1...v0.0.3
 [0.0.1]: https://github.com/CheersLoveDani/VSC-D-D/releases/tag/v0.0.1

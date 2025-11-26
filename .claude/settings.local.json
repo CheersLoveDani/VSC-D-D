@@ -9,7 +9,11 @@
       "Bash(node node_modules/typescript/bin/tsc:*)",
       "Bash(node build-webview.js:*)",
       "Bash(dir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(findstr:*)",
+      "Bash(cd:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

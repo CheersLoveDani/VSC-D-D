@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { CompendiumService } from '../services/compendiumService';
 
 export class CharacterSheetProvider implements vscode.CustomTextEditorProvider {
 
@@ -33,7 +34,7 @@ export class CharacterSheetProvider implements vscode.CustomTextEditorProvider {
 		}
 
 		// Handle messages from the webview
-		webviewPanel.webview.onDidReceiveMessage(e => {
+		webviewPanel.webview.onDidReceiveMessage(async e => {
 			switch (e.type) {
 				case 'ready':
 					// Webview is ready, send initial data
@@ -41,6 +42,46 @@ export class CharacterSheetProvider implements vscode.CustomTextEditorProvider {
 					return;
 				case 'updateData':
 					this.updateDocument(document, e.data);
+					return;
+				case 'searchSpells':
+					// Search for spells matching the query
+					const compendium = CompendiumService.getInstance();
+					const results = compendium.searchSpells(e.query, 10);
+					webviewPanel.webview.postMessage({
+						type: 'spellSearchResults',
+						requestId: e.requestId,
+						results: results.map(s => ({
+							name: s.name,
+							level: s.level,
+							school: s.school,
+							compact: compendium.formatSpellCompact(s)
+						}))
+					});
+					return;
+				case 'getSpellInfo':
+					// Get detailed spell info for hover
+					const spellCompendium = CompendiumService.getInstance();
+					const spell = spellCompendium.getSpell(e.name);
+					webviewPanel.webview.postMessage({
+						type: 'spellInfo',
+						requestId: e.requestId,
+						name: e.name,
+						found: !!spell,
+						info: spell ? {
+							name: spell.name,
+							level: spell.level,
+							school: spell.school,
+							castingTime: spell.castingTime,
+							range: spell.range,
+							components: spell.components,
+							duration: spell.duration,
+							description: spell.description,
+							higherLevels: spell.higherLevels,
+							concentration: spell.concentration,
+							ritual: spell.ritual,
+							damage: spell.damage
+						} : null
+					});
 					return;
 			}
 		});

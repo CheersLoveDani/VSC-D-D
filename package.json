@@ -2,7 +2,7 @@
   "name": "critcode",
   "displayName": "CritCode",
   "description": "A VS Code extension for planning D&D campaigns with Maps, Character Sheets, and Item Databases.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "DaniFullerton",
   "author": {
     "name": "Dani Fullerton"
@@ -130,6 +130,16 @@
         "command": "dnd-campaign-manager.createSetupFiles",
         "title": "Create Setup Files",
         "category": "D&D Manager"
+      },
+      {
+        "command": "dnd-campaign-manager.importCompendium",
+        "title": "Import Compendium (XML)",
+        "category": "D&D Manager"
+      },
+      {
+        "command": "dnd-campaign-manager.compendiumStats",
+        "title": "Show Compendium Stats",
+        "category": "D&D Manager"
       }
     ],
     "viewsContainers": {
@@ -148,6 +158,26 @@
           "name": "Plugin Manager"
         }
       ]
+    },
+    "configuration": {
+      "title": "D&D Campaign Manager",
+      "properties": {
+        "dnd.compendium.enableHoverPreviews": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show spell/item details when hovering over names in character sheets and notes"
+        },
+        "dnd.compendium.enableAutocomplete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete suggestions for spells and items"
+        },
+        "dnd.compendium.importedPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to an imported XML compendium file (e.g., Fight Club 5e format)"
+        }
+      }
     }
   },
   "scripts": {
