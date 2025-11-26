@@ -276,6 +276,16 @@ button:active {
     box-shadow: var(--dnd-shadow-md);
 }
 
+/* ========== Dialog/Input Styles ========== */
+.dnd-select {
+    width: 100%;
+    padding: 6px;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: var(--dnd-radius-sm);
+}
+
 /* ========== Warning Popover ========== */
 .warning-popover {
     position: fixed;

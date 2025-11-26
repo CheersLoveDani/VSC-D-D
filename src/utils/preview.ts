@@ -1,6 +1,20 @@
 import * as vscode from 'vscode';
 
-export async function getPreviewData(currentDoc: vscode.TextDocument, relativePath: string, webview: vscode.Webview): Promise<any> {
+/**
+ * Safely parse JSON with error handling.
+ * @param text The JSON string to parse
+ * @param fallback Optional fallback value if parsing fails
+ * @returns The parsed object or fallback/null on error
+ */
+export function safeParseJSON<T = unknown>(text: string, fallback?: T): T | null {
+    try {
+        return JSON.parse(text) as T;
+    } catch {
+        return fallback ?? null;
+    }
+}
+
+export async function getPreviewData(currentDoc: vscode.TextDocument, relativePath: string, webview: vscode.Webview): Promise<unknown> {
     try {
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
         const content = await vscode.workspace.fs.readFile(targetUri);
@@ -39,7 +53,11 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
             };
         }
         
-        const json = JSON.parse(Buffer.from(content).toString('utf8'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const json = safeParseJSON<Record<string, any>>(Buffer.from(content).toString('utf8'));
+        if (!json) {
+            return null;
+        }
 
         if (relativePath.endsWith('.dnditem')) {
             return {

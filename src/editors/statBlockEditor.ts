@@ -1,73 +1,37 @@
 import * as vscode from 'vscode';
+import { BaseCustomTextEditorProvider } from './baseEditor';
 
-export class StatBlockEditorProvider implements vscode.CustomTextEditorProvider {
+export class StatBlockEditorProvider extends BaseCustomTextEditorProvider {
 
     public static readonly viewType = 'dnd.statBlockEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
         const provider = new StatBlockEditorProvider(context);
-        const providerRegistration = vscode.window.registerCustomEditorProvider(StatBlockEditorProvider.viewType, provider);
-        return providerRegistration;
+        return vscode.window.registerCustomEditorProvider(StatBlockEditorProvider.viewType, provider);
     }
 
-    constructor(
-        private readonly context: vscode.ExtensionContext
-    ) { }
-
-    /**
-     * Called when our custom editor is opened.
-     */
     public async resolveCustomTextEditor(
         document: vscode.TextDocument,
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
-        webviewPanel.webview.options = {
-            enableScripts: true,
-        };
-
-        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
-
-        const updateWebview = () => {
-            webviewPanel.webview.postMessage({
-                type: 'update',
-                text: document.getText(),
-            });
-        };
-
-        // Hook up event handlers so that when the document changes, the webview is updated
-        const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-            if (e.document.uri.toString() === document.uri.toString()) {
-                updateWebview();
+        const subscription = this.setupWebview(document, webviewPanel, {
+            onMessage: (message) => {
+                const msg = message as { type: string; data?: unknown };
+                if (msg.type === 'updateData') {
+                    this.updateDocumentJson(document, msg.data);
+                }
             }
         });
 
-        // Make sure we get rid of the listener when our editor is closed.
         webviewPanel.onDidDispose(() => {
-            changeDocumentSubscription.dispose();
-        });
-
-        // Receive message from the webview.
-        webviewPanel.webview.onDidReceiveMessage(e => {
-            switch (e.type) {
-                case 'ready':
-                    // Wait for webview to be ready before sending data
-                    updateWebview();
-                    return;
-                case 'updateData':
-                    this.updateDocument(document, e.data);
-                    return;
-            }
+            subscription.dispose();
         });
     }
 
-    /**
-     * Get the static HTML used for the editor webviews.
-     */
-    private getHtmlForWebview(webview: vscode.Webview): string {
-        // Local path to script and css for the webview
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'statBlockEditor.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'statBlockEditor.css'));
+    protected getHtmlForWebview(webview: vscode.Webview): string {
+        const scriptUri = this.getMediaUri(webview, 'statBlockEditor.js');
+        const styleUri = this.getMediaUri(webview, 'statBlockEditor.css');
 
         return `
             <!DOCTYPE html>
@@ -87,15 +51,5 @@ export class StatBlockEditorProvider implements vscode.CustomTextEditorProvider 
                 <script src="${scriptUri}"></script>
             </body>
             </html>`;
-    }
-
-    private updateDocument(document: vscode.TextDocument, data: any) {
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(
-            document.uri,
-            new vscode.Range(0, 0, document.lineCount, 0),
-            JSON.stringify(data, null, 2)
-        );
-        vscode.workspace.applyEdit(edit);
     }
 }

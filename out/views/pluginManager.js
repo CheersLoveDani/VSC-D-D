@@ -468,17 +468,13 @@ Happy adventuring! 🎲
         try {
             const currentState = this.context.globalState.get('dnd-campaign-manager.plainTextMode', false);
             const newState = !currentState;
-            console.log(`[PluginManager] Starting toggle: ${currentState} -> ${newState}`);
             // Save currently open editors
             const openEditors = vscode.window.tabGroups.all.flatMap(group => group.tabs.map(tab => tab.input?.uri).filter((uri) => uri));
-            console.log(`[PluginManager] Saved ${openEditors.length} open editors`);
             // Update global state
             await this.context.globalState.update('dnd-campaign-manager.plainTextMode', newState);
-            console.log(`[PluginManager] Global state updated`);
             // Update workbench.editorAssociations
             const config = vscode.workspace.getConfiguration();
             const currentAssociations = config.get('workbench.editorAssociations') || {};
-            console.log('[PluginManager] Current associations before update:', JSON.stringify(currentAssociations));
             // Create a new object (shallow copy) to avoid proxy issues
             const associations = { ...currentAssociations };
             if (newState) {
@@ -487,7 +483,6 @@ Happy adventuring! 🎲
                 associations['*.dnditem'] = 'default';
                 associations['*.dndmap'] = 'default';
                 associations['*.dndnotes'] = 'default';
-                console.log('[PluginManager] Setting associations to default');
             }
             else {
                 // Disable Plain Text Mode: Remove associations to revert to custom editors
@@ -495,14 +490,10 @@ Happy adventuring! 🎲
                 delete associations['*.dnditem'];
                 delete associations['*.dndmap'];
                 delete associations['*.dndnotes'];
-                console.log('[PluginManager] Removing associations');
             }
-            console.log('[PluginManager] New associations to save:', JSON.stringify(associations));
             await config.update('workbench.editorAssociations', associations, vscode.ConfigurationTarget.Global);
-            console.log('[PluginManager] Configuration updated successfully');
             // Close all editors to force reload
             await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-            console.log('[PluginManager] All editors closed');
             // Reopen the previously open editors
             for (const uri of openEditors) {
                 try {
@@ -542,15 +533,12 @@ Happy adventuring! 🎲
                     console.warn(`[PluginManager] Failed to reopen ${uri}:`, err);
                 }
             }
-            console.log('[PluginManager] Reopened editors');
             // Refresh the tree view
             this.refresh();
-            console.log('[PluginManager] Tree view refreshed');
             const message = newState
                 ? "Plain Text Mode Enabled. Files reopened as text."
                 : "Plain Text Mode Disabled. Files reopened with Custom Editors.";
             vscode.window.showInformationMessage(message);
-            console.log(`[PluginManager] Toggle complete: ${message}`);
         }
         catch (error) {
             console.error('[PluginManager] Error toggling plain text mode:', error);

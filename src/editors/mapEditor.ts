@@ -1,47 +1,35 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { BaseCustomTextEditorProvider } from './baseEditor';
 import { getPreviewData } from '../utils/preview';
 
-export class MapEditorProvider implements vscode.CustomTextEditorProvider {
+export class MapEditorProvider extends BaseCustomTextEditorProvider {
 
     public static readonly viewType = 'dnd.mapEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
         const provider = new MapEditorProvider(context);
-        const providerRegistration = vscode.window.registerCustomEditorProvider(MapEditorProvider.viewType, provider);
-        return providerRegistration;
+        return vscode.window.registerCustomEditorProvider(MapEditorProvider.viewType, provider);
     }
 
-    constructor(
-        private readonly context: vscode.ExtensionContext
-    ) { }
-
-    /**
-     * Called when our custom editor is opened.
-     */
     public async resolveCustomTextEditor(
         document: vscode.TextDocument,
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
-        // Get workspace folder for loading local images
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         const localResourceRoots = [
             vscode.Uri.joinPath(this.context.extensionUri, 'media')
         ];
-        
-        // Add workspace folder if available
+
         if (workspaceFolder) {
             localResourceRoots.push(workspaceFolder.uri);
         }
-        
-        // Also add document directory as fallback
         localResourceRoots.push(vscode.Uri.joinPath(document.uri, '..'));
-        
-        // Setup initial content for the webview
+
         webviewPanel.webview.options = {
             enableScripts: true,
-            localResourceRoots: localResourceRoots
+            localResourceRoots
         };
 
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
@@ -56,7 +44,7 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
                     const imageUri = vscode.Uri.joinPath(docDir, json.imagePath);
                     resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
                 }
-            } catch { }
+            } catch { /* ignore parse errors */ }
 
             webviewPanel.webview.postMessage({
                 type: 'update',
@@ -65,54 +53,47 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
             });
         };
 
-        // Hook up event handlers so that when the document changes, the webview is updated
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.toString() === document.uri.toString()) {
                 updateWebview();
             }
         });
 
-        // Make sure we get rid of the listener when our editor is closed.
         webviewPanel.onDidDispose(() => {
             changeDocumentSubscription.dispose();
         });
 
-        // Receive message from the webview.
-        webviewPanel.webview.onDidReceiveMessage(async e => {
-            switch (e.type) {
+        webviewPanel.webview.onDidReceiveMessage(async (message: unknown) => {
+            const msg = message as { type: string; data?: unknown; path?: string; x?: number; y?: number };
+            switch (msg.type) {
                 case 'ready':
-                    // Wait for webview to be ready before sending data
                     updateWebview();
                     return;
                 case 'updateData':
-                    this.updateDocument(document, e.data);
+                    this.updateDocumentJson(document, msg.data);
                     return;
                 case 'selectImage':
                     this.selectImage(document);
                     return;
                 case 'openFile':
-                    this.openFile(document, e.path);
+                    this.openFile(document, msg.path ?? '');
                     return;
                 case 'getPreview':
-                    const data = await this.getPreviewData(document, e.path, webviewPanel.webview);
+                    const data = await getPreviewData(document, msg.path ?? '', webviewPanel.webview);
                     webviewPanel.webview.postMessage({
                         type: 'previewData',
                         data: data,
-                        x: e.x,
-                        y: e.y
+                        x: msg.x,
+                        y: msg.y
                     });
                     return;
             }
         });
     }
 
-    /**
-     * Get the static HTML used for the editor webviews.
-     */
-    private getHtmlForWebview(webview: vscode.Webview): string {
-        // Local path to script and css for the webview
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.css'));
+    protected getHtmlForWebview(webview: vscode.Webview): string {
+        const scriptUri = this.getMediaUri(webview, 'mapEditor.js');
+        const styleUri = this.getMediaUri(webview, 'mapEditor.css');
 
         return `
             <!DOCTYPE html>
@@ -133,17 +114,7 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
             </html>`;
     }
 
-    private updateDocument(document: vscode.TextDocument, data: any) {
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(
-            document.uri,
-            new vscode.Range(0, 0, document.lineCount, 0),
-            JSON.stringify(data, null, 2)
-        );
-        vscode.workspace.applyEdit(edit);
-    }
-
-    private async selectImage(document: vscode.TextDocument) {
+    private async selectImage(document: vscode.TextDocument): Promise<void> {
         const uris = await vscode.window.showOpenDialog({
             canSelectMany: false,
             openLabel: 'Select Map Image',
@@ -153,30 +124,24 @@ export class MapEditorProvider implements vscode.CustomTextEditorProvider {
         });
 
         if (uris && uris[0]) {
-            // Calculate relative path
             const imageUri = uris[0];
             const docDir = vscode.Uri.joinPath(document.uri, '..');
             const relativePath = './' + path.relative(docDir.fsPath, imageUri.fsPath).replace(/\\/g, '/');
 
-            // Update document
             const text = document.getText();
             try {
                 const json = JSON.parse(text);
                 json.imagePath = relativePath;
-                this.updateDocument(document, json);
-            } catch {
-                // Ignore parse errors
-            }
+                this.updateDocumentJson(document, json);
+            } catch { /* ignore parse errors */ }
         }
     }
 
-    private openFile(currentDoc: vscode.TextDocument, relativePath: string) {
-        if (!relativePath) return;
+    private openFile(currentDoc: vscode.TextDocument, relativePath: string): void {
+        if (!relativePath) {
+            return;
+        }
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
         vscode.commands.executeCommand('vscode.open', targetUri);
-    }
-
-    private async getPreviewData(currentDoc: vscode.TextDocument, relativePath: string, webview: vscode.Webview): Promise<any> {
-        return getPreviewData(currentDoc, relativePath, webview);
     }
 }

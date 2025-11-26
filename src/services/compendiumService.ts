@@ -53,6 +53,15 @@ export interface Item {
     source: string;
 }
 
+/**
+ * Search result for compendium entries (used by editors for autocomplete/previews)
+ */
+export interface CompendiumSearchResult {
+    type: 'spell' | 'monster' | 'item';
+    name: string;
+    subtitle: string;
+}
+
 // School abbreviation mapping
 const SCHOOL_MAP: { [key: string]: string } = {
     'A': 'Abjuration',
@@ -104,7 +113,6 @@ export class CompendiumService {
         }
 
         this.initialized = true;
-        console.log(`Compendium initialized: ${this.spells.size} spells, ${this.monsters.size} monsters, ${this.items.size} items`);
     }
 
     private async loadSrdData(): Promise<void> {
@@ -116,7 +124,6 @@ export class CompendiumService {
                 for (const spell of data.spells || []) {
                     this.spells.set(spell.name.toLowerCase(), spell);
                 }
-                console.log(`Loaded ${this.spells.size} SRD spells`);
             }
         } catch (error) {
             console.error('Error loading SRD data:', error);
@@ -158,8 +165,6 @@ export class CompendiumService {
                     counts.items++;
                 }
             }
-
-            console.log(`Imported compendium: ${counts.spells} spells, ${counts.monsters} monsters, ${counts.items} items`);
         } catch (error) {
             console.error('Error importing XML compendium:', error);
             vscode.window.showErrorMessage(`Failed to import compendium: ${error}`);
@@ -168,11 +173,16 @@ export class CompendiumService {
         return counts;
     }
 
+    /**
+     * Extract content from an XML tag.
+     */
+    private getXmlTag(xml: string, tag: string): string {
+        const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+        return match ? match[1].trim() : '';
+    }
+
     private parseXmlSpell(xml: string): Spell | null {
-        const getTag = (tag: string): string => {
-            const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-            return match ? match[1].trim() : '';
-        };
+        const getTag = (tag: string): string => this.getXmlTag(xml, tag);
 
         const name = getTag('name');
         if (!name || name.startsWith('Invocation:')) {
@@ -255,10 +265,7 @@ export class CompendiumService {
     }
 
     private parseXmlMonster(xml: string): Monster | null {
-        const getTag = (tag: string): string => {
-            const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-            return match ? match[1].trim() : '';
-        };
+        const getTag = (tag: string): string => this.getXmlTag(xml, tag);
 
         const name = getTag('name');
         if (!name) {
@@ -288,10 +295,7 @@ export class CompendiumService {
     }
 
     private parseXmlItem(xml: string): Item | null {
-        const getTag = (tag: string): string => {
-            const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-            return match ? match[1].trim() : '';
-        };
+        const getTag = (tag: string): string => this.getXmlTag(xml, tag);
 
         const name = getTag('name');
         if (!name) {
@@ -451,5 +455,99 @@ export class CompendiumService {
     public formatSpellCompact(spell: Spell): string {
         const levelText = spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`;
         return `${spell.name} (${levelText} ${spell.school})`;
+    }
+
+    /**
+     * Format a spell as a search result for UI display.
+     */
+    public formatSpellSearchResult(spell: Spell): CompendiumSearchResult {
+        return {
+            type: 'spell',
+            name: spell.name,
+            subtitle: `${spell.level === 0 ? 'Cantrip' : 'Level ' + spell.level} ${spell.school}`
+        };
+    }
+
+    /**
+     * Format a monster as a search result for UI display.
+     */
+    public formatMonsterSearchResult(monster: Monster): CompendiumSearchResult {
+        return {
+            type: 'monster',
+            name: monster.name,
+            subtitle: `${monster.type} - CR ${monster.cr}`
+        };
+    }
+
+    /**
+     * Format an item as a search result for UI display.
+     */
+    public formatItemSearchResult(item: Item): CompendiumSearchResult {
+        return {
+            type: 'item',
+            name: item.name,
+            subtitle: item.type
+        };
+    }
+
+    /**
+     * Search all compendium entries and return formatted results.
+     */
+    public searchAll(query: string, searchType: 'spell' | 'monster' | 'item' | 'all' = 'all', limit: number = 5): CompendiumSearchResult[] {
+        let results: CompendiumSearchResult[] = [];
+
+        if (searchType === 'spell' || searchType === 'all') {
+            const spells = this.searchSpells(query, limit).map(s => this.formatSpellSearchResult(s));
+            results = results.concat(spells);
+        }
+        if (searchType === 'monster' || searchType === 'all') {
+            const monsters = this.searchMonsters(query, limit).map(m => this.formatMonsterSearchResult(m));
+            results = results.concat(monsters);
+        }
+        if (searchType === 'item' || searchType === 'all') {
+            const items = this.searchItems(query, limit).map(i => this.formatItemSearchResult(i));
+            results = results.concat(items);
+        }
+
+        return results;
+    }
+
+    /**
+     * Get full spell info formatted for webview display.
+     */
+    public getSpellInfo(name: string): {
+        name: string;
+        level: number;
+        school: string;
+        castingTime: string;
+        range: string;
+        components: string;
+        duration: string;
+        description: string;
+        higherLevels?: string;
+        concentration: boolean;
+        ritual: boolean;
+        damage?: Spell['damage'];
+        classes: string[];
+    } | null {
+        const spell = this.getSpell(name);
+        if (!spell) {
+            return null;
+        }
+        return {
+            name: spell.name,
+            level: spell.level,
+            school: spell.school,
+            castingTime: spell.castingTime,
+            range: spell.range,
+            components: spell.components,
+            duration: spell.duration,
+            description: spell.description,
+            higherLevels: spell.higherLevels,
+            concentration: spell.concentration,
+            ritual: spell.ritual,
+            damage: spell.damage,
+            classes: spell.classes
+        };
     }
 }

@@ -11,14 +11,9 @@ import { PluginManagerProvider } from './views/pluginManager';
 import { CompendiumService } from './services/compendiumService';
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('D&D Campaign Manager is now active!');
-
 	// Initialize Compendium Service
 	const compendium = CompendiumService.getInstance(context);
-	compendium.initialize().then(() => {
-		const stats = compendium.getStats();
-		console.log(`Compendium loaded: ${stats.spells} spells, ${stats.monsters} monsters, ${stats.items} items`);
-	});
+	compendium.initialize();
 
 	// Register Custom Editors
 	context.subscriptions.push(MapEditorProvider.register(context));

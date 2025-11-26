@@ -117,42 +117,31 @@ const globalWindow = window;
         const message = event.data;
         switch (message.type) {
             case 'update':
-                console.log('=== MESSAGE: update ===');
-                console.log('Received message.text:', message.text.substring(0, 200));
-                
                 // Normalize strings for comparison (ignore whitespace differences)
                 const normalize = (str) => (str || '').replace(/\r\n/g, '\n').trim();
                 
                 // IMPORTANT: Strip webview URIs before storing
                 // This ensures state.content always has relative paths, never session-specific URIs
                 const unconvertedContent = stripWebviewUris(message.text);
-                console.log('After stripWebviewUris:', unconvertedContent.substring(0, 200));
                 
                 const newContent = normalize(unconvertedContent);
                 const currentContent = normalize(state.content);
                 const lastSaved = normalize(state.lastSavedContent);
 
-                console.log('Comparison - newContent === currentContent:', newContent === currentContent);
-                console.log('Comparison - newContent === lastSaved:', newContent === lastSaved);
-                console.log('pendingUpdate:', state.pendingUpdate);
-
                 // If we have a pending update, the editor is the source of truth
                 // Only accept updates that match what we sent
                 if (state.pendingUpdate) {
                     if (newContent === currentContent || newContent === lastSaved) {
-                        console.log('Clearing pendingUpdate flag - content matches');
                         state.pendingUpdate = false;
                         return;
                     }
                     // VSCode sent something different - it might be stale, ignore it
                     // The editor has the authoritative content
-                    console.log('Ignoring update - pendingUpdate is true and content differs');
                     return;
                 }
 
                 // Ignore if content hasn't changed OR if it matches what we just saved (echo)
                 if (newContent === currentContent || newContent === lastSaved) {
-                    console.log('Ignoring update - content unchanged');
                     return;
                 }
 
@@ -161,11 +150,9 @@ const globalWindow = window;
                 // the document echoes back changes that originated from undo/redo
                 if (editor && !state.rawMode) {
                     const editorContent = normalize(convertHTMLToMarkdown(editor.getHTML()));
-                    console.log('Editor content (converted):', editorContent.substring(0, 200));
                     if (newContent === editorContent) {
                         // TipTap already has this content (e.g., from undo/redo)
                         // Just update state without resetting the editor
-                        console.log('Editor already has this content - updating state only');
                         state.content = unconvertedContent;  // Store unconverted (relative paths)
                         state.lastSavedContent = unconvertedContent;
                         return;
@@ -173,25 +160,20 @@ const globalWindow = window;
                 }
 
                 // Update state with unconverted content (relative paths)
-                console.log('Updating state.content with unconverted content');
                 state.content = unconvertedContent;
                 
                 if (editor && !state.rawMode) {
                     // Only update if editor exists and we're in rich mode
                     // Use the CONVERTED content (with webview URIs) for display
-                    console.log('Updating editor with converted content (has webview URIs)');
                     trySetMarkdownContent(message.text);
                 } else if (rawTextarea && state.rawMode) {
                     // For raw mode, use unconverted content
-                    console.log('Updating raw textarea with unconverted content');
                     rawTextarea.value = unconvertedContent;
                 }
                 if (state.mode === 'read') {
                     // Re-render view mode with updated content
-                    console.log('Re-rendering view mode');
                     render();
                 }
-                console.log('=== MESSAGE COMPLETE ===\n');
                 return;
             case 'previewData':
                 showPopover(message.data, message.x, message.y);
@@ -200,30 +182,19 @@ const globalWindow = window;
     });
 
     toggleBtn.addEventListener('click', () => {
-        console.log('=== TOGGLE BUTTON CLICKED ===');
-        console.log('Current mode:', state.mode);
-        console.log('Current state.content:', state.content.substring(0, 200));
-        
         // If switching FROM edit mode TO read mode, we need to save the content first
         if (state.mode === 'edit' && editor) {
-            console.log('Switching FROM edit TO view - saving content');
             const html = editor.getHTML();
-            console.log('Editor HTML:', html.substring(0, 200));
             // Use helper to convert and strip webview URIs
             const converted = htmlToStorageMarkdown(html);
-            console.log('Converted markdown:', converted.substring(0, 200));
             state.content = converted;
-            console.log('Updated state.content:', state.content.substring(0, 200));
         }
 
         state.mode = state.mode === 'read' ? 'edit' : 'read';
-        console.log('New mode:', state.mode);
         toggleBtn.textContent = state.mode === 'read' ? 'Edit Note' : 'View Note';
         editorToolbar.style.display = state.mode === 'edit' ? 'flex' : 'none';
         rawToggleBtn.style.display = state.mode === 'edit' ? 'inline-block' : 'none';
-        console.log('About to call render()');
         render();
-        console.log('=== TOGGLE COMPLETE ===\n');
     });
 
     rawToggleBtn.addEventListener('click', () => {
@@ -252,34 +223,24 @@ const globalWindow = window;
     });
 
     function render() {
-        console.log('=== RENDER CALLED ===');
-        console.log('Current mode:', state.mode);
-        console.log('Current state.content:', state.content.substring(0, 200));
-        
         container.innerHTML = '';
 
         if (state.mode === 'edit') {
-            console.log('Rendering EDIT mode');
             if (state.rawMode) {
-                console.log('Raw mode enabled');
                 renderRawEditor();
             } else {
-                console.log('Rich editor mode');
                 renderRichEditor();
             }
         } else {
-            console.log('Rendering VIEW mode');
             // For view mode, we need to convert relative paths to webview URIs for display
             // state.content has relative paths, but we need webview URIs for images to display
             const preview = document.createElement('div');
             preview.className = 'markdown-preview';
             const html = simpleMarkdownToHTML(state.content);
-            console.log('Generated preview HTML:', html.substring(0, 200));
             preview.innerHTML = html;
             container.appendChild(preview);
             attachLinkListeners(preview);
         }
-        console.log('=== RENDER COMPLETE ===\n');
     }
 
     function renderRawEditor() {
@@ -336,28 +297,21 @@ const globalWindow = window;
             ],
             content: '', // Start empty to avoid conversion issues
             onUpdate: ({ editor }) => {
-                console.log('=== EDITOR onUpdate ===');
                 // Skip if this update was triggered by us setting content externally
                 if (state.isSettingContent) {
-                    console.log('Skipping - isSettingContent flag is true');
                     return;
                 }
                 const html = editor.getHTML();
-                console.log('Editor HTML:', html.substring(0, 200));
                 // Use helper to convert and strip webview URIs
                 const newContent = htmlToStorageMarkdown(html);
-                console.log('Converted to markdown:', newContent.substring(0, 200));
                 state.content = newContent;
                 state.lastSavedContent = state.content;
-                console.log('Updated state.content:', state.content.substring(0, 200));
                 // Mark that we're the source of truth - ignore incoming updates until VSCode confirms
                 state.pendingUpdate = true;
-                console.log('Sending updateData to backend');
                 vscode.postMessage({
                     type: 'updateData',
                     text: state.content
                 });
-                console.log('=== onUpdate COMPLETE ===\n');
             },
         });
 
@@ -467,9 +421,6 @@ const globalWindow = window;
     function trySetMarkdownContent(markdown) {
         if (!editor || !markdown) return;
 
-        console.log('[trySetMarkdownContent] Setting content in editor');
-        console.log('[trySetMarkdownContent] Input markdown:', markdown.substring(0, 200));
-
         // Set flag to prevent onUpdate from firing during programmatic content change
         state.isSettingContent = true;
 
@@ -477,9 +428,7 @@ const globalWindow = window;
         // Otherwise, TipTap will treat it as plain text which is fine
         try {
             const html = simpleMarkdownToHTML(markdown);
-            console.log('[trySetMarkdownContent] Converted to HTML:', html.substring(0, 200));
             editor.commands.setContent(html);
-            console.log('[trySetMarkdownContent] Content set successfully');
         } catch (e) {
             console.error('[trySetMarkdownContent] Error:', e);
             // Fallback: just set as plain text
@@ -721,8 +670,6 @@ const globalWindow = window;
     function stripWebviewUris(markdown) {
         if (!markdown) return '';
         
-        console.log('[stripWebviewUris] Input:', markdown.substring(0, 200));
-        
         // Match image syntax with webview URIs
         const result = markdown.replace(
             /!\[([^\]]*)\]\((vscode-webview:\/\/[^)]+)\)/g,
@@ -742,7 +689,6 @@ const globalWindow = window;
                     
                     if (pathMatch) {
                         const relativePath = pathMatch[1];
-                        console.log(`[stripWebviewUris] Converted: ${fullUri} -> ./${relativePath}`);
                         return `![${alt}](./${relativePath})`;
                     }
                     
@@ -750,7 +696,6 @@ const globalWindow = window;
                     const filenameMatch = decodedPath.match(/([^\/]+\.(png|jpg|jpeg|gif|svg|webp|bmp))$/i);
                     if (filenameMatch) {
                         const filename = filenameMatch[1];
-                        console.log(`[stripWebviewUris] Converted (filename only): ${fullUri} -> ./${filename}`);
                         return `![${alt}](./${filename})`;
                     }
                     
@@ -763,7 +708,6 @@ const globalWindow = window;
             }
         );
         
-        console.log('[stripWebviewUris] Output:', result.substring(0, 200));
         return result;
     }
 
@@ -776,7 +720,6 @@ const globalWindow = window;
     function htmlToStorageMarkdown(html) {
         const markdown = convertHTMLToMarkdown(html);
         const stripped = stripWebviewUris(markdown);
-        console.log('[htmlToStorageMarkdown] Converted and stripped HTML to markdown');
         return stripped;
     }
 

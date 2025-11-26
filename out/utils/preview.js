@@ -1,7 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.safeParseJSON = safeParseJSON;
 exports.getPreviewData = getPreviewData;
 const vscode = require("vscode");
+/**
+ * Safely parse JSON with error handling.
+ * @param text The JSON string to parse
+ * @param fallback Optional fallback value if parsing fails
+ * @returns The parsed object or fallback/null on error
+ */
+function safeParseJSON(text, fallback) {
+    try {
+        return JSON.parse(text);
+    }
+    catch {
+        return fallback ?? null;
+    }
+}
 async function getPreviewData(currentDoc, relativePath, webview) {
     try {
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
@@ -33,7 +48,11 @@ async function getPreviewData(currentDoc, relativePath, webview) {
                 headers: headers
             };
         }
-        const json = JSON.parse(Buffer.from(content).toString('utf8'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const json = safeParseJSON(Buffer.from(content).toString('utf8'));
+        if (!json) {
+            return null;
+        }
         if (relativePath.endsWith('.dnditem')) {
             return {
                 type: 'item',

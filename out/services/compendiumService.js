@@ -45,7 +45,6 @@ class CompendiumService {
             await this.importXmlCompendium(importedPath);
         }
         this.initialized = true;
-        console.log(`Compendium initialized: ${this.spells.size} spells, ${this.monsters.size} monsters, ${this.items.size} items`);
     }
     async loadSrdData() {
         try {
@@ -56,7 +55,6 @@ class CompendiumService {
                 for (const spell of data.spells || []) {
                     this.spells.set(spell.name.toLowerCase(), spell);
                 }
-                console.log(`Loaded ${this.spells.size} SRD spells`);
             }
         }
         catch (error) {
@@ -94,7 +92,6 @@ class CompendiumService {
                     counts.items++;
                 }
             }
-            console.log(`Imported compendium: ${counts.spells} spells, ${counts.monsters} monsters, ${counts.items} items`);
         }
         catch (error) {
             console.error('Error importing XML compendium:', error);
@@ -102,11 +99,15 @@ class CompendiumService {
         }
         return counts;
     }
+    /**
+     * Extract content from an XML tag.
+     */
+    getXmlTag(xml, tag) {
+        const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+        return match ? match[1].trim() : '';
+    }
     parseXmlSpell(xml) {
-        const getTag = (tag) => {
-            const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-            return match ? match[1].trim() : '';
-        };
+        const getTag = (tag) => this.getXmlTag(xml, tag);
         const name = getTag('name');
         if (!name || name.startsWith('Invocation:')) {
             return null; // Skip invocations and empty entries
@@ -176,10 +177,7 @@ class CompendiumService {
         };
     }
     parseXmlMonster(xml) {
-        const getTag = (tag) => {
-            const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-            return match ? match[1].trim() : '';
-        };
+        const getTag = (tag) => this.getXmlTag(xml, tag);
         const name = getTag('name');
         if (!name) {
             return null;
@@ -206,10 +204,7 @@ class CompendiumService {
         };
     }
     parseXmlItem(xml) {
-        const getTag = (tag) => {
-            const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-            return match ? match[1].trim() : '';
-        };
+        const getTag = (tag) => this.getXmlTag(xml, tag);
         const name = getTag('name');
         if (!name) {
             return null;
@@ -345,6 +340,79 @@ class CompendiumService {
     formatSpellCompact(spell) {
         const levelText = spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`;
         return `${spell.name} (${levelText} ${spell.school})`;
+    }
+    /**
+     * Format a spell as a search result for UI display.
+     */
+    formatSpellSearchResult(spell) {
+        return {
+            type: 'spell',
+            name: spell.name,
+            subtitle: `${spell.level === 0 ? 'Cantrip' : 'Level ' + spell.level} ${spell.school}`
+        };
+    }
+    /**
+     * Format a monster as a search result for UI display.
+     */
+    formatMonsterSearchResult(monster) {
+        return {
+            type: 'monster',
+            name: monster.name,
+            subtitle: `${monster.type} - CR ${monster.cr}`
+        };
+    }
+    /**
+     * Format an item as a search result for UI display.
+     */
+    formatItemSearchResult(item) {
+        return {
+            type: 'item',
+            name: item.name,
+            subtitle: item.type
+        };
+    }
+    /**
+     * Search all compendium entries and return formatted results.
+     */
+    searchAll(query, searchType = 'all', limit = 5) {
+        let results = [];
+        if (searchType === 'spell' || searchType === 'all') {
+            const spells = this.searchSpells(query, limit).map(s => this.formatSpellSearchResult(s));
+            results = results.concat(spells);
+        }
+        if (searchType === 'monster' || searchType === 'all') {
+            const monsters = this.searchMonsters(query, limit).map(m => this.formatMonsterSearchResult(m));
+            results = results.concat(monsters);
+        }
+        if (searchType === 'item' || searchType === 'all') {
+            const items = this.searchItems(query, limit).map(i => this.formatItemSearchResult(i));
+            results = results.concat(items);
+        }
+        return results;
+    }
+    /**
+     * Get full spell info formatted for webview display.
+     */
+    getSpellInfo(name) {
+        const spell = this.getSpell(name);
+        if (!spell) {
+            return null;
+        }
+        return {
+            name: spell.name,
+            level: spell.level,
+            school: spell.school,
+            castingTime: spell.castingTime,
+            range: spell.range,
+            components: spell.components,
+            duration: spell.duration,
+            description: spell.description,
+            higherLevels: spell.higherLevels,
+            concentration: spell.concentration,
+            ritual: spell.ritual,
+            damage: spell.damage,
+            classes: spell.classes
+        };
     }
 }
 exports.CompendiumService = CompendiumService;

@@ -2,92 +2,62 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CharacterSheetProvider = void 0;
 const vscode = require("vscode");
+const baseEditor_1 = require("./baseEditor");
 const compendiumService_1 = require("../services/compendiumService");
-class CharacterSheetProvider {
+class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     static register(context) {
         const provider = new CharacterSheetProvider(context);
-        const providerRegistration = vscode.window.registerCustomEditorProvider(CharacterSheetProvider.viewType, provider);
-        return providerRegistration;
-    }
-    constructor(context) {
-        this.context = context;
+        return vscode.window.registerCustomEditorProvider(CharacterSheetProvider.viewType, provider);
     }
     async resolveCustomTextEditor(document, webviewPanel, _token) {
-        webviewPanel.webview.options = {
-            enableScripts: true,
-        };
-        webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
-        function updateWebview() {
-            webviewPanel.webview.postMessage({
-                type: 'update',
-                text: document.getText(),
-            });
-        }
-        // Handle messages from the webview
-        webviewPanel.webview.onDidReceiveMessage(async (e) => {
-            switch (e.type) {
-                case 'ready':
-                    // Webview is ready, send initial data
-                    updateWebview();
-                    return;
-                case 'updateData':
-                    this.updateDocument(document, e.data);
-                    return;
-                case 'searchSpells':
-                    // Search for spells matching the query
-                    const compendium = compendiumService_1.CompendiumService.getInstance();
-                    const results = compendium.searchSpells(e.query, 10);
-                    webviewPanel.webview.postMessage({
-                        type: 'spellSearchResults',
-                        requestId: e.requestId,
-                        results: results.map(s => ({
-                            name: s.name,
-                            level: s.level,
-                            school: s.school,
-                            compact: compendium.formatSpellCompact(s)
-                        }))
-                    });
-                    return;
-                case 'getSpellInfo':
-                    // Get detailed spell info for hover
-                    const spellCompendium = compendiumService_1.CompendiumService.getInstance();
-                    const spell = spellCompendium.getSpell(e.name);
-                    webviewPanel.webview.postMessage({
-                        type: 'spellInfo',
-                        requestId: e.requestId,
-                        name: e.name,
-                        found: !!spell,
-                        info: spell ? {
-                            name: spell.name,
-                            level: spell.level,
-                            school: spell.school,
-                            castingTime: spell.castingTime,
-                            range: spell.range,
-                            components: spell.components,
-                            duration: spell.duration,
-                            description: spell.description,
-                            higherLevels: spell.higherLevels,
-                            concentration: spell.concentration,
-                            ritual: spell.ritual,
-                            damage: spell.damage
-                        } : null
-                    });
-                    return;
+        const subscription = this.setupWebview(document, webviewPanel, {
+            onMessage: async (message) => {
+                const msg = message;
+                switch (msg.type) {
+                    case 'updateData':
+                        this.updateDocumentJson(document, msg.data);
+                        return;
+                    case 'searchSpells':
+                        this.handleSpellSearch(webviewPanel, msg.query ?? '', msg.requestId ?? '');
+                        return;
+                    case 'getSpellInfo':
+                        this.handleGetSpellInfo(webviewPanel, msg.name ?? '', msg.requestId ?? '');
+                        return;
+                }
             }
         });
-        const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-            if (e.document.uri.toString() === document.uri.toString()) {
-                updateWebview();
-            }
-        });
-        // Clean up subscriptions when webview is disposed
         webviewPanel.onDidDispose(() => {
-            changeDocumentSubscription.dispose();
+            subscription.dispose();
+        });
+    }
+    handleSpellSearch(webviewPanel, query, requestId) {
+        const compendium = compendiumService_1.CompendiumService.getInstance();
+        const results = compendium.searchSpells(query, 10);
+        webviewPanel.webview.postMessage({
+            type: 'spellSearchResults',
+            requestId: requestId,
+            results: results.map(s => ({
+                name: s.name,
+                level: s.level,
+                school: s.school,
+                compact: compendium.formatSpellCompact(s)
+            }))
+        });
+    }
+    handleGetSpellInfo(webviewPanel, name, requestId) {
+        const compendium = compendiumService_1.CompendiumService.getInstance();
+        const info = compendium.getSpellInfo(name);
+        webviewPanel.webview.postMessage({
+            type: 'spellInfo',
+            requestId: requestId,
+            name: name,
+            found: !!info,
+            info: info
         });
     }
     getHtmlForWebview(webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'characterEditor.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'characterEditor.css'));
+        const scriptUri = this.getMediaUri(webview, 'characterEditor.js');
+        const styleUri = this.getMediaUri(webview, 'characterEditor.css');
         return `
 			<!DOCTYPE html>
 			<html lang="en">
@@ -167,12 +137,12 @@ class CharacterSheetProvider {
                                 <div class="section">
                                     <h3 class="section-title">Saving Throws</h3>
                                     <div class="saves-list">
-                                        ${this.renderSave('Strength', 'saves.str', 'stats.str')}
-                                        ${this.renderSave('Dexterity', 'saves.dex', 'stats.dex')}
-                                        ${this.renderSave('Constitution', 'saves.con', 'stats.con')}
-                                        ${this.renderSave('Intelligence', 'saves.int', 'stats.int')}
-                                        ${this.renderSave('Wisdom', 'saves.wis', 'stats.wis')}
-                                        ${this.renderSave('Charisma', 'saves.cha', 'stats.cha')}
+                                        ${this.renderSave('Strength', 'saves.str')}
+                                        ${this.renderSave('Dexterity', 'saves.dex')}
+                                        ${this.renderSave('Constitution', 'saves.con')}
+                                        ${this.renderSave('Intelligence', 'saves.int')}
+                                        ${this.renderSave('Wisdom', 'saves.wis')}
+                                        ${this.renderSave('Charisma', 'saves.cha')}
                                     </div>
                                 </div>
 
@@ -452,7 +422,7 @@ class CharacterSheetProvider {
             <div class="modifier" id="${id}.modifier">+0</div>
         </div>`;
     }
-    renderSave(label, id, statId) {
+    renderSave(label, id) {
         return `
         <div class="save-row">
             <input type="checkbox" id="${id}.prof" />
@@ -481,22 +451,6 @@ class CharacterSheetProvider {
                 <!-- Spells for this level will be added dynamically -->
             </div>
         </div>`;
-    }
-    updateDocument(document, data) {
-        const edit = new vscode.WorkspaceEdit();
-        // Replace the entire document content
-        // We use a large range to ensure we cover everything
-        const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
-        edit.replace(document.uri, fullRange, JSON.stringify(data, null, 2));
-        return vscode.workspace.applyEdit(edit).then(success => {
-            if (!success) {
-                console.error('Failed to apply edit to character sheet');
-                vscode.window.showErrorMessage('Failed to save character sheet changes.');
-            }
-        }, error => {
-            console.error('Error applying edit:', error);
-            vscode.window.showErrorMessage('Error saving character sheet: ' + error);
-        });
     }
 }
 exports.CharacterSheetProvider = CharacterSheetProvider;

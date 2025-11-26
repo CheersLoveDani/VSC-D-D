@@ -2,25 +2,19 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotesEditorProvider = void 0;
 const vscode = require("vscode");
-const path = require("path");
+const baseEditor_1 = require("./baseEditor");
 const preview_1 = require("../utils/preview");
 const compendiumService_1 = require("../services/compendiumService");
-class NotesEditorProvider {
-    constructor(context) {
-        this.context = context;
-    }
+class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     static register(context) {
         const provider = new NotesEditorProvider(context);
-        const providerRegistration = vscode.window.registerCustomEditorProvider(NotesEditorProvider.viewType, provider);
-        return providerRegistration;
+        return vscode.window.registerCustomEditorProvider(NotesEditorProvider.viewType, provider);
     }
     async resolveCustomTextEditor(document, webviewPanel, _token) {
-        // Get workspace folder for loading local images
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         const localResourceRoots = [
-            vscode.Uri.file(path.join(this.context.extensionPath, 'media'))
+            vscode.Uri.joinPath(this.context.extensionUri, 'media')
         ];
-        // Add workspace folder if available
         if (workspaceFolder) {
             localResourceRoots.push(workspaceFolder.uri);
         }
@@ -31,7 +25,6 @@ class NotesEditorProvider {
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
         const updateWebview = () => {
             const content = document.getText();
-            // Convert local image paths to webview URIs
             const convertedContent = this.convertImagePaths(content, document.uri, webviewPanel.webview);
             webviewPanel.webview.postMessage({
                 type: 'update',
@@ -46,156 +39,119 @@ class NotesEditorProvider {
         webviewPanel.onDidDispose(() => {
             changeDocumentSubscription.dispose();
         });
-        webviewPanel.webview.onDidReceiveMessage(async (e) => {
-            switch (e.type) {
+        webviewPanel.webview.onDidReceiveMessage(async (message) => {
+            const msg = message;
+            switch (msg.type) {
                 case 'ready':
                     updateWebview();
                     return;
                 case 'updateData':
-                    this.updateDocument(document, e.text);
+                    this.updateDocumentText(document, msg.text ?? '');
                     return;
                 case 'openFile':
-                    this.openFile(document, e.path);
+                    this.openFile(document, msg.path ?? '');
                     return;
                 case 'getPreview':
-                    const data = await this.getPreviewData(document, e.path, webviewPanel.webview);
+                    const data = await (0, preview_1.getPreviewData)(document, msg.path ?? '', webviewPanel.webview);
                     webviewPanel.webview.postMessage({
                         type: 'previewData',
                         data: data,
-                        x: e.x,
-                        y: e.y
+                        x: msg.x,
+                        y: msg.y
                     });
                     return;
                 case 'searchCompendium':
-                    // Search compendium for spells, monsters, or items
-                    const compendium = compendiumService_1.CompendiumService.getInstance();
-                    let searchResults = [];
-                    if (e.searchType === 'spell' || e.searchType === 'all') {
-                        const spells = compendium.searchSpells(e.query, 5).map(s => ({
-                            type: 'spell',
-                            name: s.name,
-                            subtitle: `${s.level === 0 ? 'Cantrip' : 'Level ' + s.level} ${s.school}`
-                        }));
-                        searchResults = searchResults.concat(spells);
-                    }
-                    if (e.searchType === 'monster' || e.searchType === 'all') {
-                        const monsters = compendium.searchMonsters(e.query, 5).map(m => ({
-                            type: 'monster',
-                            name: m.name,
-                            subtitle: `${m.type} - CR ${m.cr}`
-                        }));
-                        searchResults = searchResults.concat(monsters);
-                    }
-                    if (e.searchType === 'item' || e.searchType === 'all') {
-                        const items = compendium.searchItems(e.query, 5).map(i => ({
-                            type: 'item',
-                            name: i.name,
-                            subtitle: i.type
-                        }));
-                        searchResults = searchResults.concat(items);
-                    }
-                    webviewPanel.webview.postMessage({
-                        type: 'compendiumSearchResults',
-                        requestId: e.requestId,
-                        results: searchResults
-                    });
+                    this.handleSearchCompendium(webviewPanel, msg.query ?? '', msg.searchType ?? 'all', msg.requestId ?? '');
                     return;
                 case 'getCompendiumEntry':
-                    // Get detailed info for a compendium entry
-                    const comp = compendiumService_1.CompendiumService.getInstance();
-                    let entryData = null;
-                    if (e.entryType === 'spell') {
-                        const spell = comp.getSpell(e.name);
-                        if (spell) {
-                            entryData = {
-                                type: 'spell',
-                                name: spell.name,
-                                level: spell.level,
-                                school: spell.school,
-                                castingTime: spell.castingTime,
-                                range: spell.range,
-                                components: spell.components,
-                                duration: spell.duration,
-                                description: spell.description,
-                                higherLevels: spell.higherLevels,
-                                concentration: spell.concentration,
-                                ritual: spell.ritual,
-                                classes: spell.classes
-                            };
-                        }
-                    }
-                    else if (e.entryType === 'monster') {
-                        const monster = comp.getMonster(e.name);
-                        if (monster) {
-                            entryData = {
-                                type: 'monster',
-                                name: monster.name,
-                                size: monster.size,
-                                monsterType: monster.type,
-                                alignment: monster.alignment,
-                                ac: monster.ac,
-                                hp: monster.hp,
-                                speed: monster.speed,
-                                stats: monster.stats,
-                                cr: monster.cr
-                            };
-                        }
-                    }
-                    else if (e.entryType === 'item') {
-                        const item = comp.getItem(e.name);
-                        if (item) {
-                            entryData = {
-                                type: 'item',
-                                name: item.name,
-                                itemType: item.type,
-                                rarity: item.rarity,
-                                attunement: item.attunement,
-                                description: item.description
-                            };
-                        }
-                    }
-                    webviewPanel.webview.postMessage({
-                        type: 'compendiumEntryData',
-                        requestId: e.requestId,
-                        data: entryData,
-                        x: e.x,
-                        y: e.y
-                    });
+                    this.handleGetCompendiumEntry(webviewPanel, msg.entryType ?? '', msg.name ?? '', msg.requestId ?? '', msg.x, msg.y);
                     return;
                 case 'openCompendiumEntry':
-                    // Open compendium entry as a file in the editor
-                    this.openCompendiumEntry(e.entryType, e.name, document);
+                    this.openCompendiumEntry(msg.entryType ?? '', msg.name ?? '', document);
                     return;
             }
         });
-    }
-    updateDocument(document, content) {
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), content);
-        vscode.workspace.applyEdit(edit);
     }
     openFile(currentDoc, relativePath) {
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
         vscode.commands.executeCommand('vscode.open', targetUri);
     }
+    handleSearchCompendium(webviewPanel, query, searchType, requestId) {
+        const compendium = compendiumService_1.CompendiumService.getInstance();
+        const validSearchType = searchType;
+        const searchResults = compendium.searchAll(query, validSearchType, 5);
+        webviewPanel.webview.postMessage({
+            type: 'compendiumSearchResults',
+            requestId: requestId,
+            results: searchResults
+        });
+    }
+    handleGetCompendiumEntry(webviewPanel, entryType, name, requestId, x, y) {
+        const comp = compendiumService_1.CompendiumService.getInstance();
+        let entryData = null;
+        if (entryType === 'spell') {
+            const spellInfo = comp.getSpellInfo(name);
+            if (spellInfo) {
+                entryData = { type: 'spell', ...spellInfo };
+            }
+        }
+        else if (entryType === 'monster') {
+            const monster = comp.getMonster(name);
+            if (monster) {
+                entryData = {
+                    type: 'monster',
+                    name: monster.name,
+                    size: monster.size,
+                    monsterType: monster.type,
+                    alignment: monster.alignment,
+                    ac: monster.ac,
+                    hp: monster.hp,
+                    speed: monster.speed,
+                    stats: monster.stats,
+                    cr: monster.cr
+                };
+            }
+        }
+        else if (entryType === 'item') {
+            const item = comp.getItem(name);
+            if (item) {
+                entryData = {
+                    type: 'item',
+                    name: item.name,
+                    itemType: item.type,
+                    rarity: item.rarity,
+                    attunement: item.attunement,
+                    description: item.description
+                };
+            }
+        }
+        webviewPanel.webview.postMessage({
+            type: 'compendiumEntryData',
+            requestId: requestId,
+            data: entryData,
+            x: x,
+            y: y
+        });
+    }
     async openCompendiumEntry(entryType, name, currentDoc) {
         const compendium = compendiumService_1.CompendiumService.getInstance();
         let fileContent = null;
         let fileExtension = '';
-        let sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_'); // Sanitize filename
+        const sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_');
         if (entryType === 'spell') {
             const spell = compendium.getSpell(name);
             if (spell) {
                 fileExtension = '.dndspell';
-                // Build components string
                 const components = [];
-                if (spell.components?.includes('V'))
+                if (spell.components?.includes('V')) {
                     components.push('V');
-                if (spell.components?.includes('S'))
+                }
+                if (spell.components?.includes('S')) {
                     components.push('S');
-                if (spell.components?.includes('M'))
+                }
+                if (spell.components?.includes('M')) {
                     components.push('M');
-                // Extract material component if present
+                }
                 const matMatch = spell.components?.match(/M\s*\(([^)]+)\)/);
                 const materials = matMatch ? matMatch[1] : '';
                 fileContent = {
@@ -254,55 +210,40 @@ class NotesEditorProvider {
             vscode.window.showWarningMessage(`Could not find ${entryType}: ${name}`);
             return;
         }
-        // Create an untitled file with the content
         const content = JSON.stringify(fileContent, null, 2);
-        // Get the workspace folder or use the current document's folder
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
         const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
-        // Create a file URI in the workspace
         const fileUri = vscode.Uri.joinPath(baseUri, `${sanitizedName}${fileExtension}`);
-        // Check if file already exists
         try {
             await vscode.workspace.fs.stat(fileUri);
-            // File exists, just open it
             await vscode.commands.executeCommand('vscode.open', fileUri);
         }
         catch {
-            // File doesn't exist, create it
             const encoder = new TextEncoder();
             await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
             await vscode.commands.executeCommand('vscode.open', fileUri);
         }
     }
-    async getPreviewData(currentDoc, relativePath, webview) {
-        return (0, preview_1.getPreviewData)(currentDoc, relativePath, webview);
-    }
     convertImagePaths(markdown, documentUri, webview) {
-        // Convert markdown image syntax ![alt](path) to use webview URIs for local paths
         return markdown.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, imagePath) => {
-            // Skip if it's already an http/https/data URI
             if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
                 return match;
             }
             try {
-                // Resolve relative path to absolute URI
                 const imageUri = vscode.Uri.joinPath(documentUri, '..', imagePath);
-                // Convert to webview URI
                 const webviewUri = webview.asWebviewUri(imageUri);
-                // Return the markdown with the converted URI
                 return `![${alt}](${webviewUri.toString()})`;
             }
             catch (error) {
                 console.error(`Error converting image path: ${imagePath}`, error);
-                return match; // Return original if conversion fails
+                return match;
             }
         });
     }
     getHtmlForWebview(webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'notesEditor.js')));
-        const tiptapBundleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'tiptap-bundle.js')));
-        const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'notesEditor.css')));
-        // Generate a nonce for inline scripts
+        const scriptUri = this.getMediaUri(webview, 'notesEditor.js');
+        const tiptapBundleUri = this.getMediaUri(webview, 'tiptap-bundle.js');
+        const styleUri = this.getMediaUri(webview, 'notesEditor.css');
         const nonce = this.getNonce();
         return `
             <!DOCTYPE html>
@@ -328,7 +269,7 @@ class NotesEditorProvider {
                         <button id="btn-code" class="toolbar-btn" title="Inline Code">&lt;/&gt;</button>
                         <button id="btn-highlight" class="toolbar-btn" title="Highlight">H</button>
                     </div>
-                    
+
                     <!-- Headings -->
                     <div class="toolbar-group">
                         <button id="btn-h1" class="toolbar-btn" title="Heading 1">H1</button>
@@ -338,21 +279,21 @@ class NotesEditorProvider {
                         <button id="btn-h5" class="toolbar-btn" title="Heading 5">H5</button>
                         <button id="btn-h6" class="toolbar-btn" title="Heading 6">H6</button>
                     </div>
-                    
+
                     <!-- Lists -->
                     <div class="toolbar-group">
                         <button id="btn-bullet-list" class="toolbar-btn" title="Bullet List">• List</button>
                         <button id="btn-ordered-list" class="toolbar-btn" title="Numbered List">1. List</button>
                         <button id="btn-task-list" class="toolbar-btn" title="Task List">☑ Task</button>
                     </div>
-                    
+
                     <!-- Block Elements -->
                     <div class="toolbar-group">
                         <button id="btn-blockquote" class="toolbar-btn" title="Blockquote">" Quote</button>
                         <button id="btn-code-block" class="toolbar-btn" title="Code Block">{ Code }</button>
                         <button id="btn-hr" class="toolbar-btn" title="Horizontal Rule">—</button>
                     </div>
-                    
+
                     <!-- Links & Media -->
                     <div class="toolbar-group">
                         <button id="btn-link" class="toolbar-btn" title="Insert Link">🔗</button>
@@ -363,7 +304,7 @@ class NotesEditorProvider {
                     <div class="toolbar-group">
                         <button id="btn-compendium" class="toolbar-btn" title="Insert Compendium Reference">📖 Compendium</button>
                     </div>
-                    
+
                     <!-- Tables -->
                     <div class="toolbar-group">
                         <div class="table-picker-container">
@@ -440,7 +381,7 @@ class NotesEditorProvider {
                         <h3 class="input-dialog-title">📖 Insert Compendium Reference</h3>
                         <div class="input-dialog-field">
                             <label for="compendium-type">Type:</label>
-                            <select id="compendium-type" style="width: 100%; padding: 6px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 4px;">
+                            <select id="compendium-type" class="dnd-select">
                                 <option value="all">All</option>
                                 <option value="spell">Spells</option>
                                 <option value="monster">Monsters</option>
@@ -474,14 +415,6 @@ class NotesEditorProvider {
                 </script>
             </body>
             </html>`;
-    }
-    getNonce() {
-        let text = '';
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
     }
 }
 exports.NotesEditorProvider = NotesEditorProvider;

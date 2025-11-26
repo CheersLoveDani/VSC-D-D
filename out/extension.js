@@ -14,13 +14,9 @@ const linkProvider_1 = require("./providers/linkProvider");
 const pluginManager_1 = require("./views/pluginManager");
 const compendiumService_1 = require("./services/compendiumService");
 function activate(context) {
-    console.log('D&D Campaign Manager is now active!');
     // Initialize Compendium Service
     const compendium = compendiumService_1.CompendiumService.getInstance(context);
-    compendium.initialize().then(() => {
-        const stats = compendium.getStats();
-        console.log(`Compendium loaded: ${stats.spells} spells, ${stats.monsters} monsters, ${stats.items} items`);
-    });
+    compendium.initialize();
     // Register Custom Editors
     context.subscriptions.push(mapEditor_1.MapEditorProvider.register(context));
     context.subscriptions.push(characterEditor_1.CharacterSheetProvider.register(context));

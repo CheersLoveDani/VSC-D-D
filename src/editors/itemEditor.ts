@@ -1,65 +1,37 @@
 import * as vscode from 'vscode';
+import { BaseCustomTextEditorProvider } from './baseEditor';
 
-export class ItemEditorProvider implements vscode.CustomTextEditorProvider {
+export class ItemEditorProvider extends BaseCustomTextEditorProvider {
 
 	public static readonly viewType = 'dnd.itemEditor';
 
 	public static register(context: vscode.ExtensionContext): vscode.Disposable {
 		const provider = new ItemEditorProvider(context);
-		const providerRegistration = vscode.window.registerCustomEditorProvider(ItemEditorProvider.viewType, provider);
-		return providerRegistration;
+		return vscode.window.registerCustomEditorProvider(ItemEditorProvider.viewType, provider);
 	}
-
-	constructor(
-		private readonly context: vscode.ExtensionContext
-	) { }
 
 	public async resolveCustomTextEditor(
 		document: vscode.TextDocument,
 		webviewPanel: vscode.WebviewPanel,
 		_token: vscode.CancellationToken
 	): Promise<void> {
-		webviewPanel.webview.options = {
-			enableScripts: true,
-		};
-
-		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
-
-		function updateWebview() {
-			webviewPanel.webview.postMessage({
-				type: 'update',
-				text: document.getText(),
-			});
-		}
-
-		// Handle messages from the webview
-		webviewPanel.webview.onDidReceiveMessage(e => {
-			switch (e.type) {
-				case 'ready':
-					// Webview is ready, send initial data
-					updateWebview();
-					return;
-				case 'updateData':
-					this.updateDocument(document, e.data);
-					return;
+		const subscription = this.setupWebview(document, webviewPanel, {
+			onMessage: (message) => {
+				const msg = message as { type: string; data?: unknown };
+				if (msg.type === 'updateData') {
+					this.updateDocumentJson(document, msg.data);
+				}
 			}
 		});
 
-		const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-			if (e.document.uri.toString() === document.uri.toString()) {
-				updateWebview();
-			}
-		});
-
-		// Clean up subscriptions when webview is disposed
 		webviewPanel.onDidDispose(() => {
-			changeDocumentSubscription.dispose();
+			subscription.dispose();
 		});
 	}
 
-	private getHtmlForWebview(webview: vscode.Webview): string {
-		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'itemEditor.js'));
-		const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'itemEditor.css'));
+	protected getHtmlForWebview(webview: vscode.Webview): string {
+		const scriptUri = this.getMediaUri(webview, 'itemEditor.js');
+		const styleUri = this.getMediaUri(webview, 'itemEditor.css');
 
 		return `
 			<!DOCTYPE html>
@@ -123,14 +95,4 @@ export class ItemEditorProvider implements vscode.CustomTextEditorProvider {
 			</body>
 			</html>`;
 	}
-
-    private updateDocument(document: vscode.TextDocument, data: any) {
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(
-            document.uri,
-            new vscode.Range(0, 0, document.lineCount, 0),
-            JSON.stringify(data, null, 2)
-        );
-        vscode.workspace.applyEdit(edit);
-    }
 }

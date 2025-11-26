@@ -3,35 +3,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MapEditorProvider = void 0;
 const vscode = require("vscode");
 const path = require("path");
+const baseEditor_1 = require("./baseEditor");
 const preview_1 = require("../utils/preview");
-class MapEditorProvider {
+class MapEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     static register(context) {
         const provider = new MapEditorProvider(context);
-        const providerRegistration = vscode.window.registerCustomEditorProvider(MapEditorProvider.viewType, provider);
-        return providerRegistration;
+        return vscode.window.registerCustomEditorProvider(MapEditorProvider.viewType, provider);
     }
-    constructor(context) {
-        this.context = context;
-    }
-    /**
-     * Called when our custom editor is opened.
-     */
     async resolveCustomTextEditor(document, webviewPanel, _token) {
-        // Get workspace folder for loading local images
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         const localResourceRoots = [
             vscode.Uri.joinPath(this.context.extensionUri, 'media')
         ];
-        // Add workspace folder if available
         if (workspaceFolder) {
             localResourceRoots.push(workspaceFolder.uri);
         }
-        // Also add document directory as fallback
         localResourceRoots.push(vscode.Uri.joinPath(document.uri, '..'));
-        // Setup initial content for the webview
         webviewPanel.webview.options = {
             enableScripts: true,
-            localResourceRoots: localResourceRoots
+            localResourceRoots
         };
         webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
         const updateWebview = () => {
@@ -45,58 +35,51 @@ class MapEditorProvider {
                     resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
                 }
             }
-            catch { }
+            catch { /* ignore parse errors */ }
             webviewPanel.webview.postMessage({
                 type: 'update',
                 text: text,
                 resolvedImageUri: resolvedImageUri
             });
         };
-        // Hook up event handlers so that when the document changes, the webview is updated
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.toString() === document.uri.toString()) {
                 updateWebview();
             }
         });
-        // Make sure we get rid of the listener when our editor is closed.
         webviewPanel.onDidDispose(() => {
             changeDocumentSubscription.dispose();
         });
-        // Receive message from the webview.
-        webviewPanel.webview.onDidReceiveMessage(async (e) => {
-            switch (e.type) {
+        webviewPanel.webview.onDidReceiveMessage(async (message) => {
+            const msg = message;
+            switch (msg.type) {
                 case 'ready':
-                    // Wait for webview to be ready before sending data
                     updateWebview();
                     return;
                 case 'updateData':
-                    this.updateDocument(document, e.data);
+                    this.updateDocumentJson(document, msg.data);
                     return;
                 case 'selectImage':
                     this.selectImage(document);
                     return;
                 case 'openFile':
-                    this.openFile(document, e.path);
+                    this.openFile(document, msg.path ?? '');
                     return;
                 case 'getPreview':
-                    const data = await this.getPreviewData(document, e.path, webviewPanel.webview);
+                    const data = await (0, preview_1.getPreviewData)(document, msg.path ?? '', webviewPanel.webview);
                     webviewPanel.webview.postMessage({
                         type: 'previewData',
                         data: data,
-                        x: e.x,
-                        y: e.y
+                        x: msg.x,
+                        y: msg.y
                     });
                     return;
             }
         });
     }
-    /**
-     * Get the static HTML used for the editor webviews.
-     */
     getHtmlForWebview(webview) {
-        // Local path to script and css for the webview
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'mapEditor.css'));
+        const scriptUri = this.getMediaUri(webview, 'mapEditor.js');
+        const styleUri = this.getMediaUri(webview, 'mapEditor.css');
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -115,11 +98,6 @@ class MapEditorProvider {
             </body>
             </html>`;
     }
-    updateDocument(document, data) {
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(data, null, 2));
-        vscode.workspace.applyEdit(edit);
-    }
     async selectImage(document) {
         const uris = await vscode.window.showOpenDialog({
             canSelectMany: false,
@@ -129,30 +107,24 @@ class MapEditorProvider {
             }
         });
         if (uris && uris[0]) {
-            // Calculate relative path
             const imageUri = uris[0];
             const docDir = vscode.Uri.joinPath(document.uri, '..');
             const relativePath = './' + path.relative(docDir.fsPath, imageUri.fsPath).replace(/\\/g, '/');
-            // Update document
             const text = document.getText();
             try {
                 const json = JSON.parse(text);
                 json.imagePath = relativePath;
-                this.updateDocument(document, json);
+                this.updateDocumentJson(document, json);
             }
-            catch {
-                // Ignore parse errors
-            }
+            catch { /* ignore parse errors */ }
         }
     }
     openFile(currentDoc, relativePath) {
-        if (!relativePath)
+        if (!relativePath) {
             return;
+        }
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
         vscode.commands.executeCommand('vscode.open', targetUri);
-    }
-    async getPreviewData(currentDoc, relativePath, webview) {
-        return (0, preview_1.getPreviewData)(currentDoc, relativePath, webview);
     }
 }
 exports.MapEditorProvider = MapEditorProvider;
