@@ -1868,4 +1868,319 @@ const globalWindow = window;
         popover.classList.add('visible');
     }
 
+    // ========== Compendium Integration ==========
+
+    // Compendium dialog elements
+    const compendiumDialog = document.getElementById('compendium-dialog');
+    const compendiumTypeSelect = /** @type {HTMLSelectElement} */ (document.getElementById('compendium-type'));
+    const compendiumSearchInput = /** @type {HTMLInputElement} */ (document.getElementById('compendium-search'));
+    const compendiumResults = document.getElementById('compendium-results');
+    const compendiumCancelBtn = document.getElementById('compendium-cancel');
+    const compendiumTooltip = document.getElementById('compendium-tooltip');
+
+    let compendiumRequestId = 0;
+    /** @type {any} */
+    let compendiumSearchTimeout;
+
+    // Setup compendium button
+    document.getElementById('btn-compendium')?.addEventListener('click', () => {
+        showCompendiumDialog();
+    });
+
+    function showCompendiumDialog() {
+        if (!compendiumDialog) return;
+        compendiumSearchInput.value = '';
+        compendiumResults.innerHTML = '';
+        compendiumResults.style.display = 'none';
+        compendiumDialog.classList.add('visible');
+        compendiumSearchInput.focus();
+    }
+
+    function hideCompendiumDialog() {
+        if (!compendiumDialog) return;
+        compendiumDialog.classList.remove('visible');
+    }
+
+    compendiumCancelBtn?.addEventListener('click', hideCompendiumDialog);
+
+    compendiumDialog?.addEventListener('click', (e) => {
+        if (e.target === compendiumDialog) {
+            hideCompendiumDialog();
+        }
+    });
+
+    // Debounced compendium search
+    compendiumSearchInput?.addEventListener('input', () => {
+        clearTimeout(compendiumSearchTimeout);
+        compendiumSearchTimeout = setTimeout(() => {
+            const query = compendiumSearchInput.value.trim();
+            if (query.length >= 2) {
+                searchCompendium(query);
+            } else {
+                compendiumResults.innerHTML = '';
+                compendiumResults.style.display = 'none';
+            }
+        }, 150);
+    });
+
+    compendiumSearchInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            hideCompendiumDialog();
+        }
+    });
+
+    /**
+     * Search compendium
+     * @param {string} query
+     */
+    function searchCompendium(query) {
+        const requestId = ++compendiumRequestId;
+        const searchType = compendiumTypeSelect?.value || 'all';
+
+        vscode.postMessage({
+            type: 'searchCompendium',
+            requestId: requestId,
+            query: query,
+            searchType: searchType
+        });
+    }
+
+    // Handle compendium search results
+    window.addEventListener('message', event => {
+        const message = event.data;
+
+        if (message.type === 'compendiumSearchResults') {
+            displayCompendiumResults(message.results);
+        } else if (message.type === 'compendiumEntryData') {
+            showCompendiumTooltip(message.data, message.x, message.y);
+        }
+    });
+
+    /**
+     * Display search results
+     * @param {any[]} results
+     */
+    function displayCompendiumResults(results) {
+        if (!compendiumResults) return;
+
+        if (results.length === 0) {
+            compendiumResults.innerHTML = '<div style="padding: 12px; color: var(--vscode-descriptionForeground);">No results found</div>';
+            compendiumResults.style.display = 'block';
+            return;
+        }
+
+        const typeIcons = { spell: '✨', monster: '👹', item: '⚔️' };
+
+        compendiumResults.innerHTML = results.map(r => `
+            <div class="compendium-result-item" data-type="${r.type}" data-name="${r.name}" style="
+                padding: 10px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid var(--vscode-panel-border);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <span style="font-size: 16px;">${typeIcons[r.type] || '📄'}</span>
+                <div>
+                    <div style="font-weight: 500;">${r.name}</div>
+                    <div style="font-size: 11px; color: var(--vscode-descriptionForeground);">${r.subtitle}</div>
+                </div>
+            </div>
+        `).join('');
+
+        compendiumResults.style.display = 'block';
+
+        // Add click handlers
+        compendiumResults.querySelectorAll('.compendium-result-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.getAttribute('data-type');
+                const name = item.getAttribute('data-name');
+                insertCompendiumReference(type, name);
+                hideCompendiumDialog();
+            });
+
+            item.addEventListener('mouseenter', () => {
+                // @ts-ignore
+                item.style.background = 'var(--vscode-list-hoverBackground, #2a2d2e)';
+            });
+            item.addEventListener('mouseleave', () => {
+                // @ts-ignore
+                item.style.background = 'transparent';
+            });
+        });
+    }
+
+    /**
+     * Insert compendium reference at cursor
+     * @param {string} type
+     * @param {string} name
+     */
+    function insertCompendiumReference(type, name) {
+        if (!editor) return;
+
+        const reference = `@${type}[${name}]`;
+        editor.chain().focus().insertContent(reference).run();
+    }
+
+    /**
+     * Show compendium tooltip
+     * @param {any} data
+     * @param {number} x
+     * @param {number} y
+     */
+    function showCompendiumTooltip(data, x, y) {
+        if (!compendiumTooltip || !data) {
+            if (compendiumTooltip) compendiumTooltip.style.display = 'none';
+            return;
+        }
+
+        let html = '';
+
+        if (data.type === 'spell') {
+            const levelText = data.level === 0 ? 'Cantrip' : `Level ${data.level}`;
+            let tags = [];
+            if (data.concentration) tags.push('Concentration');
+            if (data.ritual) tags.push('Ritual');
+
+            html = `
+                <div class="popover-title">${data.name}</div>
+                <div class="popover-detail" style="font-style: italic; margin-bottom: 8px;">
+                    ${levelText} ${data.school}${tags.length ? ' (' + tags.join(', ') + ')' : ''}
+                </div>
+                <div class="popover-detail"><b>Casting Time:</b> ${data.castingTime}</div>
+                <div class="popover-detail"><b>Range:</b> ${data.range}</div>
+                <div class="popover-detail"><b>Components:</b> ${data.components}</div>
+                <div class="popover-detail"><b>Duration:</b> ${data.duration}</div>
+                <div class="popover-detail" style="margin-top: 8px; max-height: 100px; overflow-y: auto;">
+                    ${(data.description || '').substring(0, 300)}${data.description?.length > 300 ? '...' : ''}
+                </div>
+            `;
+        } else if (data.type === 'monster') {
+            const sizeMap = { 'T': 'Tiny', 'S': 'Small', 'M': 'Medium', 'L': 'Large', 'H': 'Huge', 'G': 'Gargantuan' };
+            const size = sizeMap[data.size] || data.size;
+
+            html = `
+                <div class="popover-title">${data.name}</div>
+                <div class="popover-detail" style="font-style: italic;">${size} ${data.monsterType}, ${data.alignment}</div>
+                <div class="popover-detail"><b>AC:</b> ${data.ac} | <b>HP:</b> ${data.hp} | <b>CR:</b> ${data.cr}</div>
+                <div class="popover-detail"><b>Speed:</b> ${data.speed}</div>
+            `;
+        } else if (data.type === 'item') {
+            html = `
+                <div class="popover-title">${data.name}</div>
+                <div class="popover-detail" style="font-style: italic;">
+                    ${data.itemType}${data.rarity ? ', ' + data.rarity : ''}${data.attunement ? ' (requires attunement)' : ''}
+                </div>
+                <div class="popover-detail" style="margin-top: 8px; max-height: 100px; overflow-y: auto;">
+                    ${(data.description || '').substring(0, 300)}${data.description?.length > 300 ? '...' : ''}
+                </div>
+            `;
+        }
+
+        compendiumTooltip.innerHTML = html;
+        compendiumTooltip.style.display = 'block';
+        compendiumTooltip.style.left = `${x + 10}px`;
+        compendiumTooltip.style.top = `${y + 10}px`;
+    }
+
+    function hideCompendiumTooltip() {
+        if (compendiumTooltip) {
+            compendiumTooltip.style.display = 'none';
+        }
+    }
+
+    /**
+     * Attach compendium reference hover listeners to container
+     * @param {HTMLElement} container
+     */
+    function attachCompendiumListeners(container) {
+        // Find all compendium references in text
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+        const textNodes = [];
+
+        while (walker.nextNode()) {
+            textNodes.push(walker.currentNode);
+        }
+
+        textNodes.forEach(node => {
+            const text = node.textContent || '';
+            const regex = /@(spell|monster|item)\[([^\]]+)\]/gi;
+
+            if (regex.test(text)) {
+                // Wrap matches in spans
+                const parent = node.parentNode;
+                if (!parent) return;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                regex.lastIndex = 0;
+
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    // Add text before match
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+                    }
+
+                    // Create span for match
+                    const span = document.createElement('span');
+                    span.className = 'compendium-ref';
+                    span.dataset.type = match[1].toLowerCase();
+                    span.dataset.name = match[2];
+                    span.textContent = match[0];
+                    span.style.cssText = 'color: var(--vscode-textLink-foreground); cursor: help; text-decoration: underline dotted;';
+
+                    // Add hover listeners
+                    span.addEventListener('mouseenter', (e) => {
+                        const type = span.dataset.type;
+                        const name = span.dataset.name;
+                        requestCompendiumEntry(type, name, e.clientX, e.clientY);
+                    });
+
+                    span.addEventListener('mouseleave', () => {
+                        hideCompendiumTooltip();
+                    });
+
+                    fragment.appendChild(span);
+                    lastIndex = regex.lastIndex;
+                }
+
+                // Add remaining text
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+                }
+
+                parent.replaceChild(fragment, node);
+            }
+        });
+    }
+
+    /**
+     * Request compendium entry for hover
+     * @param {string} type
+     * @param {string} name
+     * @param {number} x
+     * @param {number} y
+     */
+    function requestCompendiumEntry(type, name, x, y) {
+        const requestId = ++compendiumRequestId;
+
+        vscode.postMessage({
+            type: 'getCompendiumEntry',
+            requestId: requestId,
+            entryType: type,
+            name: name,
+            x: x,
+            y: y
+        });
+    }
+
+    // Override attachLinkListeners to also attach compendium listeners
+    const originalAttachLinkListeners = attachLinkListeners;
+    // @ts-ignore
+    attachLinkListeners = function(container) {
+        originalAttachLinkListeners(container);
+        attachCompendiumListeners(container);
+    };
+
 }());

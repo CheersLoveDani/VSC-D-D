@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { getPreviewData } from '../utils/preview';
+import { CompendiumService } from '../services/compendiumService';
 
 export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
 
@@ -80,6 +81,106 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                     webviewPanel.webview.postMessage({
                         type: 'previewData',
                         data: data,
+                        x: e.x,
+                        y: e.y
+                    });
+                    return;
+
+                case 'searchCompendium':
+                    // Search compendium for spells, monsters, or items
+                    const compendium = CompendiumService.getInstance();
+                    let searchResults: any[] = [];
+
+                    if (e.searchType === 'spell' || e.searchType === 'all') {
+                        const spells = compendium.searchSpells(e.query, 5).map(s => ({
+                            type: 'spell',
+                            name: s.name,
+                            subtitle: `${s.level === 0 ? 'Cantrip' : 'Level ' + s.level} ${s.school}`
+                        }));
+                        searchResults = searchResults.concat(spells);
+                    }
+                    if (e.searchType === 'monster' || e.searchType === 'all') {
+                        const monsters = compendium.searchMonsters(e.query, 5).map(m => ({
+                            type: 'monster',
+                            name: m.name,
+                            subtitle: `${m.type} - CR ${m.cr}`
+                        }));
+                        searchResults = searchResults.concat(monsters);
+                    }
+                    if (e.searchType === 'item' || e.searchType === 'all') {
+                        const items = compendium.searchItems(e.query, 5).map(i => ({
+                            type: 'item',
+                            name: i.name,
+                            subtitle: i.type
+                        }));
+                        searchResults = searchResults.concat(items);
+                    }
+
+                    webviewPanel.webview.postMessage({
+                        type: 'compendiumSearchResults',
+                        requestId: e.requestId,
+                        results: searchResults
+                    });
+                    return;
+
+                case 'getCompendiumEntry':
+                    // Get detailed info for a compendium entry
+                    const comp = CompendiumService.getInstance();
+                    let entryData: any = null;
+
+                    if (e.entryType === 'spell') {
+                        const spell = comp.getSpell(e.name);
+                        if (spell) {
+                            entryData = {
+                                type: 'spell',
+                                name: spell.name,
+                                level: spell.level,
+                                school: spell.school,
+                                castingTime: spell.castingTime,
+                                range: spell.range,
+                                components: spell.components,
+                                duration: spell.duration,
+                                description: spell.description,
+                                higherLevels: spell.higherLevels,
+                                concentration: spell.concentration,
+                                ritual: spell.ritual,
+                                classes: spell.classes
+                            };
+                        }
+                    } else if (e.entryType === 'monster') {
+                        const monster = comp.getMonster(e.name);
+                        if (monster) {
+                            entryData = {
+                                type: 'monster',
+                                name: monster.name,
+                                size: monster.size,
+                                monsterType: monster.type,
+                                alignment: monster.alignment,
+                                ac: monster.ac,
+                                hp: monster.hp,
+                                speed: monster.speed,
+                                stats: monster.stats,
+                                cr: monster.cr
+                            };
+                        }
+                    } else if (e.entryType === 'item') {
+                        const item = comp.getItem(e.name);
+                        if (item) {
+                            entryData = {
+                                type: 'item',
+                                name: item.name,
+                                itemType: item.type,
+                                rarity: item.rarity,
+                                attunement: item.attunement,
+                                description: item.description
+                            };
+                        }
+                    }
+
+                    webviewPanel.webview.postMessage({
+                        type: 'compendiumEntryData',
+                        requestId: e.requestId,
+                        data: entryData,
                         x: e.x,
                         y: e.y
                     });
@@ -198,6 +299,11 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                         <button id="btn-link" class="toolbar-btn" title="Insert Link">🔗</button>
                         <button id="btn-image" class="toolbar-btn" title="Insert Image">🖼</button>
                     </div>
+
+                    <!-- Compendium -->
+                    <div class="toolbar-group">
+                        <button id="btn-compendium" class="toolbar-btn" title="Insert Compendium Reference">📖 Compendium</button>
+                    </div>
                     
                     <!-- Tables -->
                     <div class="toolbar-group">
@@ -268,6 +374,33 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                         </div>
                     </div>
                 </div>
+
+                <!-- Compendium Search Dialog -->
+                <div id="compendium-dialog" class="input-dialog">
+                    <div class="input-dialog-content" style="width: 450px;">
+                        <h3 class="input-dialog-title">📖 Insert Compendium Reference</h3>
+                        <div class="input-dialog-field">
+                            <label for="compendium-type">Type:</label>
+                            <select id="compendium-type" style="width: 100%; padding: 6px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 4px;">
+                                <option value="all">All</option>
+                                <option value="spell">Spells</option>
+                                <option value="monster">Monsters</option>
+                                <option value="item">Items</option>
+                            </select>
+                        </div>
+                        <div class="input-dialog-field">
+                            <label for="compendium-search">Search:</label>
+                            <input type="text" id="compendium-search" placeholder="Search spells, monsters, items..." autocomplete="off" />
+                        </div>
+                        <div id="compendium-results" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--vscode-input-border); border-radius: 4px; margin-bottom: 12px; display: none;"></div>
+                        <div class="input-dialog-buttons">
+                            <button id="compendium-cancel" class="dnd-btn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compendium Tooltip -->
+                <div id="compendium-tooltip" class="popover" style="max-width: 400px; display: none;"></div>
 
                 <script nonce="${nonce}" src="${tiptapBundleUri}"></script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>

@@ -40,9 +40,11 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
   - Shows spell description with truncation for long text
   - Includes "At Higher Levels" information when available
   - Shows concentration and ritual tags
-- **Compendium References in Notes**: Reference spells, monsters, and items in `.dndnotes` and markdown files
+- **Compendium References in Notes**: Reference spells, monsters, and items in `.dndnotes` files
   - Syntax: `@spell[Fireball]`, `@monster[Goblin]`, `@item[Longsword]`
-  - Hover over references to see full compendium entry details
+  - Hover over references in View mode to see full compendium entry details
+  - New toolbar button "📖 Compendium" to search and insert references
+  - Search dialog with type filter (All/Spells/Monsters/Items)
   - Works with both SRD data and imported compendium content
 - **Compendium Settings**: New configuration options under `D&D Campaign Manager`
   - `dnd.compendium.enableHoverPreviews`: Toggle hover tooltips (default: true)
