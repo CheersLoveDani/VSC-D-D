@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
  * @param fallback Optional fallback value if parsing fails
  * @returns The parsed object or fallback/null on error
  */
-export function safeParseJSON<T = unknown>(text: string, fallback?: T): T | null {
+function safeParseJSON<T = unknown>(text: string, fallback?: T): T | null {
     try {
         return JSON.parse(text) as T;
     } catch {

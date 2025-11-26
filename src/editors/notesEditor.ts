@@ -105,11 +105,6 @@ export class NotesEditorProvider extends BaseCustomTextEditorProvider {
         });
     }
 
-    private openFile(currentDoc: vscode.TextDocument, relativePath: string): void {
-        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
-        vscode.commands.executeCommand('vscode.open', targetUri);
-    }
-
     private handleSearchCompendium(webviewPanel: vscode.WebviewPanel, query: string, searchType: string, requestId: string): void {
         const compendium = CompendiumService.getInstance();
         const validSearchType = searchType as 'spell' | 'monster' | 'item' | 'all';

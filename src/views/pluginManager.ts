@@ -220,7 +220,7 @@ export class PluginManagerProvider implements vscode.TreeDataProvider<PluginItem
                         y: 100,
                         label: "Town Square",
                         icon: "🏛️",
-                        link: "./examples/example.dndnotes"
+                        link: "./example.dndnotes"
                     }
                 ]
             };

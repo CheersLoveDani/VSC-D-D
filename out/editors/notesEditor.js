@@ -72,10 +72,6 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
             }
         });
     }
-    openFile(currentDoc, relativePath) {
-        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
-        vscode.commands.executeCommand('vscode.open', targetUri);
-    }
     handleSearchCompendium(webviewPanel, query, searchType, requestId) {
         const compendium = compendiumService_1.CompendiumService.getInstance();
         const validSearchType = searchType;

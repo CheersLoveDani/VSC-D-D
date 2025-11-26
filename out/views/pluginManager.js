@@ -200,7 +200,7 @@ class PluginManagerProvider {
                         y: 100,
                         label: "Town Square",
                         icon: "🏛️",
-                        link: "./examples/example.dndnotes"
+                        link: "./example.dndnotes"
                     }
                 ]
             };

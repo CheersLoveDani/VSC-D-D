@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.safeParseJSON = safeParseJSON;
 exports.getPreviewData = getPreviewData;
 const vscode = require("vscode");
 /**

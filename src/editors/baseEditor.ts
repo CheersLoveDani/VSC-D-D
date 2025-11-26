@@ -146,4 +146,17 @@ export abstract class BaseCustomTextEditorProvider implements vscode.CustomTextE
 
         return changeDocumentSubscription;
     }
+
+    /**
+     * Open a file relative to the current document.
+     * @param currentDoc The current document
+     * @param relativePath The relative path to the file to open
+     */
+    protected openFile(currentDoc: vscode.TextDocument, relativePath: string): void {
+        if (!relativePath) {
+            return;
+        }
+        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
+        vscode.commands.executeCommand('vscode.open', targetUri);
+    }
 }

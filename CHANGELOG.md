@@ -23,6 +23,35 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.7] - 2025-11-26
+
+### Added
+- **Spell File Link Support**: `.dndspell` files are now fully supported in markdown links
+  - Clickable links to spell files in notes and markdown documents
+  - Hover previews showing spell details (name, level, school, components, duration, description)
+
+### Improved
+- **Editor Architecture Consolidation**: Refactored editors to share common functionality via base class
+  - Moved `openFile()` method to `BaseCustomTextEditorProvider` for reuse across editors
+  - Extracted duplicate `calcMod()` function in hover provider to single class method
+  - Reduced code duplication between `MapEditorProvider` and `NotesEditorProvider`
+
+### Fixed
+- **Example Files**: Fixed incorrect relative path in example map pin link
+  - Map pin link now correctly points to `./example.dndnotes` instead of `./examples/example.dndnotes`
+- **Notes Link Persistence**: Fixed bugs with link persistence when switching between view and edit modes
+
+### Removed
+- **Dead Code Cleanup**: Removed unused code to reduce extension size and improve maintainability
+  - Removed unimplemented `createCharacter` command from package.json
+  - Removed unused `enableHoverPreviews` and `enableAutocomplete` configuration settings
+  - Removed unused `getSpellsByLevel()`, `getSpellsByClass()`, `getAllSpellNames()` methods from CompendiumService
+  - Removed unused `formatSpellForHover()` method (hover provider has its own implementation)
+  - Made `safeParseJSON()` private (was exported but only used internally)
+
+### Changed
+- **License**: Updated from CC BY 4.0 to GPLv3
+
 ## [0.0.6] - 2025-11-26
 
 ### Added
@@ -165,7 +194,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.3...v0.0.4

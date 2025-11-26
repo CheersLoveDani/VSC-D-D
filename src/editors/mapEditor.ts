@@ -137,11 +137,4 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
         }
     }
 
-    private openFile(currentDoc: vscode.TextDocument, relativePath: string): void {
-        if (!relativePath) {
-            return;
-        }
-        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
-        vscode.commands.executeCommand('vscode.open', targetUri);
-    }
 }

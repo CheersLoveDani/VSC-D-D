@@ -343,31 +343,6 @@ export class CompendiumService {
         });
     }
 
-    public getSpellsByLevel(level: number): Spell[] {
-        const results: Spell[] = [];
-        for (const spell of this.spells.values()) {
-            if (spell.level === level) {
-                results.push(spell);
-            }
-        }
-        return results.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    public getSpellsByClass(className: string): Spell[] {
-        const results: Spell[] = [];
-        const lowerClass = className.toLowerCase();
-        for (const spell of this.spells.values()) {
-            if (spell.classes.some(c => c.toLowerCase().includes(lowerClass))) {
-                results.push(spell);
-            }
-        }
-        return results.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    public getAllSpellNames(): string[] {
-        return Array.from(this.spells.values()).map(s => s.name).sort();
-    }
-
     public getMonster(name: string): Monster | undefined {
         return this.monsters.get(name.toLowerCase());
     }
@@ -414,41 +389,6 @@ export class CompendiumService {
             monsters: this.monsters.size,
             items: this.items.size
         };
-    }
-
-    // Format spell for display
-    public formatSpellForHover(spell: Spell): string {
-        const lines: string[] = [];
-
-        lines.push(`**${spell.name}**`);
-        lines.push(`*${spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`} ${spell.school}${spell.ritual ? ' (ritual)' : ''}*`);
-        lines.push('');
-        lines.push(`**Casting Time:** ${spell.castingTime}`);
-        lines.push(`**Range:** ${spell.range}`);
-        lines.push(`**Components:** ${spell.components}`);
-        lines.push(`**Duration:** ${spell.duration}${spell.concentration ? ' (concentration)' : ''}`);
-        lines.push('');
-        lines.push(spell.description);
-
-        if (spell.higherLevels) {
-            lines.push('');
-            lines.push(`**At Higher Levels:** ${spell.higherLevels}`);
-        }
-
-        if (spell.damage && Object.keys(spell.damage.dice).length > 0) {
-            lines.push('');
-            const damageEntries = Object.entries(spell.damage.dice)
-                .map(([lvl, dice]) => `Level ${lvl}: ${dice}`)
-                .join(', ');
-            lines.push(`**Damage (${spell.damage.type}):** ${damageEntries}`);
-        }
-
-        if (spell.classes.length > 0) {
-            lines.push('');
-            lines.push(`**Classes:** ${spell.classes.slice(0, 5).join(', ')}${spell.classes.length > 5 ? '...' : ''}`);
-        }
-
-        return lines.join('\n');
     }
 
     // Format spell for compact display (autocomplete, etc.)

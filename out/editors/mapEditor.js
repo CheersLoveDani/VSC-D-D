@@ -119,13 +119,6 @@ class MapEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
             catch { /* ignore parse errors */ }
         }
     }
-    openFile(currentDoc, relativePath) {
-        if (!relativePath) {
-            return;
-        }
-        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
-        vscode.commands.executeCommand('vscode.open', targetUri);
-    }
 }
 exports.MapEditorProvider = MapEditorProvider;
 MapEditorProvider.viewType = 'dnd.mapEditor';

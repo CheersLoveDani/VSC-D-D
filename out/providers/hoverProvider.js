@@ -6,6 +6,15 @@ const fs = require("fs");
 const path = require("path");
 const compendiumService_1 = require("../services/compendiumService");
 class DndHoverProvider {
+    /**
+     * Calculate ability score modifier.
+     * @param score The ability score (e.g., 10, 14, 8)
+     * @returns The modifier string with sign (e.g., "+0", "+2", "-1")
+     */
+    calcMod(score) {
+        const mod = Math.floor((score - 10) / 2);
+        return mod >= 0 ? `+${mod}` : `${mod}`;
+    }
     provideHover(document, position, token) {
         // Check for compendium references first: @spell[Name], @monster[Name], @item[Name]
         const compendiumHover = this.checkCompendiumReference(document, position);
@@ -23,7 +32,7 @@ class DndHoverProvider {
             return null;
         }
         const linkPath = match[2];
-        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap') && !linkPath.endsWith('.dndstat')) {
+        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap') && !linkPath.endsWith('.dndstat') && !linkPath.endsWith('.dndspell')) {
             return null;
         }
         // Resolve absolute path
@@ -48,6 +57,9 @@ class DndHoverProvider {
             }
             else if (linkPath.endsWith('.dndstat')) {
                 this.formatStatBlockHover(markdown, data);
+            }
+            else if (linkPath.endsWith('.dndspell')) {
+                this.formatSpellFileHover(markdown, data);
             }
             return new vscode.Hover(markdown);
         }
@@ -86,16 +98,12 @@ class DndHoverProvider {
         }
         // Display ability scores
         if (data.abilityScores) {
-            const calcMod = (score) => {
-                const mod = Math.floor((score - 10) / 2);
-                return mod >= 0 ? `+${mod}` : `${mod}`;
-            };
-            md.appendMarkdown(`**STR** ${data.abilityScores.strength} (${calcMod(data.abilityScores.strength)}) | `);
-            md.appendMarkdown(`**DEX** ${data.abilityScores.dexterity} (${calcMod(data.abilityScores.dexterity)}) | `);
-            md.appendMarkdown(`**CON** ${data.abilityScores.constitution} (${calcMod(data.abilityScores.constitution)})\n`);
-            md.appendMarkdown(`**INT** ${data.abilityScores.intelligence} (${calcMod(data.abilityScores.intelligence)}) | `);
-            md.appendMarkdown(`**WIS** ${data.abilityScores.wisdom} (${calcMod(data.abilityScores.wisdom)}) | `);
-            md.appendMarkdown(`**CHA** ${data.abilityScores.charisma} (${calcMod(data.abilityScores.charisma)})\n\n`);
+            md.appendMarkdown(`**STR** ${data.abilityScores.strength} (${this.calcMod(data.abilityScores.strength)}) | `);
+            md.appendMarkdown(`**DEX** ${data.abilityScores.dexterity} (${this.calcMod(data.abilityScores.dexterity)}) | `);
+            md.appendMarkdown(`**CON** ${data.abilityScores.constitution} (${this.calcMod(data.abilityScores.constitution)})\n`);
+            md.appendMarkdown(`**INT** ${data.abilityScores.intelligence} (${this.calcMod(data.abilityScores.intelligence)}) | `);
+            md.appendMarkdown(`**WIS** ${data.abilityScores.wisdom} (${this.calcMod(data.abilityScores.wisdom)}) | `);
+            md.appendMarkdown(`**CHA** ${data.abilityScores.charisma} (${this.calcMod(data.abilityScores.charisma)})\n\n`);
         }
         // Display traits
         if (data.traits && data.traits.length > 0) {
@@ -191,13 +199,9 @@ class DndHoverProvider {
         md.appendMarkdown(`**AC** ${monster.ac} | **HP** ${monster.hp} | **CR** ${monster.cr}\n\n`);
         md.appendMarkdown(`**Speed:** ${monster.speed}\n\n`);
         // Ability scores
-        const calcMod = (score) => {
-            const mod = Math.floor((score - 10) / 2);
-            return mod >= 0 ? `+${mod}` : `${mod}`;
-        };
         md.appendMarkdown(`| STR | DEX | CON | INT | WIS | CHA |\n`);
         md.appendMarkdown(`|:---:|:---:|:---:|:---:|:---:|:---:|\n`);
-        md.appendMarkdown(`| ${monster.stats.str} (${calcMod(monster.stats.str)}) | ${monster.stats.dex} (${calcMod(monster.stats.dex)}) | ${monster.stats.con} (${calcMod(monster.stats.con)}) | ${monster.stats.int} (${calcMod(monster.stats.int)}) | ${monster.stats.wis} (${calcMod(monster.stats.wis)}) | ${monster.stats.cha} (${calcMod(monster.stats.cha)}) |\n`);
+        md.appendMarkdown(`| ${monster.stats.str} (${this.calcMod(monster.stats.str)}) | ${monster.stats.dex} (${this.calcMod(monster.stats.dex)}) | ${monster.stats.con} (${this.calcMod(monster.stats.con)}) | ${monster.stats.int} (${this.calcMod(monster.stats.int)}) | ${monster.stats.wis} (${this.calcMod(monster.stats.wis)}) | ${monster.stats.cha} (${this.calcMod(monster.stats.cha)}) |\n`);
     }
     formatCompendiumItemHover(md, item) {
         md.appendMarkdown(`### ${item.name}\n`);
@@ -206,6 +210,32 @@ class DndHoverProvider {
         const desc = item.description.length > 500
             ? item.description.substring(0, 500) + '...'
             : item.description;
+        md.appendMarkdown(`${desc}\n`);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    formatSpellFileHover(md, data) {
+        const levelText = data.level === 0 ? 'Cantrip' : `Level ${data.level}`;
+        md.appendMarkdown(`### ${data.name || 'Unknown Spell'}\n`);
+        md.appendMarkdown(`*${levelText} ${data.school || 'Unknown'}${data.ritual ? ' (ritual)' : ''}*\n\n`);
+        md.appendMarkdown(`**Casting Time:** ${data.castingTime || '1 action'}\n\n`);
+        md.appendMarkdown(`**Range:** ${data.range || 'Self'}\n\n`);
+        // Build components string
+        const components = [];
+        if (data.componentV) {
+            components.push('V');
+        }
+        if (data.componentS) {
+            components.push('S');
+        }
+        if (data.componentM) {
+            components.push(`M (${data.materials || 'materials'})`);
+        }
+        md.appendMarkdown(`**Components:** ${components.join(', ') || 'None'}\n\n`);
+        md.appendMarkdown(`**Duration:** ${data.duration || 'Instantaneous'}${data.concentration ? ' (concentration)' : ''}\n\n`);
+        // Truncate description for hover
+        const desc = (data.description || 'No description.').length > 500
+            ? data.description.substring(0, 500) + '...'
+            : (data.description || 'No description.');
         md.appendMarkdown(`${desc}\n`);
     }
 }

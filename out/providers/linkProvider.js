@@ -17,7 +17,8 @@ class DndLinkProvider {
                 linkPath.endsWith('.dndchar') ||
                 linkPath.endsWith('.dndmap') ||
                 linkPath.endsWith('.dndstat') ||
-                linkPath.endsWith('.dndnotes')) {
+                linkPath.endsWith('.dndnotes') ||
+                linkPath.endsWith('.dndspell')) {
                 // Calculate the position of the link in the document
                 const startPos = document.positionAt(match.index);
                 const endPos = document.positionAt(match.index + match[0].length);

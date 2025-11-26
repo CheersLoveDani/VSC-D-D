@@ -13,7 +13,10 @@
       "Bash(wc:*)",
       "Bash(findstr:*)",
       "Bash(cd:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []
