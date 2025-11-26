@@ -117,26 +117,42 @@ const globalWindow = window;
         const message = event.data;
         switch (message.type) {
             case 'update':
+                console.log('=== MESSAGE: update ===');
+                console.log('Received message.text:', message.text.substring(0, 200));
+                
                 // Normalize strings for comparison (ignore whitespace differences)
                 const normalize = (str) => (str || '').replace(/\r\n/g, '\n').trim();
-                const newContent = normalize(message.text);
+                
+                // IMPORTANT: Strip webview URIs before storing
+                // This ensures state.content always has relative paths, never session-specific URIs
+                const unconvertedContent = stripWebviewUris(message.text);
+                console.log('After stripWebviewUris:', unconvertedContent.substring(0, 200));
+                
+                const newContent = normalize(unconvertedContent);
                 const currentContent = normalize(state.content);
                 const lastSaved = normalize(state.lastSavedContent);
+
+                console.log('Comparison - newContent === currentContent:', newContent === currentContent);
+                console.log('Comparison - newContent === lastSaved:', newContent === lastSaved);
+                console.log('pendingUpdate:', state.pendingUpdate);
 
                 // If we have a pending update, the editor is the source of truth
                 // Only accept updates that match what we sent
                 if (state.pendingUpdate) {
                     if (newContent === currentContent || newContent === lastSaved) {
+                        console.log('Clearing pendingUpdate flag - content matches');
                         state.pendingUpdate = false;
                         return;
                     }
                     // VSCode sent something different - it might be stale, ignore it
                     // The editor has the authoritative content
+                    console.log('Ignoring update - pendingUpdate is true and content differs');
                     return;
                 }
 
                 // Ignore if content hasn't changed OR if it matches what we just saved (echo)
                 if (newContent === currentContent || newContent === lastSaved) {
+                    console.log('Ignoring update - content unchanged');
                     return;
                 }
 
@@ -145,26 +161,37 @@ const globalWindow = window;
                 // the document echoes back changes that originated from undo/redo
                 if (editor && !state.rawMode) {
                     const editorContent = normalize(convertHTMLToMarkdown(editor.getHTML()));
+                    console.log('Editor content (converted):', editorContent.substring(0, 200));
                     if (newContent === editorContent) {
                         // TipTap already has this content (e.g., from undo/redo)
                         // Just update state without resetting the editor
-                        state.content = message.text;
-                        state.lastSavedContent = message.text;
+                        console.log('Editor already has this content - updating state only');
+                        state.content = unconvertedContent;  // Store unconverted (relative paths)
+                        state.lastSavedContent = unconvertedContent;
                         return;
                     }
                 }
 
-                state.content = message.text;
+                // Update state with unconverted content (relative paths)
+                console.log('Updating state.content with unconverted content');
+                state.content = unconvertedContent;
+                
                 if (editor && !state.rawMode) {
                     // Only update if editor exists and we're in rich mode
-                    // Use trySetMarkdownContent to handle conversion safely
-                    trySetMarkdownContent(state.content);
+                    // Use the CONVERTED content (with webview URIs) for display
+                    console.log('Updating editor with converted content (has webview URIs)');
+                    trySetMarkdownContent(message.text);
                 } else if (rawTextarea && state.rawMode) {
-                    rawTextarea.value = state.content;
+                    // For raw mode, use unconverted content
+                    console.log('Updating raw textarea with unconverted content');
+                    rawTextarea.value = unconvertedContent;
                 }
                 if (state.mode === 'read') {
+                    // Re-render view mode with updated content
+                    console.log('Re-rendering view mode');
                     render();
                 }
+                console.log('=== MESSAGE COMPLETE ===\n');
                 return;
             case 'previewData':
                 showPopover(message.data, message.x, message.y);
@@ -173,17 +200,30 @@ const globalWindow = window;
     });
 
     toggleBtn.addEventListener('click', () => {
+        console.log('=== TOGGLE BUTTON CLICKED ===');
+        console.log('Current mode:', state.mode);
+        console.log('Current state.content:', state.content.substring(0, 200));
+        
         // If switching FROM edit mode TO read mode, we need to save the content first
         if (state.mode === 'edit' && editor) {
+            console.log('Switching FROM edit TO view - saving content');
             const html = editor.getHTML();
-            state.content = convertHTMLToMarkdown(html);
+            console.log('Editor HTML:', html.substring(0, 200));
+            // Use helper to convert and strip webview URIs
+            const converted = htmlToStorageMarkdown(html);
+            console.log('Converted markdown:', converted.substring(0, 200));
+            state.content = converted;
+            console.log('Updated state.content:', state.content.substring(0, 200));
         }
 
         state.mode = state.mode === 'read' ? 'edit' : 'read';
+        console.log('New mode:', state.mode);
         toggleBtn.textContent = state.mode === 'read' ? 'Edit Note' : 'View Note';
         editorToolbar.style.display = state.mode === 'edit' ? 'flex' : 'none';
         rawToggleBtn.style.display = state.mode === 'edit' ? 'inline-block' : 'none';
+        console.log('About to call render()');
         render();
+        console.log('=== TOGGLE COMPLETE ===\n');
     });
 
     rawToggleBtn.addEventListener('click', () => {
@@ -195,7 +235,9 @@ const globalWindow = window;
 
         if (state.rawMode && editor) {
             // Switch to raw markdown
-            state.content = editor.storage.markdown?.getMarkdown() || convertHTMLToMarkdown(editor.getHTML());
+            const markdown = editor.storage.markdown?.getMarkdown() || convertHTMLToMarkdown(editor.getHTML());
+            // Strip webview URIs before storing
+            state.content = stripWebviewUris(markdown);
             editor.destroy();
             editor = null;
             container.innerHTML = '';
@@ -210,21 +252,34 @@ const globalWindow = window;
     });
 
     function render() {
+        console.log('=== RENDER CALLED ===');
+        console.log('Current mode:', state.mode);
+        console.log('Current state.content:', state.content.substring(0, 200));
+        
         container.innerHTML = '';
 
         if (state.mode === 'edit') {
+            console.log('Rendering EDIT mode');
             if (state.rawMode) {
+                console.log('Raw mode enabled');
                 renderRawEditor();
             } else {
+                console.log('Rich editor mode');
                 renderRichEditor();
             }
         } else {
+            console.log('Rendering VIEW mode');
+            // For view mode, we need to convert relative paths to webview URIs for display
+            // state.content has relative paths, but we need webview URIs for images to display
             const preview = document.createElement('div');
             preview.className = 'markdown-preview';
-            preview.innerHTML = simpleMarkdownToHTML(state.content);
+            const html = simpleMarkdownToHTML(state.content);
+            console.log('Generated preview HTML:', html.substring(0, 200));
+            preview.innerHTML = html;
             container.appendChild(preview);
             attachLinkListeners(preview);
         }
+        console.log('=== RENDER COMPLETE ===\n');
     }
 
     function renderRawEditor() {
@@ -281,20 +336,28 @@ const globalWindow = window;
             ],
             content: '', // Start empty to avoid conversion issues
             onUpdate: ({ editor }) => {
+                console.log('=== EDITOR onUpdate ===');
                 // Skip if this update was triggered by us setting content externally
                 if (state.isSettingContent) {
+                    console.log('Skipping - isSettingContent flag is true');
                     return;
                 }
                 const html = editor.getHTML();
-                const newContent = convertHTMLToMarkdown(html);
+                console.log('Editor HTML:', html.substring(0, 200));
+                // Use helper to convert and strip webview URIs
+                const newContent = htmlToStorageMarkdown(html);
+                console.log('Converted to markdown:', newContent.substring(0, 200));
                 state.content = newContent;
                 state.lastSavedContent = state.content;
+                console.log('Updated state.content:', state.content.substring(0, 200));
                 // Mark that we're the source of truth - ignore incoming updates until VSCode confirms
                 state.pendingUpdate = true;
+                console.log('Sending updateData to backend');
                 vscode.postMessage({
                     type: 'updateData',
                     text: state.content
                 });
+                console.log('=== onUpdate COMPLETE ===\n');
             },
         });
 
@@ -404,6 +467,9 @@ const globalWindow = window;
     function trySetMarkdownContent(markdown) {
         if (!editor || !markdown) return;
 
+        console.log('[trySetMarkdownContent] Setting content in editor');
+        console.log('[trySetMarkdownContent] Input markdown:', markdown.substring(0, 200));
+
         // Set flag to prevent onUpdate from firing during programmatic content change
         state.isSettingContent = true;
 
@@ -411,8 +477,11 @@ const globalWindow = window;
         // Otherwise, TipTap will treat it as plain text which is fine
         try {
             const html = simpleMarkdownToHTML(markdown);
+            console.log('[trySetMarkdownContent] Converted to HTML:', html.substring(0, 200));
             editor.commands.setContent(html);
+            console.log('[trySetMarkdownContent] Content set successfully');
         } catch (e) {
+            console.error('[trySetMarkdownContent] Error:', e);
             // Fallback: just set as plain text
             editor.commands.setContent(`<p>${markdown}</p>`);
         } finally {
@@ -644,6 +713,74 @@ const globalWindow = window;
     }
 
     /**
+     * Convert webview URIs back to relative paths for storage
+     * This ensures we never save session-specific URIs to the document
+     * @param {string} markdown - Markdown that may contain webview URIs
+     * @returns {string} - Markdown with relative paths
+     */
+    function stripWebviewUris(markdown) {
+        if (!markdown) return '';
+        
+        console.log('[stripWebviewUris] Input:', markdown.substring(0, 200));
+        
+        // Match image syntax with webview URIs
+        const result = markdown.replace(
+            /!\[([^\]]*)\]\((vscode-webview:\/\/[^)]+)\)/g,
+            (match, alt, fullUri) => {
+                try {
+                    // Extract the path from the webview URI
+                    // Format: vscode-webview://authority/e%3A/development/VSC-D%26D/images/pic.png
+                    const url = new URL(fullUri);
+                    const pathname = url.pathname;
+                    
+                    // Decode URI components (handles %20, %26, etc.)
+                    const decodedPath = decodeURIComponent(pathname);
+                    
+                    // Find the last occurrence of a reasonable file path
+                    // We're looking for patterns like: /folder/file.ext or folder/file.ext
+                    const pathMatch = decodedPath.match(/([^\/]+\/[^\/]+\.(png|jpg|jpeg|gif|svg|webp|bmp))$/i);
+                    
+                    if (pathMatch) {
+                        const relativePath = pathMatch[1];
+                        console.log(`[stripWebviewUris] Converted: ${fullUri} -> ./${relativePath}`);
+                        return `![${alt}](./${relativePath})`;
+                    }
+                    
+                    // If no match, try to extract just the filename
+                    const filenameMatch = decodedPath.match(/([^\/]+\.(png|jpg|jpeg|gif|svg|webp|bmp))$/i);
+                    if (filenameMatch) {
+                        const filename = filenameMatch[1];
+                        console.log(`[stripWebviewUris] Converted (filename only): ${fullUri} -> ./${filename}`);
+                        return `![${alt}](./${filename})`;
+                    }
+                    
+                    console.warn('[stripWebviewUris] Could not extract path from:', fullUri);
+                    return match; // Return original if we can't parse
+                } catch (error) {
+                    console.error('[stripWebviewUris] Error processing:', fullUri, error);
+                    return match; // On error, return original to avoid data loss
+                }
+            }
+        );
+        
+        console.log('[stripWebviewUris] Output:', result.substring(0, 200));
+        return result;
+    }
+
+    /**
+     * Safely convert HTML to markdown and strip webview URIs for storage
+     * This ensures we always store relative paths, never session-specific URIs
+     * @param {string} html - HTML from TipTap editor
+     * @returns {string} - Markdown with relative paths
+     */
+    function htmlToStorageMarkdown(html) {
+        const markdown = convertHTMLToMarkdown(html);
+        const stripped = stripWebviewUris(markdown);
+        console.log('[htmlToStorageMarkdown] Converted and stripped HTML to markdown');
+        return stripped;
+    }
+
+    /**
      * Process inline markdown (bold, italic, links, etc.)
      * @param {string} text
      * @returns {string}
@@ -674,6 +811,8 @@ const globalWindow = window;
     function convertHTMLToMarkdown(html) {
         if (!html) return '';
 
+        console.log('[convertHTMLToMarkdown] Starting conversion, input HTML:', html);
+
         // Create a temporary div to parse HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
@@ -688,6 +827,7 @@ const globalWindow = window;
         // Clean up excessive newlines (more than 2 consecutive newlines)
         markdown = markdown.replace(/\n{3,}/g, '\n\n');
 
+        console.log('[convertHTMLToMarkdown] Conversion complete, output markdown:', markdown.trim());
         return markdown.trim();
     }
     
@@ -707,6 +847,7 @@ const globalWindow = window;
 
         const element = /** @type {HTMLElement} */ (node);
         const tagName = element.tagName.toLowerCase();
+        console.log('[convertNodeToMarkdown] Processing element:', tagName);
         
         switch (tagName) {
             case 'h1':
@@ -719,10 +860,14 @@ const globalWindow = window;
                 return '#'.repeat(level) + ' ' + element.textContent + '\n\n';
             
             case 'p':
+                // Process child nodes to preserve inline markdown (links, bold, italic, etc.)
+                let pContent = '';
+                for (const child of element.childNodes) {
+                    pContent += convertNodeToMarkdown(child);
+                }
                 // Only add content if paragraph is not empty
-                const pText = element.textContent?.trim() || '';
-                if (!pText) return '';
-                return pText + '\n\n';
+                if (!pContent.trim()) return '';
+                return pContent + '\n\n';
             
             case 'strong':
             case 'b':
@@ -756,9 +901,19 @@ const globalWindow = window;
                         const hasCheckbox = li.querySelector('input[type="checkbox"]');
                         if (hasCheckbox) {
                             const checked = hasCheckbox.checked;
-                            ulMarkdown += `- [${checked ? 'x' : ' '}] ${li.textContent}\n`;
+                            // Process child nodes to preserve links and other inline elements
+                            let liContent = '';
+                            for (const child of li.childNodes) {
+                                liContent += convertNodeToMarkdown(child);
+                            }
+                            ulMarkdown += `- [${checked ? 'x' : ' '}] ${liContent}\n`;
                         } else {
-                            ulMarkdown += '- ' + li.textContent + '\n';
+                            // Process child nodes to preserve links and other inline elements
+                            let liContent = '';
+                            for (const child of li.childNodes) {
+                                liContent += convertNodeToMarkdown(child);
+                            }
+                            ulMarkdown += '- ' + liContent + '\n';
                         }
                     }
                 }
@@ -769,7 +924,12 @@ const globalWindow = window;
                 let index = 1;
                 for (const li of element.children) {
                     if (li.tagName.toLowerCase() === 'li') {
-                        olMarkdown += `${index}. ${li.textContent}\n`;
+                        // Process child nodes to preserve links and other inline elements
+                        let liContent = '';
+                        for (const child of li.childNodes) {
+                            liContent += convertNodeToMarkdown(child);
+                        }
+                        olMarkdown += `${index}. ${liContent}\n`;
                         index++;
                     }
                 }
@@ -777,7 +937,19 @@ const globalWindow = window;
             
             case 'a':
                 const href = element.getAttribute('href') || '';
-                return `[${element.textContent}](${href})`;
+                console.log('[convertNodeToMarkdown] Link - href:', href);
+                console.log('[convertNodeToMarkdown] Link - element.childNodes.length:', element.childNodes.length);
+                // Process child nodes to preserve images and other inline elements
+                let linkContent = '';
+                for (const child of element.childNodes) {
+                    const childResult = convertNodeToMarkdown(child);
+                    console.log('[convertNodeToMarkdown] Link child result:', childResult);
+                    linkContent += childResult;
+                }
+                console.log('[convertNodeToMarkdown] Final link content:', linkContent);
+                const result = `[${linkContent}](${href})`;
+                console.log('[convertNodeToMarkdown] Final link markdown:', result);
+                return result;
             
             case 'img':
                 const src = element.getAttribute('src') || '';
