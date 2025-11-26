@@ -217,6 +217,18 @@ You can link to other files in your campaign:
 - [Item Database](./example.dnditem) - Link to an item
 - [Map](./example.dndmap) - Link to a map
 - [Stat Block](./example.dndstat) - Link to a creature stat block
+- [Spell](./example.dndspell) - Link to a spell
+
+## Compendium References
+
+You can reference spells, monsters, and items from the compendium! Click on them to open their details:
+
+- @spell[Fireball] - A classic wizard spell
+- @spell[Cure Wounds] - Essential healing magic
+- @monster[Goblin] - Common low-level enemy
+- @item[Longsword] - Standard martial weapon
+
+Hover over these references to see a preview, or click to open them as editable files!
 
 ## Formatting
 
@@ -235,6 +247,24 @@ You can use **bold**, *italic*, and other markdown formatting.
 | Gandalf | 10 | Wizard |
 | Aragorn | 8 | Ranger |
 `;
+            // Create example spell file
+            const exampleSpell = {
+                name: "Fireball",
+                level: 3,
+                school: "Evocation",
+                castingTime: "1 action",
+                range: "150 feet",
+                duration: "Instantaneous",
+                componentV: true,
+                componentS: true,
+                componentM: true,
+                materials: "a tiny ball of bat guano and sulfur",
+                ritual: false,
+                concentration: false,
+                classes: "Sorcerer, Wizard",
+                description: "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a Dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.\n\nThe fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried.",
+                higherLevels: "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
+            };
             // Create example stat block file
             const exampleStat = {
                 name: "Goblin",
@@ -282,6 +312,7 @@ You can use **bold**, *italic*, and other markdown formatting.
             await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndmap`), new TextEncoder().encode(JSON.stringify(exampleMap, null, 2)));
             await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndnotes`), new TextEncoder().encode(exampleNotes));
             await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndstat`), new TextEncoder().encode(JSON.stringify(exampleStat, null, 2)));
+            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndspell`), new TextEncoder().encode(JSON.stringify(exampleSpell, null, 2)));
             // Create instruction file
             const instructions = `# CritCode Instructions
 
@@ -296,6 +327,7 @@ CritCode provides custom editors for managing your D&D campaign files:
 - **Maps** (.dndmap) - Visual maps with interactive pins linking to notes and locations
 - **Notes** (.dndnotes) - Rich text campaign notes with markdown support and file linking
 - **Stat Blocks** (.dndstat) - Monster and creature statistics
+- **Spells** (.dndspell) - Custom spell cards with full details
 
 ## Getting Started
 
@@ -309,6 +341,7 @@ CritCode provides custom editors for managing your D&D campaign files:
    - \`worldmap.dndmap\` for maps
    - \`notes.dndnotes\` for campaign notes
    - \`goblin.dndstat\` for stat blocks
+   - \`fireball.dndspell\` for spells
 
 ### Using the Editors
 
@@ -341,6 +374,43 @@ Each file type opens with a custom editor designed for that content:
 - Create monster and creature stat blocks
 - Track abilities, actions, and traits
 - Set challenge rating and XP
+
+#### Spells (.dndspell)
+- Create custom spell cards
+- Track casting time, range, components, and duration
+- Mark concentration and ritual spells
+- Add "At Higher Levels" descriptions
+
+## D&D 5e Compendium
+
+CritCode includes a built-in compendium with 319 SRD 5.1 spells!
+
+### Compendium References in Notes
+
+Reference spells, monsters, and items directly in your notes:
+
+\`\`\`markdown
+The wizard cast @spell[Fireball] at the @monster[Goblin] horde.
+The party found a @item[Longsword] in the treasure chest.
+\`\`\`
+
+- **Hover** over references to see a quick preview
+- **Click** on references to open them as editable files
+- Use the **📖 Compendium** toolbar button in notes to search and insert references
+
+### Character Sheet Integration
+
+- Type in spell name fields to search the compendium
+- Hover over spell names to see full details
+- Autocomplete with fuzzy matching
+
+### Importing Additional Content
+
+Import Fight Club 5e XML compendium files to add more spells, monsters, and items:
+
+1. Open Command Palette (Ctrl+Shift+P)
+2. Run \`D&D Manager: Import Compendium (XML)\`
+3. Select your XML file
 
 ## Linking Files
 

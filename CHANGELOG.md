@@ -23,6 +23,26 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.6] - 2025-11-26
+
+### Added
+- **Spell Editor (.dndspell)**: New custom editor for creating and editing spell cards
+  - Full spell details: name, level, school, casting time, range, duration
+  - Component tracking with material component descriptions
+  - Ritual and concentration tags
+  - Classes and "At Higher Levels" fields
+  - Live preview card with D&D-styled formatting
+- **Clickable Compendium References**: Click on `@spell[Name]`, `@monster[Name]`, or `@item[Name]` in notes to open as editable files
+  - Clicking creates a new file with the compendium entry data
+  - Spells open as `.dndspell`, monsters as `.dndstat`, items as `.dnditem`
+  - Files are created in the workspace root for easy access
+  - If the file already exists, it opens instead of creating a duplicate
+
+### Improved
+- **Example Files**: Setup files now include spell example (`example.dndspell`)
+- **Instructions**: CRITCODE_INSTRUCTIONS.md updated with compendium documentation
+- **Notes Example**: Example notes file demonstrates compendium reference syntax
+
 ## [0.0.5] - 2025-11-26
 
 ### Added
@@ -145,7 +165,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.1...v0.0.3

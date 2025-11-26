@@ -13,6 +13,7 @@ This extension provides specialized editors for different aspects of your D&D ca
 - **Item Database (`.dnditem`)** - Organize and catalog items, weapons, and magical artifacts
 - **Campaign Notes (`.dndnotes`)** - Rich text editor for campaign notes with markdown support
 - **Stat Blocks (`.dndstat`)** - Create and manage creature and NPC stat blocks
+- **Spell Editor (`.dndspell`)** - Create custom spell cards with full D&D spell details
 
 ### Rich Text Editing
 
@@ -123,6 +124,12 @@ Please report issues on the [GitHub repository](https://github.com/yourusername/
 ## Release Notes
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+### 0.0.6
+
+- New Spell Editor (`.dndspell`) for creating custom spell cards
+- Clickable compendium references - click to open as editable files
+- Updated example files with spell demonstration
 
 ### 0.0.5
 

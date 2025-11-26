@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { MapEditorProvider } from './editors/mapEditor';
 import { CharacterSheetProvider } from './editors/characterEditor';
 import { ItemEditorProvider } from './editors/itemEditor';
+import { SpellEditorProvider } from './editors/spellEditor';
 import { NotesEditorProvider } from './editors/notesEditor';
 import { StatBlockEditorProvider } from './editors/statBlockEditor';
 import { DndHoverProvider } from './providers/hoverProvider';
@@ -23,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(MapEditorProvider.register(context));
 	context.subscriptions.push(CharacterSheetProvider.register(context));
 	context.subscriptions.push(ItemEditorProvider.register(context));
+	context.subscriptions.push(SpellEditorProvider.register(context));
     context.subscriptions.push(NotesEditorProvider.register(context));
 	context.subscriptions.push(StatBlockEditorProvider.register(context));
 

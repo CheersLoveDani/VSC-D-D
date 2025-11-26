@@ -2128,7 +2128,7 @@ const globalWindow = window;
                     span.dataset.type = match[1].toLowerCase();
                     span.dataset.name = match[2];
                     span.textContent = match[0];
-                    span.style.cssText = 'color: var(--vscode-textLink-foreground); cursor: help; text-decoration: underline dotted;';
+                    span.style.cssText = 'color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: underline dotted;';
 
                     // Add hover listeners
                     span.addEventListener('mouseenter', (e) => {
@@ -2139,6 +2139,15 @@ const globalWindow = window;
 
                     span.addEventListener('mouseleave', () => {
                         hideCompendiumTooltip();
+                    });
+
+                    // Add click listener to open compendium entry as file
+                    span.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const type = span.dataset.type;
+                        const name = span.dataset.name;
+                        openCompendiumEntry(type, name);
                     });
 
                     fragment.appendChild(span);
@@ -2172,6 +2181,19 @@ const globalWindow = window;
             name: name,
             x: x,
             y: y
+        });
+    }
+
+    /**
+     * Open compendium entry as a file
+     * @param {string} type
+     * @param {string} name
+     */
+    function openCompendiumEntry(type, name) {
+        vscode.postMessage({
+            type: 'openCompendiumEntry',
+            entryType: type,
+            name: name
         });
     }
 

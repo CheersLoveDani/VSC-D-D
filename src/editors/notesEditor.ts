@@ -185,6 +185,11 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
                         y: e.y
                     });
                     return;
+
+                case 'openCompendiumEntry':
+                    // Open compendium entry as a file in the editor
+                    this.openCompendiumEntry(e.entryType, e.name, document);
+                    return;
             }
         });
     }
@@ -201,6 +206,105 @@ export class NotesEditorProvider implements vscode.CustomTextEditorProvider {
     private openFile(currentDoc: vscode.TextDocument, relativePath: string) {
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
         vscode.commands.executeCommand('vscode.open', targetUri);
+    }
+
+    private async openCompendiumEntry(entryType: string, name: string, currentDoc: vscode.TextDocument) {
+        const compendium = CompendiumService.getInstance();
+        let fileContent: any = null;
+        let fileExtension = '';
+        let sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_'); // Sanitize filename
+
+        if (entryType === 'spell') {
+            const spell = compendium.getSpell(name);
+            if (spell) {
+                fileExtension = '.dndspell';
+                // Build components string
+                const components: string[] = [];
+                if (spell.components?.includes('V')) components.push('V');
+                if (spell.components?.includes('S')) components.push('S');
+                if (spell.components?.includes('M')) components.push('M');
+
+                // Extract material component if present
+                const matMatch = spell.components?.match(/M\s*\(([^)]+)\)/);
+                const materials = matMatch ? matMatch[1] : '';
+
+                fileContent = {
+                    name: spell.name,
+                    level: spell.level,
+                    school: spell.school,
+                    castingTime: spell.castingTime,
+                    range: spell.range,
+                    duration: spell.duration,
+                    componentV: components.includes('V'),
+                    componentS: components.includes('S'),
+                    componentM: components.includes('M'),
+                    materials: materials,
+                    ritual: spell.ritual || false,
+                    concentration: spell.concentration || false,
+                    classes: spell.classes?.join(', ') || '',
+                    description: spell.description || '',
+                    higherLevels: spell.higherLevels || ''
+                };
+            }
+        } else if (entryType === 'monster') {
+            const monster = compendium.getMonster(name);
+            if (monster) {
+                fileExtension = '.dndstat';
+                fileContent = {
+                    name: monster.name,
+                    size: monster.size,
+                    type: monster.type,
+                    alignment: monster.alignment,
+                    ac: monster.ac,
+                    hp: monster.hp,
+                    speed: monster.speed,
+                    stats: monster.stats,
+                    cr: monster.cr,
+                    description: monster.description || ''
+                };
+            }
+        } else if (entryType === 'item') {
+            const item = compendium.getItem(name);
+            if (item) {
+                fileExtension = '.dnditem';
+                fileContent = {
+                    name: item.name,
+                    type: item.type,
+                    rarity: item.rarity || '',
+                    attunement: item.attunement || false,
+                    description: item.description || '',
+                    value: 0,
+                    weight: 0
+                };
+            }
+        }
+
+        if (!fileContent) {
+            vscode.window.showWarningMessage(`Could not find ${entryType}: ${name}`);
+            return;
+        }
+
+        // Create an untitled file with the content
+        const content = JSON.stringify(fileContent, null, 2);
+
+        // Get the workspace folder or use the current document's folder
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
+        const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
+
+        // Create a file URI in the workspace
+        const fileUri = vscode.Uri.joinPath(baseUri, `${sanitizedName}${fileExtension}`);
+
+        // Check if file already exists
+        try {
+            await vscode.workspace.fs.stat(fileUri);
+            // File exists, just open it
+            await vscode.commands.executeCommand('vscode.open', fileUri);
+        } catch {
+            // File doesn't exist, create it
+            const encoder = new TextEncoder();
+            await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
+            await vscode.commands.executeCommand('vscode.open', fileUri);
+        }
     }
 
 
