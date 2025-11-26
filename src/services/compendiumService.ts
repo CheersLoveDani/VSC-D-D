@@ -27,9 +27,12 @@ export interface Monster {
     name: string;
     size: string;
     type: string;
+    subtype?: string;
     alignment: string;
-    ac: string;
-    hp: string;
+    ac: number;
+    acType?: string;
+    hp: number;
+    hitDice: string;
     speed: string;
     stats: {
         str: number;
@@ -39,8 +42,23 @@ export interface Monster {
         wis: number;
         cha: number;
     };
+    saves?: string[];
+    skills?: string[];
+    damageVulnerabilities?: string[];
+    damageResistances?: string[];
+    damageImmunities?: string[];
+    conditionImmunities?: string[];
+    senses: string;
+    languages: string;
     cr: string;
-    description: string;
+    xp: number;
+    proficiencyBonus: number;
+    traits?: Array<{ name: string; description: string }>;
+    actions?: Array<{ name: string; description: string }>;
+    reactions?: Array<{ name: string; description: string }>;
+    legendaryActions?: Array<{ name: string; description: string }>;
+    legendaryDescription?: string;
+    description?: string;
     source: string;
 }
 
@@ -214,6 +232,15 @@ export class CompendiumService {
                     this.items.set(item.name.toLowerCase(), item);
                 }
             }
+
+            // Load bundled SRD monsters
+            const srdMonstersPath = path.join(this.context.extensionPath, 'src', 'data', 'srd-monsters.json');
+            if (fs.existsSync(srdMonstersPath)) {
+                const data = JSON.parse(fs.readFileSync(srdMonstersPath, 'utf8'));
+                for (const monster of data.monsters || []) {
+                    this.monsters.set(monster.name.toLowerCase(), monster);
+                }
+            }
         } catch (error) {
             console.error('Error loading SRD data:', error);
         }
@@ -235,11 +262,11 @@ export class CompendiumService {
                 }
             }
 
-            // Parse monsters
+            // Parse monsters (don't overwrite SRD monsters which have better data)
             const monsterMatches = content.matchAll(/<monster>([\s\S]*?)<\/monster>/g);
             for (const match of monsterMatches) {
                 const monster = this.parseXmlMonster(match[1]);
-                if (monster && monster.name) {
+                if (monster && monster.name && !this.monsters.has(monster.name.toLowerCase())) {
                     this.monsters.set(monster.name.toLowerCase(), monster);
                     counts.monsters++;
                 }
@@ -361,13 +388,73 @@ export class CompendiumService {
             return null;
         }
 
+        const cr = getTag('cr') || '0';
+
+        // Parse HP - may be in format "22 (3d8+9)" or just "22"
+        const hpStr = getTag('hp') || '1';
+        const hpMatch = hpStr.match(/^(\d+)/);
+        const hp = hpMatch ? parseInt(hpMatch[1]) : 1;
+
+        // Extract hit dice from HP string if present, otherwise use <hd> tag
+        const hdMatch = hpStr.match(/\(([^)]+)\)/);
+        const hitDice = hdMatch ? hdMatch[1] : (getTag('hd') || '1d8');
+
+        // Parse type - may include subtype in format "humanoid (human)"
+        const typeStr = getTag('type') || 'unknown';
+        const typeMatch = typeStr.match(/^([^(]+)(?:\s*\(([^)]+)\))?/);
+        const type = typeMatch ? typeMatch[1].trim() : typeStr;
+        const subtype = typeMatch && typeMatch[2] ? typeMatch[2].trim() : undefined;
+
+        // Parse saves - format: "Int +5, Wis +3"
+        const saveStr = getTag('save');
+        const saves = saveStr ? saveStr.split(',').map(s => s.trim()).filter(s => s) : undefined;
+
+        // Parse skills - format: "Arcana +5, History +5"
+        const skillStr = getTag('skill');
+        const skills = skillStr ? skillStr.split(',').map(s => s.trim()).filter(s => s) : undefined;
+
+        // Parse damage vulnerabilities, resistances, immunities
+        const vulnerableStr = getTag('vulnerable');
+        const damageVulnerabilities = vulnerableStr ? vulnerableStr.split(',').map(s => s.trim()).filter(s => s) : undefined;
+
+        const resistStr = getTag('resist');
+        const damageResistances = resistStr ? resistStr.split(',').map(s => s.trim()).filter(s => s) : undefined;
+
+        const immuneStr = getTag('immune');
+        const damageImmunities = immuneStr ? immuneStr.split(',').map(s => s.trim()).filter(s => s) : undefined;
+
+        // Parse condition immunities
+        const conditionImmuneStr = getTag('conditionImmune');
+        const conditionImmunities = conditionImmuneStr ? conditionImmuneStr.split(',').map(s => s.trim()).filter(s => s) : undefined;
+
+        // Parse senses and passive perception
+        const sensesStr = getTag('senses') || '';
+        const passiveStr = getTag('passive') || '10';
+        const senses = sensesStr
+            ? `${sensesStr}, passive Perception ${passiveStr}`
+            : `passive Perception ${passiveStr}`;
+
+        // Parse traits
+        const traits = this.parseXmlFeatures(xml, 'trait');
+
+        // Parse actions
+        const actions = this.parseXmlFeatures(xml, 'action');
+
+        // Parse reactions
+        const reactions = this.parseXmlFeatures(xml, 'reaction');
+
+        // Parse legendary actions
+        const legendaryActions = this.parseXmlFeatures(xml, 'legendary');
+
         return {
             name,
             size: getTag('size') || 'M',
-            type: getTag('type') || 'unknown',
+            type,
+            subtype,
             alignment: getTag('alignment') || 'unaligned',
-            ac: getTag('ac') || '10',
-            hp: getTag('hp') || '1',
+            ac: parseInt(getTag('ac')) || 10,
+            hp,
+            hitDice,
             speed: getTag('speed') || '30 ft.',
             stats: {
                 str: parseInt(getTag('str')) || 10,
@@ -377,10 +464,67 @@ export class CompendiumService {
                 wis: parseInt(getTag('wis')) || 10,
                 cha: parseInt(getTag('cha')) || 10
             },
-            cr: getTag('cr') || '0',
-            description: getTag('description') || '',
+            saves: saves?.length ? saves : undefined,
+            skills: skills?.length ? skills : undefined,
+            damageVulnerabilities: damageVulnerabilities?.length ? damageVulnerabilities : undefined,
+            damageResistances: damageResistances?.length ? damageResistances : undefined,
+            damageImmunities: damageImmunities?.length ? damageImmunities : undefined,
+            conditionImmunities: conditionImmunities?.length ? conditionImmunities : undefined,
+            senses,
+            languages: getTag('languages') || 'None',
+            cr,
+            xp: this.crToXp(cr),
+            proficiencyBonus: this.crToProficiency(cr),
+            traits: traits.length ? traits : undefined,
+            actions: actions.length ? actions : undefined,
+            reactions: reactions.length ? reactions : undefined,
+            legendaryActions: legendaryActions.length ? legendaryActions : undefined,
+            description: getTag('description') || undefined,
             source: 'Imported Compendium'
         };
+    }
+
+    private parseXmlFeatures(xml: string, tagName: string): Array<{ name: string; description: string }> {
+        const features: Array<{ name: string; description: string }> = [];
+        const regex = new RegExp(`<${tagName}>([\\s\\S]*?)<\\/${tagName}>`, 'g');
+        let match;
+
+        while ((match = regex.exec(xml)) !== null) {
+            const featureXml = match[1];
+            const name = this.getXmlTag(featureXml, 'name');
+            const text = this.getXmlTag(featureXml, 'text');
+
+            if (name && text) {
+                features.push({ name, description: text });
+            }
+        }
+
+        return features;
+    }
+
+    private crToXp(cr: string): number {
+        const xpMap: { [key: string]: number } = {
+            '0': 0, '1/8': 25, '1/4': 50, '1/2': 100,
+            '1': 200, '2': 450, '3': 700, '4': 1100, '5': 1800,
+            '6': 2300, '7': 2900, '8': 3900, '9': 5000, '10': 5900,
+            '11': 7200, '12': 8400, '13': 10000, '14': 11500, '15': 13000,
+            '16': 15000, '17': 18000, '18': 20000, '19': 22000, '20': 25000,
+            '21': 33000, '22': 41000, '23': 50000, '24': 62000, '25': 75000,
+            '26': 90000, '27': 105000, '28': 120000, '29': 135000, '30': 155000
+        };
+        return xpMap[cr] || 0;
+    }
+
+    private crToProficiency(cr: string): number {
+        const numCr = cr.includes('/') ? eval(cr) : parseFloat(cr);
+        if (numCr < 5) return 2;
+        if (numCr < 9) return 3;
+        if (numCr < 13) return 4;
+        if (numCr < 17) return 5;
+        if (numCr < 21) return 6;
+        if (numCr < 25) return 7;
+        if (numCr < 29) return 8;
+        return 9;
     }
 
     private parseXmlItem(xml: string): Item | null {
@@ -750,5 +894,12 @@ export class CompendiumService {
             range: item.range,
             description: item.description
         };
+    }
+
+    /**
+     * Get full monster info formatted for webview display.
+     */
+    public getMonsterInfo(name: string): Monster | null {
+        return this.getMonster(name) || null;
     }
 }

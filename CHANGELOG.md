@@ -23,6 +23,36 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.9] - 2025-11-26
+
+### Added
+- **SRD Monsters Database**: Bundled 328 SRD 5e monsters for compendium
+  - Monsters fetched from D&D 5e API and normalized to consistent format
+  - Includes full stat blocks: ability scores, saves, skills, traits, actions, reactions, legendary actions
+  - Auto-calculated XP and proficiency bonus from CR
+
+### Improved
+- **Monster Interface**: Unified Monster interface for cross-compatibility between SRD, XML compendium, and custom `.dndstat` files
+  - All monster data now uses the same comprehensive interface
+  - Fields: `ac`, `hp`, `hitDice`, `speed`, `stats`, `saves`, `skills`, damage/condition immunities
+  - Traits, actions, reactions, and legendary actions with name/description structure
+  - Removed separate `StatBlockData` interface to eliminate data conversion
+- **Stat Block Editor**: Completely rewritten to use Monster interface directly
+  - Displays all D&D 5e monster fields: saves, skills, damage vulnerabilities/resistances/immunities, condition immunities
+  - Traits, actions, reactions, and legendary actions sections with add/remove functionality
+  - Auto-migration from old editor format (abilityScores, armorClass, hitPoints) to new format
+  - Auto-calculates XP when CR changes
+- **XML Compendium Import**: Enhanced Fight Club 5e XML parsing for monsters
+  - Parses all monster fields including saves, skills, damage/condition immunities
+  - Extracts traits, actions, reactions, and legendary actions from XML
+  - SRD monsters now take priority over XML imports to preserve higher-quality data
+- **Compendium Click-to-Open**: Monster files created from compendium now include all monster properties
+
+### Fixed
+- **Newline Preservation**: Fixed trait/action descriptions losing newlines when displayed
+  - Newlines in descriptions (like numbered lists in Beholder's Eye Rays) now render properly with `<br>` tags
+  - Editing descriptions preserves newlines when saving back to file
+
 ## [0.0.8] - 2025-11-26
 
 ### Added
@@ -227,7 +257,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.8...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.9...HEAD
+[0.0.9]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.5...v0.0.6

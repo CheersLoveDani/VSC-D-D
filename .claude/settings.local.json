@@ -18,7 +18,9 @@
       "Bash(head:*)",
       "Bash(npm run lint:*)",
       "Bash(git -C \"E:/development/VSC-D&D\" log --oneline 494228c..HEAD)",
-      "Bash(git -C \"E:/development/VSC-D&D\" diff --stat)"
+      "Bash(git -C \"E:/development/VSC-D&D\" diff --stat)",
+      "Bash(powershell -Command \"Select-String -Path ''E:\\development\\VSC-D&D\\test-files\\Complete_Compendium_2014.xml'' -Pattern ''<monster>'' -Context 0,80 | Select-Object -First 1 | ForEach-Object { $_Context.PostContext }\")",
+      "Bash(powershell -Command \"Select-String -Path ''E:\\development\\VSC-D&D\\test-files\\Complete_Compendium_2014.xml'' -Pattern ''<name>Beholder</name>'' -Context 0,120 | Select-Object -First 1\")"
     ],
     "deny": [],
     "ask": []
