@@ -614,6 +614,7 @@
         let html = `
             <div style="font-weight: bold; font-size: 14px; color: var(--vscode-textLink-foreground, #3794ff); margin-bottom: 8px;">
                 ${spellInfo.name}
+                ${spellInfo.isCustom ? '<span style="color: var(--vscode-charts-purple, #b180d7); font-size: 11px; margin-left: 8px;">★ Custom Spell</span>' : ''}
             </div>
             <div style="font-style: italic; color: var(--vscode-descriptionForeground, #999); margin-bottom: 8px;">
                 ${levelText} ${spellInfo.school}${tags.length ? ' (' + tags.join(', ') + ')' : ''}
@@ -683,7 +684,10 @@
                 cursor: pointer;
                 border-bottom: 1px solid var(--vscode-panel-border, #333);
             ">
-                <div style="font-weight: 500;">${spell.name}</div>
+                <div style="font-weight: 500;">
+                    ${spell.name}
+                    ${spell.isCustom ? '<span style="color: var(--vscode-charts-purple, #b180d7); font-size: 10px; margin-left: 6px;">★ Custom</span>' : ''}
+                </div>
                 <div style="font-size: 11px; color: var(--vscode-descriptionForeground, #999);">
                     ${spell.level === 0 ? 'Cantrip' : 'Level ' + spell.level} ${spell.school}
                 </div>

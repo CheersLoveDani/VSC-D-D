@@ -23,6 +23,29 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ### Changed
 
 
+## [0.0.10] - 2025-11-26
+
+### Added
+- **Custom Spell Support**: `.dndspell` files in workspace are now integrated into the compendium system
+  - Custom spells appear in spell search autocomplete alongside SRD spells
+  - Custom spells show "★ Custom" badge in search results to distinguish from compendium entries
+  - Hover tooltips display "★ Custom Spell" indicator for user-created spells
+  - Custom spells take priority over SRD spells with the same name (user data wins)
+- **Real-time Spell File Watching**: Custom spells automatically reload when files change
+  - File watcher monitors `.dndspell` files for create/modify/delete events
+  - Changes to spell files immediately reflect in search and hover previews
+  - No extension restart required when adding or editing custom spells
+
+### Improved
+- **Spell Search**: Enhanced to include both SRD compendium and custom workspace spells
+  - Custom spells appear first in search results
+  - Unified search experience across all spell sources
+- **Character Editor Spell Fields**: Now supports custom spells with full hover previews
+  - Autocomplete shows custom spells with visual indicator
+  - Hover over spell names to see full details including custom spell indicator
+- **Notes Editor Compendium Search**: Custom spells now appear with "★ Custom" badge
+- **Compendium Stats**: `getStats()` now reports custom spell count separately
+
 ## [0.0.9] - 2025-11-26
 
 ### Added
@@ -257,7 +280,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.9...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.10...HEAD
+[0.0.10]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.6...v0.0.7

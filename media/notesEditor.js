@@ -2097,7 +2097,10 @@ const globalWindow = window;
             ">
                 <span style="font-size: 16px;">${typeIcons[r.type] || '📄'}</span>
                 <div>
-                    <div style="font-weight: 500;">${r.name}</div>
+                    <div style="font-weight: 500;">
+                        ${r.name}
+                        ${r.isCustom ? '<span style="color: var(--vscode-charts-purple, #b180d7); font-size: 10px; margin-left: 6px;">★ Custom</span>' : ''}
+                    </div>
                     <div style="font-size: 11px; color: var(--vscode-descriptionForeground);">${r.subtitle}</div>
                 </div>
             </div>

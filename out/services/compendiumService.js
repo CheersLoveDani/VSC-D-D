@@ -75,6 +75,7 @@ class CompendiumService {
         this.spells = new Map();
         this.monsters = new Map();
         this.items = new Map();
+        this.customSpells = new Map();
         this.initialized = false;
         this.context = context;
     }
@@ -99,7 +100,104 @@ class CompendiumService {
         if (importedPath && fs.existsSync(importedPath)) {
             await this.importXmlCompendium(importedPath);
         }
+        // Load custom spells from workspace
+        await this.loadCustomSpells();
+        // Set up file watcher for custom spells
+        this.setupCustomSpellWatcher();
         this.initialized = true;
+    }
+    /**
+     * Load all custom .dndspell files from the workspace.
+     */
+    async loadCustomSpells() {
+        this.customSpells.clear();
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+            return;
+        }
+        try {
+            const files = await vscode.workspace.findFiles('**/*.dndspell', '**/node_modules/**');
+            for (const file of files) {
+                await this.loadCustomSpellFile(file);
+            }
+        }
+        catch (error) {
+            console.error('Error loading custom spells:', error);
+        }
+    }
+    /**
+     * Load a single custom spell file.
+     */
+    async loadCustomSpellFile(uri) {
+        try {
+            const content = await vscode.workspace.fs.readFile(uri);
+            const text = new TextDecoder().decode(content);
+            const data = JSON.parse(text);
+            if (data.name) {
+                data.filePath = uri.fsPath;
+                this.customSpells.set(data.name.toLowerCase(), data);
+            }
+        }
+        catch (error) {
+            console.error(`Error loading custom spell from ${uri.fsPath}:`, error);
+        }
+    }
+    /**
+     * Set up a file watcher to reload custom spells when they change.
+     */
+    setupCustomSpellWatcher() {
+        if (this.customSpellWatcher) {
+            this.customSpellWatcher.dispose();
+        }
+        this.customSpellWatcher = vscode.workspace.createFileSystemWatcher('**/*.dndspell');
+        this.customSpellWatcher.onDidCreate(async (uri) => {
+            await this.loadCustomSpellFile(uri);
+        });
+        this.customSpellWatcher.onDidChange(async (uri) => {
+            await this.loadCustomSpellFile(uri);
+        });
+        this.customSpellWatcher.onDidDelete((uri) => {
+            // Find and remove the spell that was in this file
+            for (const [key, spell] of this.customSpells) {
+                if (spell.filePath === uri.fsPath) {
+                    this.customSpells.delete(key);
+                    break;
+                }
+            }
+        });
+    }
+    /**
+     * Convert a CustomSpell to the standard Spell format for display.
+     */
+    customSpellToSpell(custom) {
+        // Build components string
+        const components = [];
+        if (custom.componentV)
+            components.push('V');
+        if (custom.componentS)
+            components.push('S');
+        if (custom.componentM) {
+            components.push(custom.materials ? `M (${custom.materials})` : 'M');
+        }
+        // Parse classes string to array
+        const classes = custom.classes
+            ? custom.classes.split(',').map(c => c.trim()).filter(c => c)
+            : [];
+        return {
+            name: custom.name,
+            level: custom.level,
+            school: custom.school,
+            castingTime: custom.castingTime,
+            range: custom.range,
+            components: components.join(', '),
+            duration: custom.duration,
+            description: custom.description,
+            higherLevels: custom.higherLevels,
+            classes,
+            ritual: custom.ritual,
+            concentration: custom.concentration,
+            source: 'Custom'
+        };
     }
     async loadSrdData() {
         try {
@@ -497,21 +595,64 @@ class CompendiumService {
     }
     // Public API methods
     getSpell(name) {
-        return this.spells.get(name.toLowerCase());
+        const lowerName = name.toLowerCase();
+        // Check custom spells first (user spells take priority)
+        const customSpell = this.customSpells.get(lowerName);
+        if (customSpell) {
+            return this.customSpellToSpell(customSpell);
+        }
+        return this.spells.get(lowerName);
+    }
+    /**
+     * Get a custom spell by name (returns the raw CustomSpell format).
+     */
+    getCustomSpell(name) {
+        return this.customSpells.get(name.toLowerCase());
+    }
+    /**
+     * Check if a spell is a custom spell from a .dndspell file.
+     */
+    isCustomSpell(name) {
+        return this.customSpells.has(name.toLowerCase());
     }
     searchSpells(query, limit = 20) {
         const results = [];
         const lowerQuery = query.toLowerCase();
-        for (const [key, spell] of this.spells) {
-            if (key.includes(lowerQuery) || spell.name.toLowerCase().includes(lowerQuery)) {
-                results.push(spell);
+        const addedNames = new Set();
+        // Search custom spells first (they take priority)
+        for (const [key, customSpell] of this.customSpells) {
+            if (key.includes(lowerQuery) || customSpell.name.toLowerCase().includes(lowerQuery)) {
+                results.push(this.customSpellToSpell(customSpell));
+                addedNames.add(key);
                 if (results.length >= limit) {
                     break;
                 }
             }
         }
+        // Then search SRD/compendium spells
+        if (results.length < limit) {
+            for (const [key, spell] of this.spells) {
+                // Skip if already added from custom spells
+                if (addedNames.has(key)) {
+                    continue;
+                }
+                if (key.includes(lowerQuery) || spell.name.toLowerCase().includes(lowerQuery)) {
+                    results.push(spell);
+                    if (results.length >= limit) {
+                        break;
+                    }
+                }
+            }
+        }
         return results.sort((a, b) => {
-            // Prioritize exact prefix matches
+            // Prioritize custom spells
+            const aIsCustom = a.source === 'Custom';
+            const bIsCustom = b.source === 'Custom';
+            if (aIsCustom && !bIsCustom)
+                return -1;
+            if (!aIsCustom && bIsCustom)
+                return 1;
+            // Then prioritize exact prefix matches
             const aStartsWith = a.name.toLowerCase().startsWith(lowerQuery);
             const bStartsWith = b.name.toLowerCase().startsWith(lowerQuery);
             if (aStartsWith && !bStartsWith)
@@ -557,7 +698,8 @@ class CompendiumService {
         return {
             spells: this.spells.size,
             monsters: this.monsters.size,
-            items: this.items.size
+            items: this.items.size,
+            customSpells: this.customSpells.size
         };
     }
     // Format spell for compact display (autocomplete, etc.)
@@ -572,7 +714,8 @@ class CompendiumService {
         return {
             type: 'spell',
             name: spell.name,
-            subtitle: `${spell.level === 0 ? 'Cantrip' : 'Level ' + spell.level} ${spell.school}`
+            subtitle: `${spell.level === 0 ? 'Cantrip' : 'Level ' + spell.level} ${spell.school}`,
+            isCustom: spell.source === 'Custom'
         };
     }
     /**
@@ -640,6 +783,8 @@ class CompendiumService {
         if (!spell) {
             return null;
         }
+        const isCustom = this.isCustomSpell(name);
+        const customSpell = isCustom ? this.getCustomSpell(name) : undefined;
         return {
             name: spell.name,
             level: spell.level,
@@ -653,7 +798,9 @@ class CompendiumService {
             concentration: spell.concentration,
             ritual: spell.ritual,
             damage: spell.damage,
-            classes: spell.classes
+            classes: spell.classes,
+            isCustom,
+            filePath: customSpell?.filePath
         };
     }
     /**

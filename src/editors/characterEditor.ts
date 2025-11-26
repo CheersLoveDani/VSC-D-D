@@ -48,7 +48,8 @@ export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 				name: s.name,
 				level: s.level,
 				school: s.school,
-				compact: compendium.formatSpellCompact(s)
+				compact: compendium.formatSpellCompact(s),
+				isCustom: s.source === 'Custom'
 			}))
 		});
 	}
