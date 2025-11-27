@@ -18,7 +18,7 @@ export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 	): Promise<void> {
 		const subscription = this.setupWebview(document, webviewPanel, {
 			onMessage: async (message) => {
-				const msg = message as { type: string; data?: unknown; query?: string; requestId?: string; name?: string };
+				const msg = message as { type: string; data?: unknown; query?: string; requestId?: string; name?: string; level?: number };
 				switch (msg.type) {
 					case 'updateData':
 						this.updateDocumentJson(document, msg.data);
@@ -28,6 +28,9 @@ export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 						return;
 					case 'getSpellInfo':
 						this.handleGetSpellInfo(webviewPanel, msg.name ?? '', msg.requestId ?? '');
+						return;
+					case 'openSpell':
+						await this.handleOpenSpell(msg.name ?? '', msg.level ?? 0, document);
 						return;
 				}
 			}
@@ -64,6 +67,82 @@ export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 			found: !!info,
 			info: info
 		});
+	}
+
+	private async handleOpenSpell(name: string, level: number, currentDoc: vscode.TextDocument): Promise<void> {
+		if (!name.trim()) {
+			return;
+		}
+
+		const compendium = CompendiumService.getInstance();
+		const sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_');
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
+		const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
+		const fileUri = vscode.Uri.joinPath(baseUri, `${sanitizedName}.dndspell`);
+
+		try {
+			// Check if file already exists
+			await vscode.workspace.fs.stat(fileUri);
+			// File exists, open it
+			await vscode.commands.executeCommand('vscode.open', fileUri);
+		} catch {
+			// File doesn't exist, create it
+			const spell = compendium.getSpell(name);
+			let fileContent: unknown;
+
+			if (spell) {
+				// Spell exists in compendium, use its data
+				const components: string[] = [];
+				if (spell.components?.includes('V')) { components.push('V'); }
+				if (spell.components?.includes('S')) { components.push('S'); }
+				if (spell.components?.includes('M')) { components.push('M'); }
+
+				const matMatch = spell.components?.match(/M\s*\(([^)]+)\)/);
+				const materials = matMatch ? matMatch[1] : '';
+
+				fileContent = {
+					name: spell.name,
+					level: spell.level,
+					school: spell.school,
+					castingTime: spell.castingTime,
+					range: spell.range,
+					duration: spell.duration,
+					componentV: components.includes('V'),
+					componentS: components.includes('S'),
+					componentM: components.includes('M'),
+					materials: materials,
+					ritual: spell.ritual || false,
+					concentration: spell.concentration || false,
+					classes: spell.classes?.join(', ') || '',
+					description: spell.description || '',
+					higherLevels: spell.higherLevels || ''
+				};
+			} else {
+				// Spell doesn't exist, create a blank template with the name and level
+				fileContent = {
+					name: name,
+					level: level,
+					school: '',
+					castingTime: '1 action',
+					range: '',
+					duration: '',
+					componentV: false,
+					componentS: false,
+					componentM: false,
+					materials: '',
+					ritual: false,
+					concentration: false,
+					classes: '',
+					description: '',
+					higherLevels: ''
+				};
+			}
+
+			const content = JSON.stringify(fileContent, null, 2);
+			const encoder = new TextEncoder();
+			await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
+			await vscode.commands.executeCommand('vscode.open', fileUri);
+		}
 	}
 
 	protected getHtmlForWebview(webview: vscode.Webview): string {

@@ -729,12 +729,15 @@
     /**
      * Request spell info from extension
      * @param {string} name
-     * @param {function} callback
+     * @param {function} callback - called with spell info if found, null if not found
      */
     function requestSpellInfo(name, callback) {
-        if (!name || name.trim().length === 0) return;
+        if (!name || name.trim().length === 0) {
+            callback(null);
+            return;
+        }
 
-        // Check cache first
+        // Check cache first (only cache found spells, not "not found" results)
         const cacheKey = name.toLowerCase();
         if (spellInfoCache[cacheKey]) {
             callback(spellInfoCache[cacheKey]);
@@ -751,6 +754,9 @@
                 if (message.found) {
                     spellInfoCache[cacheKey] = message.info;
                     callback(message.info);
+                } else {
+                    // Don't cache "not found" - spell might be created later
+                    callback(null);
                 }
             }
         };
@@ -812,6 +818,50 @@
     }
 
     /**
+     * Open or create a spell file
+     * @param {string} name
+     * @param {number} level
+     */
+    function openSpellFile(name, level) {
+        if (!name.trim()) return;
+        vscode.postMessage({
+            type: 'openSpell',
+            name: name,
+            level: level
+        });
+    }
+
+    /**
+     * Update the spell action button icon based on whether the spell exists
+     * @param {HTMLButtonElement} button
+     * @param {string} spellName
+     */
+    function updateSpellButtonIcon(button, spellName) {
+        if (!spellName.trim()) {
+            // No spell name - show disabled state
+            button.textContent = '→';
+            button.className = 'open-spell spell-btn-disabled';
+            button.title = 'Enter a spell name first';
+            return;
+        }
+
+        // Check if spell exists in compendium/custom spells
+        requestSpellInfo(spellName, (/** @type {any} */ info) => {
+            if (info) {
+                // Spell exists - show blue arrow (open)
+                button.textContent = '→';
+                button.className = 'open-spell spell-btn-open';
+                button.title = 'Open spell file (Ctrl+Click on name)';
+            } else {
+                // Spell doesn't exist - show green plus (create)
+                button.textContent = '+';
+                button.className = 'open-spell spell-btn-create';
+                button.title = 'Create new spell file';
+            }
+        });
+    }
+
+    /**
      * @param {any} level
      * @param {any} spellData
      */
@@ -829,11 +879,18 @@
         // @ts-ignore
         div.innerHTML = `
             <input type="checkbox" ${spellData.prepared ? 'checked' : ''} data-field="prepared" title="Prepared" />
-            <input type="text" placeholder="Spell name" value="${spellData.name || ''}" data-field="name" class="spell-name-input" />
+            <input type="text" placeholder="Spell name" value="${spellData.name || ''}" data-field="name" class="spell-name-input" title="Ctrl+Click to open spell file" />
+            <button type="button" class="open-spell spell-btn-disabled" title="Enter a spell name first">→</button>
             <button type="button" class="delete-spell">×</button>
         `;
 
         const nameInput = /** @type {HTMLInputElement} */ (div.querySelector('[data-field="name"]'));
+        const openButton = /** @type {HTMLButtonElement} */ (div.querySelector('.open-spell'));
+
+        // Update button icon based on initial spell name
+        if (spellData.name) {
+            updateSpellButtonIcon(openButton, spellData.name);
+        }
 
         // Add event listeners
         div.querySelectorAll('input').forEach(el => {
@@ -841,11 +898,21 @@
             el.addEventListener(eventType, () => saveSpells());
         });
 
+        // Open spell button click handler
+        openButton?.addEventListener('click', () => {
+            const spellName = nameInput?.value.trim();
+            if (spellName) {
+                openSpellFile(spellName, parseInt(level));
+            }
+        });
+
         // Autocomplete on typing
         if (nameInput) {
             nameInput.addEventListener('input', () => {
                 activeSpellInput = nameInput;
                 debouncedSearch(nameInput);
+                // Update button icon when spell name changes
+                updateSpellButtonIcon(openButton, nameInput.value);
             });
 
             nameInput.addEventListener('focus', () => {
@@ -862,6 +929,21 @@
                         hideAutocomplete();
                     }
                 }, 200);
+                // Update button icon after blur (in case autocomplete selected something)
+                setTimeout(() => {
+                    updateSpellButtonIcon(openButton, nameInput.value);
+                }, 250);
+            });
+
+            // Ctrl+Click to open spell file
+            nameInput.addEventListener('click', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const spellName = nameInput.value.trim();
+                    if (spellName) {
+                        openSpellFile(spellName, parseInt(level));
+                    }
+                }
             });
 
             // Show tooltip on hover if spell exists
@@ -903,6 +985,8 @@
                         nameInput.dispatchEvent(new Event('input', { bubbles: true }));
                         hideAutocomplete();
                         saveSpells();
+                        // Update button after autocomplete selection
+                        updateSpellButtonIcon(openButton, name);
                     }
                     return;
                 } else if (e.key === 'Escape') {

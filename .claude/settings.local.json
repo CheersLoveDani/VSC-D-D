@@ -20,7 +20,9 @@
       "Bash(git -C \"E:/development/VSC-D&D\" log --oneline 494228c..HEAD)",
       "Bash(git -C \"E:/development/VSC-D&D\" diff --stat)",
       "Bash(powershell -Command \"Select-String -Path ''E:\\development\\VSC-D&D\\test-files\\Complete_Compendium_2014.xml'' -Pattern ''<monster>'' -Context 0,80 | Select-Object -First 1 | ForEach-Object { $_Context.PostContext }\")",
-      "Bash(powershell -Command \"Select-String -Path ''E:\\development\\VSC-D&D\\test-files\\Complete_Compendium_2014.xml'' -Pattern ''<name>Beholder</name>'' -Context 0,120 | Select-Object -First 1\")"
+      "Bash(powershell -Command \"Select-String -Path ''E:\\development\\VSC-D&D\\test-files\\Complete_Compendium_2014.xml'' -Pattern ''<name>Beholder</name>'' -Context 0,120 | Select-Object -First 1\")",
+      "Bash(git -C \"E:/development/VSC-D&D\" log --oneline v0.0.9..HEAD)",
+      "Bash(git -C \"E:/development/VSC-D&D\" log --oneline -5)"
     ],
     "deny": [],
     "ask": []

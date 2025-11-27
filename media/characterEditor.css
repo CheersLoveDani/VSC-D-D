@@ -622,7 +622,7 @@ body {
 
 .spell-entry {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: var(--dnd-space-2);
     align-items: center;
     padding: var(--dnd-space-2);
@@ -638,6 +638,11 @@ body {
 
 .spell-entry input[type="text"] {
     font-size: var(--dnd-text-sm);
+    cursor: pointer;
+}
+
+.spell-entry input[type="text"]:hover {
+    border-color: var(--vscode-textLink-foreground, #3794ff);
 }
 
 .spell-entry button {
@@ -650,9 +655,38 @@ body {
     transition: all var(--dnd-transition);
     width: 24px;
     height: 24px;
+    font-weight: bold;
 }
 
-.spell-entry button:hover {
+/* Spell button states */
+.spell-entry button.spell-btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.spell-entry button.spell-btn-open {
+    color: var(--vscode-textLink-foreground, #3794ff);
+    border-color: var(--vscode-textLink-foreground, #3794ff);
+}
+
+.spell-entry button.spell-btn-open:hover {
+    background: var(--vscode-textLink-foreground, #3794ff);
+    color: white;
+    border-color: var(--vscode-textLink-activeForeground, #006ab1);
+}
+
+.spell-entry button.spell-btn-create {
+    color: #22c55e;
+    border-color: #22c55e;
+}
+
+.spell-entry button.spell-btn-create:hover {
+    background: #22c55e;
+    color: white;
+    border-color: #16a34a;
+}
+
+.spell-entry button.delete-spell:hover {
     background: #ef4444;
     color: white;
     border-color: #dc2626;

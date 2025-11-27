@@ -35,6 +35,14 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
   - File watcher monitors `.dndspell` files for create/modify/delete events
   - Changes to spell files immediately reflect in search and hover previews
   - No extension restart required when adding or editing custom spells
+- **Spell File Navigation**: Click-to-open functionality for spell entries in character sheets
+  - Ctrl+Click (Cmd+Click on Mac) on any spell name to open its `.dndspell` file
+  - Dynamic button next to each spell entry with contextual icons:
+    - Blue arrow (→) for spells that exist in compendium or custom files (opens file)
+    - Green plus (+) for new spells not in compendium (creates new file)
+    - Disabled state when no spell name is entered
+  - If the spell file doesn't exist, it's automatically created with compendium data or a blank template
+  - New spells are created with the correct level pre-filled
 
 ### Improved
 - **Spell Search**: Enhanced to include both SRD compendium and custom workspace spells
@@ -43,8 +51,14 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - **Character Editor Spell Fields**: Now supports custom spells with full hover previews
   - Autocomplete shows custom spells with visual indicator
   - Hover over spell names to see full details including custom spell indicator
+  - Spell input fields highlight on hover to indicate click-to-open functionality
 - **Notes Editor Compendium Search**: Custom spells now appear with "★ Custom" badge
 - **Compendium Stats**: `getStats()` now reports custom spell count separately
+
+### Fixed
+- **Spell Button Icon**: Fixed contextual spell button not showing green "+" for non-compendium spells
+  - `requestSpellInfo` callback now properly returns `null` for spells not in compendium
+  - Button correctly updates to show create icon when typing a new spell name
 
 ## [0.0.9] - 2025-11-26
 
