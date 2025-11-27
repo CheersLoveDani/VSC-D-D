@@ -5,6 +5,7 @@ const vscode = require("vscode");
 const baseEditor_1 = require("./baseEditor");
 const preview_1 = require("../utils/preview");
 const compendiumService_1 = require("../services/compendiumService");
+const tempFileService_1 = require("../services/tempFileService");
 const filePaths_1 = require("../utils/filePaths");
 class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     static register(context) {
@@ -261,16 +262,14 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
             await vscode.commands.executeCommand('vscode.open', existingFile);
             return;
         }
-        // File doesn't exist, create it in the custom folder
+        // File doesn't exist - open as temp file (deleted when closed, unless saved elsewhere)
         try {
-            const fileUri = await (0, filePaths_1.getCustomFileUri)(baseUri, sanitizedName, fileExtension);
             const content = JSON.stringify(fileContent, null, 2);
-            const encoder = new TextEncoder();
-            await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
-            await vscode.commands.executeCommand('vscode.open', fileUri);
+            const tempFileService = tempFileService_1.TempFileService.getInstance();
+            await tempFileService.openTempFile(sanitizedName, fileExtension, content);
         }
         catch (error) {
-            vscode.window.showErrorMessage(`Failed to create ${entryType} file: ${error}`);
+            vscode.window.showErrorMessage(`Failed to open ${entryType}: ${error}`);
         }
     }
     convertImagePaths(markdown, documentUri, webview) {

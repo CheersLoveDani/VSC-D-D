@@ -13,6 +13,7 @@ const hoverProvider_1 = require("./providers/hoverProvider");
 const linkProvider_1 = require("./providers/linkProvider");
 const pluginManager_1 = require("./views/pluginManager");
 const compendiumService_1 = require("./services/compendiumService");
+const tempFileService_1 = require("./services/tempFileService");
 function activate(context) {
     // Initialize Compendium Service
     const compendium = compendiumService_1.CompendiumService.getInstance(context);
@@ -69,5 +70,8 @@ function activate(context) {
         vscode.window.showInformationMessage(`Compendium: ${stats.spells} spells, ${stats.monsters} monsters, ${stats.items} items`);
     }));
 }
-function deactivate() { }
+function deactivate() {
+    // Clean up temp files
+    tempFileService_1.TempFileService.getInstance().dispose();
+}
 //# sourceMappingURL=extension.js.map

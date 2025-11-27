@@ -9,6 +9,7 @@ import { DndHoverProvider } from './providers/hoverProvider';
 import { DndLinkProvider } from './providers/linkProvider';
 import { PluginManagerProvider } from './views/pluginManager';
 import { CompendiumService } from './services/compendiumService';
+import { TempFileService } from './services/tempFileService';
 
 export function activate(context: vscode.ExtensionContext) {
 	// Initialize Compendium Service
@@ -93,4 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 }
 
-export function deactivate() {}
+export function deactivate() {
+	// Clean up temp files
+	TempFileService.getInstance().dispose();
+}

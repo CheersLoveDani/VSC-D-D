@@ -15,6 +15,14 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ## [Unreleased]
 
 ### Added
+- **Temporary Compendium Preview**: Clicking compendium entries now opens them as temporary files
+  - Opens in custom editors (spell editor, stat block editor, item editor) with full UI
+  - Temp files are automatically deleted when closed without saving
+  - Use "Save As" to keep the file permanently in your workspace
+  - Existing custom files still open normally (no temp file created)
+- **TempFileService**: New service to manage temporary compendium file lifecycle
+  - Creates temp files in system temp directory (`%TEMP%/vscode-dnd-compendium/`)
+  - Automatic cleanup on file close and extension deactivation
 
 ### Improved
 

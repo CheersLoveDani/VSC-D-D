@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { BaseCustomTextEditorProvider } from './baseEditor';
 import { getPreviewData } from '../utils/preview';
 import { CompendiumService } from '../services/compendiumService';
-import { findExistingCustomFile, getCustomFileUri } from '../utils/filePaths';
+import { TempFileService } from '../services/tempFileService';
+import { findExistingCustomFile } from '../utils/filePaths';
 
 export class NotesEditorProvider extends BaseCustomTextEditorProvider {
 
@@ -303,15 +304,13 @@ export class NotesEditorProvider extends BaseCustomTextEditorProvider {
             return;
         }
 
-        // File doesn't exist, create it in the custom folder
+        // File doesn't exist - open as temp file (deleted when closed, unless saved elsewhere)
         try {
-            const fileUri = await getCustomFileUri(baseUri, sanitizedName, fileExtension);
             const content = JSON.stringify(fileContent, null, 2);
-            const encoder = new TextEncoder();
-            await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
-            await vscode.commands.executeCommand('vscode.open', fileUri);
+            const tempFileService = TempFileService.getInstance();
+            await tempFileService.openTempFile(sanitizedName, fileExtension, content);
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to create ${entryType} file: ${error}`);
+            vscode.window.showErrorMessage(`Failed to open ${entryType}: ${error}`);
         }
     }
 

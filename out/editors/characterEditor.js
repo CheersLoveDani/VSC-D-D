@@ -4,6 +4,7 @@ exports.CharacterSheetProvider = void 0;
 const vscode = require("vscode");
 const baseEditor_1 = require("./baseEditor");
 const compendiumService_1 = require("../services/compendiumService");
+const tempFileService_1 = require("../services/tempFileService");
 const filePaths_1 = require("../utils/filePaths");
 class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     static register(context) {
@@ -74,9 +75,8 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
             await vscode.commands.executeCommand('vscode.open', existingFile);
             return;
         }
-        // File doesn't exist, create it in the custom folder
+        // File doesn't exist - open as untitled document (temporary until saved)
         try {
-            const fileUri = await (0, filePaths_1.getCustomFileUri)(baseUri, sanitizedName, '.dndspell');
             const spell = compendium.getSpell(name);
             let fileContent;
             if (spell) {
@@ -132,12 +132,12 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 };
             }
             const content = JSON.stringify(fileContent, null, 2);
-            const encoder = new TextEncoder();
-            await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
-            await vscode.commands.executeCommand('vscode.open', fileUri);
+            // Open as temp file (deleted when closed, unless saved elsewhere)
+            const tempFileService = tempFileService_1.TempFileService.getInstance();
+            await tempFileService.openTempFile(sanitizedName, '.dndspell', content);
         }
         catch (error) {
-            vscode.window.showErrorMessage(`Failed to create spell file: ${error}`);
+            vscode.window.showErrorMessage(`Failed to open spell: ${error}`);
         }
     }
     getHtmlForWebview(webview) {
