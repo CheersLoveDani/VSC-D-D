@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { BaseCustomTextEditorProvider } from './baseEditor';
 import { CompendiumService } from '../services/compendiumService';
+import { findExistingCustomFile, getCustomFileUri } from '../utils/filePaths';
 
 export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 
@@ -78,15 +79,17 @@ export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 		const sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_');
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
 		const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
-		const fileUri = vscode.Uri.joinPath(baseUri, `${sanitizedName}.dndspell`);
 
+		// Check if file already exists (in custom folder or base directory)
+		const existingFile = await findExistingCustomFile(baseUri, sanitizedName, '.dndspell');
+		if (existingFile) {
+			await vscode.commands.executeCommand('vscode.open', existingFile);
+			return;
+		}
+
+		// File doesn't exist, create it in the custom folder
 		try {
-			// Check if file already exists
-			await vscode.workspace.fs.stat(fileUri);
-			// File exists, open it
-			await vscode.commands.executeCommand('vscode.open', fileUri);
-		} catch {
-			// File doesn't exist, create it
+			const fileUri = await getCustomFileUri(baseUri, sanitizedName, '.dndspell');
 			const spell = compendium.getSpell(name);
 			let fileContent: unknown;
 
@@ -142,6 +145,8 @@ export class CharacterSheetProvider extends BaseCustomTextEditorProvider {
 			const encoder = new TextEncoder();
 			await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
 			await vscode.commands.executeCommand('vscode.open', fileUri);
+		} catch (error) {
+			vscode.window.showErrorMessage(`Failed to create spell file: ${error}`);
 		}
 	}
 

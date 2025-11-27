@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { BaseCustomTextEditorProvider } from './baseEditor';
 import { getPreviewData } from '../utils/preview';
 import { CompendiumService } from '../services/compendiumService';
+import { findExistingCustomFile, getCustomFileUri } from '../utils/filePaths';
 
 export class NotesEditorProvider extends BaseCustomTextEditorProvider {
 
@@ -292,18 +293,25 @@ export class NotesEditorProvider extends BaseCustomTextEditorProvider {
             return;
         }
 
-        const content = JSON.stringify(fileContent, null, 2);
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
         const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
-        const fileUri = vscode.Uri.joinPath(baseUri, `${sanitizedName}${fileExtension}`);
 
+        // Check if file already exists (in custom folder or base directory)
+        const existingFile = await findExistingCustomFile(baseUri, sanitizedName, fileExtension);
+        if (existingFile) {
+            await vscode.commands.executeCommand('vscode.open', existingFile);
+            return;
+        }
+
+        // File doesn't exist, create it in the custom folder
         try {
-            await vscode.workspace.fs.stat(fileUri);
-            await vscode.commands.executeCommand('vscode.open', fileUri);
-        } catch {
+            const fileUri = await getCustomFileUri(baseUri, sanitizedName, fileExtension);
+            const content = JSON.stringify(fileContent, null, 2);
             const encoder = new TextEncoder();
             await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
             await vscode.commands.executeCommand('vscode.open', fileUri);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create ${entryType} file: ${error}`);
         }
     }
 

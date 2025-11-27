@@ -4,6 +4,7 @@ exports.CharacterSheetProvider = void 0;
 const vscode = require("vscode");
 const baseEditor_1 = require("./baseEditor");
 const compendiumService_1 = require("../services/compendiumService");
+const filePaths_1 = require("../utils/filePaths");
 class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     static register(context) {
         const provider = new CharacterSheetProvider(context);
@@ -67,15 +68,15 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
         const sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_');
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
         const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
-        const fileUri = vscode.Uri.joinPath(baseUri, `${sanitizedName}.dndspell`);
-        try {
-            // Check if file already exists
-            await vscode.workspace.fs.stat(fileUri);
-            // File exists, open it
-            await vscode.commands.executeCommand('vscode.open', fileUri);
+        // Check if file already exists (in custom folder or base directory)
+        const existingFile = await (0, filePaths_1.findExistingCustomFile)(baseUri, sanitizedName, '.dndspell');
+        if (existingFile) {
+            await vscode.commands.executeCommand('vscode.open', existingFile);
+            return;
         }
-        catch {
-            // File doesn't exist, create it
+        // File doesn't exist, create it in the custom folder
+        try {
+            const fileUri = await (0, filePaths_1.getCustomFileUri)(baseUri, sanitizedName, '.dndspell');
             const spell = compendium.getSpell(name);
             let fileContent;
             if (spell) {
@@ -134,6 +135,9 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
             const encoder = new TextEncoder();
             await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
             await vscode.commands.executeCommand('vscode.open', fileUri);
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to create spell file: ${error}`);
         }
     }
     getHtmlForWebview(webview) {
