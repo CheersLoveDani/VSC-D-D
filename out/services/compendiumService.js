@@ -76,6 +76,7 @@ class CompendiumService {
         this.monsters = new Map();
         this.items = new Map();
         this.customSpells = new Map();
+        this.customWeapons = new Map();
         this.initialized = false;
         this.context = context;
     }
@@ -102,8 +103,12 @@ class CompendiumService {
         }
         // Load custom spells from workspace
         await this.loadCustomSpells();
+        // Load custom weapons from workspace
+        await this.loadCustomWeapons();
         // Set up file watcher for custom spells
         this.setupCustomSpellWatcher();
+        // Set up file watcher for custom items (weapons)
+        this.setupCustomItemWatcher();
         this.initialized = true;
     }
     /**
@@ -161,6 +166,82 @@ class CompendiumService {
             for (const [key, spell] of this.customSpells) {
                 if (spell.filePath === uri.fsPath) {
                     this.customSpells.delete(key);
+                    break;
+                }
+            }
+        });
+    }
+    /**
+     * Load all custom .dnditem weapon files from the workspace.
+     */
+    async loadCustomWeapons() {
+        this.customWeapons.clear();
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+            return;
+        }
+        try {
+            const files = await vscode.workspace.findFiles('**/*.dnditem', '**/node_modules/**');
+            for (const file of files) {
+                await this.loadCustomWeaponFile(file);
+            }
+        }
+        catch (error) {
+            console.error('Error loading custom weapons:', error);
+        }
+    }
+    /**
+     * Load a single custom item file if it's a weapon.
+     */
+    async loadCustomWeaponFile(uri) {
+        try {
+            const content = await vscode.workspace.fs.readFile(uri);
+            const text = new TextDecoder().decode(content);
+            const data = JSON.parse(text);
+            // Only load items of type "Weapon"
+            if (data.name && data.type === 'Weapon') {
+                const weapon = {
+                    name: data.name,
+                    type: data.type,
+                    subtype: data.subtype,
+                    rarity: data.rarity || 'Common',
+                    magic: data.magic || false,
+                    attunement: data.attunement || false,
+                    attunementRequirement: data.attunementRequirement,
+                    weight: data.weight || 0,
+                    value: data.value || '',
+                    damage: data.damage,
+                    properties: data.properties || [],
+                    range: data.range,
+                    description: data.description || '',
+                    filePath: uri.fsPath
+                };
+                this.customWeapons.set(data.name.toLowerCase(), weapon);
+            }
+        }
+        catch (error) {
+            console.error(`Error loading custom weapon from ${uri.fsPath}:`, error);
+        }
+    }
+    /**
+     * Set up a file watcher to reload custom items when they change.
+     */
+    setupCustomItemWatcher() {
+        if (this.customItemWatcher) {
+            this.customItemWatcher.dispose();
+        }
+        this.customItemWatcher = vscode.workspace.createFileSystemWatcher('**/*.dnditem');
+        this.customItemWatcher.onDidCreate(async (uri) => {
+            await this.loadCustomWeaponFile(uri);
+        });
+        this.customItemWatcher.onDidChange(async (uri) => {
+            await this.loadCustomWeaponFile(uri);
+        });
+        this.customItemWatcher.onDidDelete((uri) => {
+            // Find and remove the weapon that was in this file
+            for (const [key, weapon] of this.customWeapons) {
+                if (weapon.filePath === uri.fsPath) {
+                    this.customWeapons.delete(key);
                     break;
                 }
             }
@@ -693,6 +774,128 @@ class CompendiumService {
             }
         }
         return results.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    /**
+     * Get a weapon by name (checks custom weapons first, then compendium items).
+     */
+    getWeapon(name) {
+        const lowerName = name.toLowerCase();
+        // Check custom weapons first (user weapons take priority)
+        const customWeapon = this.customWeapons.get(lowerName);
+        if (customWeapon) {
+            return this.customWeaponToItem(customWeapon);
+        }
+        // Check compendium items for weapons
+        const item = this.items.get(lowerName);
+        if (item && item.type === 'Weapon') {
+            return item;
+        }
+        return undefined;
+    }
+    /**
+     * Check if a weapon is a custom weapon from a .dnditem file.
+     */
+    isCustomWeapon(name) {
+        return this.customWeapons.has(name.toLowerCase());
+    }
+    /**
+     * Convert a CustomWeapon to the standard Item format for display.
+     */
+    customWeaponToItem(custom) {
+        return {
+            name: custom.name,
+            type: custom.type,
+            subtype: custom.subtype,
+            rarity: custom.rarity,
+            magic: custom.magic,
+            attunement: custom.attunement,
+            attunementRequirement: custom.attunementRequirement,
+            weight: custom.weight,
+            value: custom.value,
+            damage: custom.damage,
+            properties: custom.properties,
+            range: custom.range,
+            description: custom.description,
+            source: 'Custom'
+        };
+    }
+    /**
+     * Search for weapons (both custom and compendium).
+     */
+    searchWeapons(query, limit = 20) {
+        const results = [];
+        const lowerQuery = query.toLowerCase();
+        const addedNames = new Set();
+        // Search custom weapons first (they take priority)
+        for (const [key, customWeapon] of this.customWeapons) {
+            if (key.includes(lowerQuery) || customWeapon.name.toLowerCase().includes(lowerQuery)) {
+                results.push(this.customWeaponToItem(customWeapon));
+                addedNames.add(key);
+                if (results.length >= limit) {
+                    break;
+                }
+            }
+        }
+        // Then search compendium items for weapons
+        if (results.length < limit) {
+            for (const [key, item] of this.items) {
+                // Only include weapons
+                if (item.type !== 'Weapon') {
+                    continue;
+                }
+                // Skip if already added from custom weapons
+                if (addedNames.has(key)) {
+                    continue;
+                }
+                if (key.includes(lowerQuery) || item.name.toLowerCase().includes(lowerQuery)) {
+                    results.push(item);
+                    if (results.length >= limit) {
+                        break;
+                    }
+                }
+            }
+        }
+        return results.sort((a, b) => {
+            // Prioritize custom weapons
+            const aIsCustom = a.source === 'Custom';
+            const bIsCustom = b.source === 'Custom';
+            if (aIsCustom && !bIsCustom)
+                return -1;
+            if (!aIsCustom && bIsCustom)
+                return 1;
+            // Then prioritize exact prefix matches
+            const aStartsWith = a.name.toLowerCase().startsWith(lowerQuery);
+            const bStartsWith = b.name.toLowerCase().startsWith(lowerQuery);
+            if (aStartsWith && !bStartsWith)
+                return -1;
+            if (!aStartsWith && bStartsWith)
+                return 1;
+            return a.name.localeCompare(b.name);
+        });
+    }
+    /**
+     * Get full weapon info formatted for webview display.
+     */
+    getWeaponInfo(name) {
+        const weapon = this.getWeapon(name);
+        if (!weapon) {
+            return null;
+        }
+        const isCustom = this.isCustomWeapon(name);
+        const customWeapon = isCustom ? this.customWeapons.get(name.toLowerCase()) : undefined;
+        return {
+            name: weapon.name,
+            type: weapon.type,
+            subtype: weapon.subtype,
+            rarity: weapon.rarity,
+            magic: weapon.magic,
+            damage: weapon.damage,
+            properties: weapon.properties,
+            range: weapon.range,
+            description: weapon.description,
+            isCustom,
+            filePath: customWeapon?.filePath
+        };
     }
     getStats() {
         return {

@@ -692,6 +692,106 @@ body {
     border-color: #dc2626;
 }
 
+/* ========== Weapons Section ========== */
+.weapons-grid {
+    display: grid;
+    gap: var(--dnd-space-2);
+    overflow-x: auto;
+}
+
+.weapon-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 2fr) auto minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(70px, 1fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(80px, 1fr) auto;
+    gap: var(--dnd-space-2);
+    align-items: center;
+    padding: var(--dnd-space-2);
+    background: var(--dnd-bg-secondary);
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+    min-width: 0;
+}
+
+.weapon-row input,
+.weapon-row select {
+    font-size: var(--dnd-text-sm);
+    padding: var(--dnd-space-1) var(--dnd-space-2);
+    min-width: 0;
+    width: 100%;
+}
+
+.weapon-row input.weapon-name-input {
+    cursor: pointer;
+}
+
+.weapon-row input.weapon-name-input:hover {
+    border-color: var(--vscode-textLink-foreground, #3794ff);
+}
+
+.weapon-row button {
+    padding: var(--dnd-space-1);
+    background: var(--dnd-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-sm);
+    cursor: pointer;
+    color: var(--dnd-text-muted);
+    transition: all var(--dnd-transition);
+    width: 24px;
+    height: 24px;
+    font-weight: bold;
+}
+
+.weapon-row button.delete-weapon:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #dc2626;
+}
+
+/* Weapon button states */
+.weapon-row button.weapon-btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.weapon-row button.weapon-btn-open {
+    color: var(--vscode-textLink-foreground, #3794ff);
+    border-color: var(--vscode-textLink-foreground, #3794ff);
+}
+
+.weapon-row button.weapon-btn-open:hover {
+    background: var(--vscode-textLink-foreground, #3794ff);
+    color: white;
+    border-color: var(--vscode-textLink-activeForeground, #006ab1);
+}
+
+.weapon-row button.weapon-btn-create {
+    color: #22c55e;
+    border-color: #22c55e;
+}
+
+.weapon-row button.weapon-btn-create:hover {
+    background: #22c55e;
+    color: white;
+    border-color: #16a34a;
+}
+
+.add-weapon-btn {
+    margin-top: var(--dnd-space-2);
+    padding: var(--dnd-space-2);
+    width: 100%;
+    background: var(--dnd-bg-secondary);
+    border: 1px dashed var(--dnd-border);
+    border-radius: var(--dnd-radius-md);
+    cursor: pointer;
+    color: var(--dnd-accent);
+    font-weight: 600;
+    transition: all var(--dnd-transition);
+}
+
+.add-weapon-btn:hover {
+    background: var(--dnd-accent-soft);
+    border-style: solid;
+}
+
 /* ========== Money Section ========== */
 .money-grid {
     display: grid;

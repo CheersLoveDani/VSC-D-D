@@ -28,6 +28,15 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                     case 'openSpell':
                         await this.handleOpenSpell(msg.name ?? '', msg.level ?? 0, document);
                         return;
+                    case 'searchWeapons':
+                        this.handleWeaponSearch(webviewPanel, msg.query ?? '', msg.requestId ?? '');
+                        return;
+                    case 'getWeaponInfo':
+                        this.handleGetWeaponInfo(webviewPanel, msg.name ?? '', msg.requestId ?? '');
+                        return;
+                    case 'openWeapon':
+                        await this.handleOpenWeapon(msg.name ?? '', document);
+                        return;
                 }
             }
         });
@@ -60,6 +69,103 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
             found: !!info,
             info: info
         });
+    }
+    handleWeaponSearch(webviewPanel, query, requestId) {
+        const compendium = compendiumService_1.CompendiumService.getInstance();
+        const results = compendium.searchWeapons(query, 10);
+        webviewPanel.webview.postMessage({
+            type: 'weaponSearchResults',
+            requestId: requestId,
+            results: results.map(w => ({
+                name: w.name,
+                damage: w.damage,
+                properties: w.properties,
+                subtype: w.subtype,
+                isCustom: w.source === 'Custom'
+            }))
+        });
+    }
+    handleGetWeaponInfo(webviewPanel, name, requestId) {
+        const compendium = compendiumService_1.CompendiumService.getInstance();
+        const info = compendium.getWeaponInfo(name);
+        webviewPanel.webview.postMessage({
+            type: 'weaponInfo',
+            requestId: requestId,
+            name: name,
+            found: !!info,
+            info: info
+        });
+    }
+    async handleOpenWeapon(name, currentDoc) {
+        if (!name.trim()) {
+            return;
+        }
+        const compendium = compendiumService_1.CompendiumService.getInstance();
+        const sanitizedName = name.replace(/[<>:"/\\|?*]/g, '_');
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(currentDoc.uri);
+        const baseUri = workspaceFolder ? workspaceFolder.uri : vscode.Uri.joinPath(currentDoc.uri, '..');
+        // Check if file already exists (in custom folder or base directory)
+        const existingFile = await (0, filePaths_1.findExistingCustomFile)(baseUri, sanitizedName, '.dnditem');
+        if (existingFile) {
+            await vscode.commands.executeCommand('vscode.open', existingFile);
+            return;
+        }
+        // File doesn't exist - open as untitled document (temporary until saved)
+        try {
+            const weapon = compendium.getWeapon(name);
+            let fileContent;
+            if (weapon) {
+                // Weapon exists in compendium, use its data
+                fileContent = {
+                    name: weapon.name,
+                    type: 'Weapon',
+                    subtype: weapon.subtype || '',
+                    rarity: weapon.rarity,
+                    magic: weapon.magic,
+                    attunement: weapon.attunement,
+                    attunementRequirement: weapon.attunementRequirement || '',
+                    weight: weapon.weight,
+                    value: weapon.value,
+                    damage: weapon.damage,
+                    stealthDisadvantage: weapon.stealthDisadvantage || false,
+                    properties: weapon.properties,
+                    range: weapon.range,
+                    description: weapon.description
+                };
+            }
+            else {
+                // Weapon doesn't exist, create a blank template with the name
+                fileContent = {
+                    name: name,
+                    type: 'Weapon',
+                    subtype: 'Simple Melee Weapon',
+                    rarity: 'Common',
+                    magic: false,
+                    attunement: false,
+                    attunementRequirement: '',
+                    weight: 0,
+                    value: '',
+                    damage: {
+                        dice: '1d6',
+                        type: 'slashing',
+                        twoHanded: ''
+                    },
+                    stealthDisadvantage: false,
+                    properties: [],
+                    range: {
+                        normal: 5
+                    },
+                    description: ''
+                };
+            }
+            const content = JSON.stringify(fileContent, null, 2);
+            // Open as temp file (deleted when closed, unless saved elsewhere)
+            const tempFileService = tempFileService_1.TempFileService.getInstance();
+            await tempFileService.openTempFile(sanitizedName, '.dnditem', content);
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to open weapon: ${error}`);
+        }
     }
     async handleOpenSpell(name, level, currentDoc) {
         if (!name.trim()) {
@@ -341,6 +447,15 @@ class CharacterSheetProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                                         <!-- Attacks will be added dynamically -->
                                     </div>
                                     <button class="add-attack-btn" id="add-attack-btn">+ Add Attack</button>
+                                </div>
+
+                                <!-- Weapons -->
+                                <div class="section">
+                                    <h3 class="section-title">Weapons</h3>
+                                    <div class="weapons-grid" id="weapons-container">
+                                        <!-- Weapons will be added dynamically -->
+                                    </div>
+                                    <button class="add-weapon-btn" id="add-weapon-btn">+ Add Weapon</button>
                                 </div>
 
                                 <!-- Grid Sections -->

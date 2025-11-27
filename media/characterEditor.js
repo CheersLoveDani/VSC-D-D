@@ -206,6 +206,11 @@
             updateAttackCalculations(/** @type {HTMLElement} */ (row));
         });
 
+        // Update weapon calculations for all weapon rows
+        document.querySelectorAll('.weapon-row').forEach(row => {
+            updateWeaponCalculations(/** @type {HTMLElement} */ (row));
+        });
+
         // Calculate Total Money
         const cp = getNestedValue(state, 'money.cp') || 0;
         const sp = getNestedValue(state, 'money.sp') || 0;
@@ -259,12 +264,13 @@
                     const newState = JSON.parse(text);
                     state = newState;
 
-                    // Check if we're editing any input or if focus is inside an attack row
+                    // Check if we're editing any input or if focus is inside an attack/weapon/spell row
                     const activeElement = document.activeElement;
                     const isEditingInput = activeElement && (
                         inputs.includes(activeElement.id) ||
                         activeElement.closest('.attack-row') ||
-                        activeElement.closest('.spell-entry')
+                        activeElement.closest('.spell-entry') ||
+                        activeElement.closest('.weapon-row')
                     );
 
                     // Only update UI if we are NOT currently editing
@@ -299,6 +305,7 @@
         // Load dynamic content
         loadAttacks();
         loadSpells();
+        loadWeapons();
     }
 
     function updateStateFromUI() {
@@ -1091,6 +1098,654 @@
             }
         });
     });
+
+    // ========== Dynamic Weapons ==========
+    let weaponCounter = 0;
+    const weaponsContainer = document.getElementById('weapons-container');
+    const addWeaponBtn = document.getElementById('add-weapon-btn');
+
+    // ========== Weapon Tooltip and Autocomplete ==========
+
+    // Create weapon tooltip element
+    const weaponTooltip = document.createElement('div');
+    weaponTooltip.className = 'weapon-tooltip';
+    weaponTooltip.style.cssText = `
+        position: fixed;
+        background: var(--vscode-editor-background, #1e1e1e);
+        border: 1px solid var(--vscode-panel-border, #454545);
+        border-radius: 4px;
+        padding: 12px;
+        max-width: 400px;
+        z-index: 10000;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        font-size: 12px;
+        line-height: 1.4;
+    `;
+    document.body.appendChild(weaponTooltip);
+
+    // Create weapon autocomplete dropdown
+    const weaponAutocompleteDropdown = document.createElement('div');
+    weaponAutocompleteDropdown.className = 'weapon-autocomplete';
+    weaponAutocompleteDropdown.style.cssText = `
+        position: fixed;
+        background: var(--vscode-dropdown-background, #3c3c3c);
+        border: 1px solid var(--vscode-dropdown-border, #454545);
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 10001;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    `;
+    document.body.appendChild(weaponAutocompleteDropdown);
+
+    /** @type {HTMLInputElement | null} */
+    let activeWeaponInput = null;
+    let weaponAutocompleteRequestId = 0;
+    /** @type {Record<string, any>} */
+    const weaponInfoCache = {};
+
+    /**
+     * Show weapon tooltip near an element
+     * @param {HTMLElement} element
+     * @param {any} weaponInfo
+     */
+    function showWeaponTooltip(element, weaponInfo) {
+        const rect = element.getBoundingClientRect();
+
+        let damageText = weaponInfo.damage
+            ? `${weaponInfo.damage.dice} ${weaponInfo.damage.type}`
+            : 'No damage';
+
+        if (weaponInfo.damage?.twoHanded) {
+            damageText += ` (${weaponInfo.damage.twoHanded} two-handed)`;
+        }
+
+        const properties = weaponInfo.properties?.length > 0
+            ? weaponInfo.properties.join(', ')
+            : 'None';
+
+        let html = `
+            <div style="font-weight: bold; font-size: 14px; color: var(--vscode-textLink-foreground, #3794ff); margin-bottom: 8px;">
+                ${weaponInfo.name}
+                ${weaponInfo.isCustom ? '<span style="color: var(--vscode-charts-purple, #b180d7); font-size: 11px; margin-left: 8px;">★ Custom Weapon</span>' : ''}
+            </div>
+            <div style="font-style: italic; color: var(--vscode-descriptionForeground, #999); margin-bottom: 8px;">
+                ${weaponInfo.subtype || 'Weapon'}${weaponInfo.magic ? ' (Magic)' : ''}
+            </div>
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-bottom: 8px;">
+                <span style="color: var(--vscode-descriptionForeground, #999);">Damage:</span>
+                <span>${damageText}</span>
+                <span style="color: var(--vscode-descriptionForeground, #999);">Properties:</span>
+                <span>${properties}</span>
+                ${weaponInfo.range ? `
+                    <span style="color: var(--vscode-descriptionForeground, #999);">Range:</span>
+                    <span>${weaponInfo.range.normal} ft${weaponInfo.range.long ? ' / ' + weaponInfo.range.long + ' ft' : ''}</span>
+                ` : ''}
+            </div>
+        `;
+
+        if (weaponInfo.description) {
+            html += `
+                <div style="border-top: 1px solid var(--vscode-panel-border, #454545); padding-top: 8px; max-height: 100px; overflow-y: auto;">
+                    ${weaponInfo.description.substring(0, 300)}${weaponInfo.description.length > 300 ? '...' : ''}
+                </div>
+            `;
+        }
+
+        weaponTooltip.innerHTML = html;
+        weaponTooltip.style.display = 'block';
+
+        // Position tooltip
+        let left = rect.left;
+        let top = rect.bottom + 5;
+
+        // Adjust if off-screen
+        if (left + 400 > window.innerWidth) {
+            left = window.innerWidth - 410;
+        }
+        if (top + weaponTooltip.offsetHeight > window.innerHeight) {
+            top = rect.top - weaponTooltip.offsetHeight - 5;
+        }
+
+        weaponTooltip.style.left = left + 'px';
+        weaponTooltip.style.top = top + 'px';
+    }
+
+    function hideWeaponTooltip() {
+        weaponTooltip.style.display = 'none';
+    }
+
+    /**
+     * Show weapon autocomplete dropdown
+     * @param {HTMLInputElement} input
+     * @param {any[]} results
+     */
+    function showWeaponAutocomplete(input, results) {
+        if (results.length === 0) {
+            hideWeaponAutocomplete();
+            return;
+        }
+
+        const rect = input.getBoundingClientRect();
+
+        weaponAutocompleteDropdown.innerHTML = results.map((weapon, index) => {
+            const damageStr = weapon.damage
+                ? `${weapon.damage.dice} ${weapon.damage.type}`
+                : '';
+            return `
+                <div class="weapon-autocomplete-item" data-index="${index}" data-name="${weapon.name}" style="
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    border-bottom: 1px solid var(--vscode-panel-border, #333);
+                ">
+                    <div style="font-weight: 500;">
+                        ${weapon.name}
+                        ${weapon.isCustom ? '<span style="color: var(--vscode-charts-purple, #b180d7); font-size: 10px; margin-left: 6px;">★ Custom</span>' : ''}
+                    </div>
+                    <div style="font-size: 11px; color: var(--vscode-descriptionForeground, #999);">
+                        ${weapon.subtype || 'Weapon'}${damageStr ? ' - ' + damageStr : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        weaponAutocompleteDropdown.style.display = 'block';
+        weaponAutocompleteDropdown.style.left = rect.left + 'px';
+        weaponAutocompleteDropdown.style.top = rect.bottom + 2 + 'px';
+        weaponAutocompleteDropdown.style.width = Math.max(rect.width, 250) + 'px';
+
+        // Add click handlers
+        weaponAutocompleteDropdown.querySelectorAll('.weapon-autocomplete-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const name = item.getAttribute('data-name');
+                if (name && activeWeaponInput) {
+                    activeWeaponInput.value = name;
+                    activeWeaponInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    hideWeaponAutocomplete();
+                    saveWeapons();
+                    // Update the weapon row calculations
+                    const weaponRow = activeWeaponInput.closest('.weapon-row');
+                    if (weaponRow) {
+                        updateWeaponFromCompendium(/** @type {HTMLElement} */ (weaponRow), name);
+                    }
+                }
+            });
+
+            item.addEventListener('mouseenter', () => {
+                // @ts-ignore
+                item.style.background = 'var(--vscode-list-hoverBackground, #2a2d2e)';
+            });
+            item.addEventListener('mouseleave', () => {
+                // @ts-ignore
+                item.style.background = 'transparent';
+            });
+        });
+    }
+
+    function hideWeaponAutocomplete() {
+        weaponAutocompleteDropdown.style.display = 'none';
+    }
+
+    /**
+     * Request weapon info from extension
+     * @param {string} name
+     * @param {function} callback - called with weapon info if found, null if not found
+     */
+    function requestWeaponInfo(name, callback) {
+        if (!name || name.trim().length === 0) {
+            callback(null);
+            return;
+        }
+
+        // Check cache first
+        const cacheKey = name.toLowerCase();
+        if (weaponInfoCache[cacheKey]) {
+            callback(weaponInfoCache[cacheKey]);
+            return;
+        }
+
+        const requestId = ++weaponAutocompleteRequestId;
+
+        // Listen for response
+        const handler = (/** @type {MessageEvent} */ event) => {
+            const message = event.data;
+            if (message.type === 'weaponInfo' && message.requestId === requestId) {
+                window.removeEventListener('message', handler);
+                if (message.found) {
+                    weaponInfoCache[cacheKey] = message.info;
+                    callback(message.info);
+                } else {
+                    callback(null);
+                }
+            }
+        };
+        window.addEventListener('message', handler);
+
+        vscode.postMessage({
+            type: 'getWeaponInfo',
+            requestId: requestId,
+            name: name
+        });
+    }
+
+    /**
+     * Request weapon search from extension
+     * @param {string} query
+     * @param {function} callback
+     */
+    function searchWeapons(query, callback) {
+        if (!query || query.trim().length < 2) {
+            callback([]);
+            return;
+        }
+
+        const requestId = ++weaponAutocompleteRequestId;
+
+        const handler = (/** @type {MessageEvent} */ event) => {
+            const message = event.data;
+            if (message.type === 'weaponSearchResults' && message.requestId === requestId) {
+                window.removeEventListener('message', handler);
+                callback(message.results);
+            }
+        };
+        window.addEventListener('message', handler);
+
+        vscode.postMessage({
+            type: 'searchWeapons',
+            requestId: requestId,
+            query: query
+        });
+    }
+
+    // Debounced weapon search
+    /** @type {any} */
+    let weaponSearchTimeout;
+    function debouncedWeaponSearch(/** @type {HTMLInputElement} */ input) {
+        clearTimeout(weaponSearchTimeout);
+        weaponSearchTimeout = setTimeout(() => {
+            const query = input.value.trim();
+            if (query.length >= 2) {
+                searchWeapons(query, (/** @type {any[]} */ results) => {
+                    if (document.activeElement === input) {
+                        showWeaponAutocomplete(input, results);
+                    }
+                });
+            } else {
+                hideWeaponAutocomplete();
+            }
+        }, 150);
+    }
+
+    /**
+     * Open or create a weapon file
+     * @param {string} name
+     */
+    function openWeaponFile(name) {
+        if (!name.trim()) return;
+        vscode.postMessage({
+            type: 'openWeapon',
+            name: name
+        });
+    }
+
+    /**
+     * Update the weapon action button icon based on whether the weapon exists
+     * @param {HTMLButtonElement} button
+     * @param {string} weaponName
+     */
+    function updateWeaponButtonIcon(button, weaponName) {
+        if (!weaponName.trim()) {
+            // No weapon name - show disabled state
+            button.textContent = '→';
+            button.className = 'open-weapon weapon-btn-disabled';
+            button.title = 'Enter a weapon name first';
+            return;
+        }
+
+        // Check if weapon exists in compendium/custom weapons
+        requestWeaponInfo(weaponName, (/** @type {any} */ info) => {
+            if (info) {
+                // Weapon exists - show blue arrow (open)
+                button.textContent = '→';
+                button.className = 'open-weapon weapon-btn-open';
+                button.title = 'Open weapon file (Ctrl+Click on name)';
+            } else {
+                // Weapon doesn't exist - show green plus (create)
+                button.textContent = '+';
+                button.className = 'open-weapon weapon-btn-create';
+                button.title = 'Create new weapon file';
+            }
+        });
+    }
+
+    /**
+     * Update weapon row with compendium data
+     * @param {HTMLElement} weaponRow
+     * @param {string} weaponName
+     */
+    function updateWeaponFromCompendium(weaponRow, weaponName) {
+        requestWeaponInfo(weaponName, (/** @type {any} */ info) => {
+            if (info) {
+                // Update damage dice
+                const diceInput = /** @type {HTMLInputElement | null} */ (weaponRow.querySelector('[data-field="dice"]'));
+                if (diceInput && info.damage?.dice) {
+                    diceInput.value = info.damage.dice;
+                }
+
+                // Update damage type
+                const damageTypeInput = /** @type {HTMLInputElement | null} */ (weaponRow.querySelector('[data-field="damageType"]'));
+                if (damageTypeInput && info.damage?.type) {
+                    damageTypeInput.value = info.damage.type;
+                }
+
+                // Check if finesse to auto-select dex
+                const statSelect = /** @type {HTMLSelectElement | null} */ (weaponRow.querySelector('[data-field="stat"]'));
+                if (statSelect && info.properties) {
+                    if (info.properties.includes('Finesse')) {
+                        // Default to DEX for finesse weapons
+                        const dexMod = calculateModifier(getNestedValue(state, 'stats.dex') || 10);
+                        const strMod = calculateModifier(getNestedValue(state, 'stats.str') || 10);
+                        statSelect.value = dexMod >= strMod ? 'dex' : 'str';
+                    } else if (info.subtype?.includes('Ranged')) {
+                        // Default to DEX for ranged weapons
+                        statSelect.value = 'dex';
+                    }
+                }
+
+                // Update calculations and save
+                updateWeaponCalculations(weaponRow);
+                saveWeapons();
+            }
+        });
+    }
+
+    /**
+     * Update attack bonus and damage bonus calculations for a weapon row
+     * @param {HTMLElement} weaponRow
+     */
+    function updateWeaponCalculations(weaponRow) {
+        const statSelect = /** @type {HTMLSelectElement | null} */ (weaponRow.querySelector('[data-field="stat"]'));
+        if (!statSelect) return;
+
+        const selectedStat = statSelect.value;
+        const abilityScore = getNestedValue(state, `stats.${selectedStat}`) || 10;
+        const abilityMod = calculateModifier(abilityScore);
+        const level = getNestedValue(state, 'level') || 1;
+        const profBonus = calculateProficiencyBonus(level);
+
+        // Attack Bonus = Ability Modifier + Proficiency Bonus
+        const attackBonus = abilityMod + profBonus;
+        const attackBonusEl = weaponRow.querySelector('[data-field="attackBonus"]');
+        if (attackBonusEl) {
+            attackBonusEl.innerHTML = `${d20Icon} <span>${formatModifier(attackBonus)}</span>`;
+        }
+
+        // Damage Bonus = Ability Modifier + Bonus Damage
+        const bonusDamageInput = /** @type {HTMLInputElement | null} */ (weaponRow.querySelector('[data-field="bonusDamage"]'));
+        const extraDamage = bonusDamageInput ? (parseInt(bonusDamageInput.value) || 0) : 0;
+        const damageBonus = abilityMod + extraDamage;
+
+        const damageBonusEl = weaponRow.querySelector('[data-field="damageBonus"]');
+        if (damageBonusEl) {
+            damageBonusEl.innerHTML = `${swordIcon} <span>${formatModifier(damageBonus)}</span>`;
+        }
+    }
+
+    /**
+     * @param {any} weaponData
+     */
+    function createWeaponRow(weaponData = {}) {
+        const weaponId = weaponCounter++;
+        const div = document.createElement('div');
+        div.className = 'weapon-row';
+        div.dataset.weaponId = weaponId.toString();
+
+        // @ts-ignore
+        div.innerHTML = `
+            <input type="text" placeholder="Weapon name" value="${weaponData.name || ''}" data-field="name" class="weapon-name-input" title="Ctrl+Click to open weapon file" />
+            <button type="button" class="open-weapon weapon-btn-disabled" title="Enter a weapon name first">→</button>
+            <select data-field="stat">
+                <option value="str" ${weaponData.stat === 'str' ? 'selected' : ''}>STR</option>
+                <option value="dex" ${weaponData.stat === 'dex' ? 'selected' : ''}>DEX</option>
+            </select>
+            <div class="attack-bonus-display" data-field="attackBonus">${d20Icon} <span>+0</span></div>
+            <input type="text" placeholder="Dice" value="${weaponData.dice || ''}" data-field="dice" />
+            <input type="text" placeholder="+Dmg" value="${weaponData.bonusDamage || ''}" data-field="bonusDamage" />
+            <div class="damage-bonus-display" data-field="damageBonus">${swordIcon} <span>+0</span></div>
+            <input type="text" placeholder="Type" value="${weaponData.damageType || ''}" data-field="damageType" />
+            <button type="button" class="delete-weapon">×</button>
+        `;
+
+        const nameInput = /** @type {HTMLInputElement} */ (div.querySelector('[data-field="name"]'));
+        const openButton = /** @type {HTMLButtonElement} */ (div.querySelector('.open-weapon'));
+
+        // Update button icon based on initial weapon name
+        if (weaponData.name) {
+            updateWeaponButtonIcon(openButton, weaponData.name);
+        }
+
+        // Add event listeners
+        div.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', () => {
+                updateWeaponCalculations(div);
+                saveWeapons();
+            });
+            el.addEventListener('change', () => {
+                updateWeaponCalculations(div);
+                saveWeapons();
+            });
+        });
+
+        // Open weapon button click handler
+        openButton?.addEventListener('click', () => {
+            const weaponName = nameInput?.value.trim();
+            if (weaponName) {
+                openWeaponFile(weaponName);
+            }
+        });
+
+        // Autocomplete on typing
+        if (nameInput) {
+            nameInput.addEventListener('input', () => {
+                activeWeaponInput = nameInput;
+                debouncedWeaponSearch(nameInput);
+                // Update button icon when weapon name changes
+                updateWeaponButtonIcon(openButton, nameInput.value);
+            });
+
+            nameInput.addEventListener('focus', () => {
+                activeWeaponInput = nameInput;
+                if (nameInput.value.trim().length >= 2) {
+                    debouncedWeaponSearch(nameInput);
+                }
+            });
+
+            nameInput.addEventListener('blur', () => {
+                // Delay to allow click on autocomplete
+                setTimeout(() => {
+                    if (activeWeaponInput === nameInput) {
+                        hideWeaponAutocomplete();
+                    }
+                }, 200);
+                // Update button icon and fetch weapon data after blur
+                setTimeout(() => {
+                    updateWeaponButtonIcon(openButton, nameInput.value);
+                    if (nameInput.value.trim()) {
+                        updateWeaponFromCompendium(div, nameInput.value.trim());
+                    }
+                }, 250);
+            });
+
+            // Ctrl+Click to open weapon file
+            nameInput.addEventListener('click', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const weaponName = nameInput.value.trim();
+                    if (weaponName) {
+                        openWeaponFile(weaponName);
+                    }
+                }
+            });
+
+            // Show tooltip on hover if weapon exists
+            nameInput.addEventListener('mouseenter', () => {
+                const weaponName = nameInput.value.trim();
+                if (weaponName) {
+                    requestWeaponInfo(weaponName, (/** @type {any} */ info) => {
+                        if (info) {
+                            showWeaponTooltip(nameInput, info);
+                        }
+                    });
+                }
+            });
+
+            nameInput.addEventListener('mouseleave', () => {
+                hideWeaponTooltip();
+            });
+
+            // Keyboard navigation for autocomplete
+            nameInput.addEventListener('keydown', (e) => {
+                if (weaponAutocompleteDropdown.style.display === 'none') return;
+
+                const items = weaponAutocompleteDropdown.querySelectorAll('.weapon-autocomplete-item');
+                const selected = weaponAutocompleteDropdown.querySelector('.weapon-autocomplete-item.selected');
+                let selectedIndex = selected ? parseInt(selected.getAttribute('data-index') || '-1') : -1;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                    e.preventDefault();
+                    const item = items[selectedIndex];
+                    const name = item?.getAttribute('data-name');
+                    if (name) {
+                        nameInput.value = name;
+                        nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        hideWeaponAutocomplete();
+                        saveWeapons();
+                        updateWeaponButtonIcon(openButton, name);
+                        updateWeaponFromCompendium(div, name);
+                    }
+                    return;
+                } else if (e.key === 'Escape') {
+                    hideWeaponAutocomplete();
+                    return;
+                } else {
+                    return;
+                }
+
+                // Update selection
+                items.forEach((item, i) => {
+                    if (i === selectedIndex) {
+                        item.classList.add('selected');
+                        // @ts-ignore
+                        item.style.background = 'var(--vscode-list-activeSelectionBackground, #094771)';
+                    } else {
+                        item.classList.remove('selected');
+                        // @ts-ignore
+                        item.style.background = 'transparent';
+                    }
+                });
+            });
+        }
+
+        div.querySelector('.delete-weapon')?.addEventListener('click', () => {
+            div.remove();
+            saveWeapons();
+        });
+
+        // Calculate initial values
+        updateWeaponCalculations(div);
+
+        return div;
+    }
+
+    function saveWeapons() {
+        /** @type {any[]} */
+        const weapons = [];
+        weaponsContainer?.querySelectorAll('.weapon-row').forEach(row => {
+            const weapon = {
+                name: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="name"]'))?.value || '',
+                stat: /** @type {HTMLSelectElement} */ (row.querySelector('[data-field="stat"]'))?.value || 'str',
+                dice: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="dice"]'))?.value || '',
+                bonusDamage: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="bonusDamage"]'))?.value || '',
+                damageType: /** @type {HTMLInputElement} */ (row.querySelector('[data-field="damageType"]'))?.value || ''
+            };
+            weapons.push(weapon);
+        });
+        setNestedValue(state, 'weapons', weapons);
+        debouncedUpdate();
+    }
+
+    function loadWeapons() {
+        const weapons = getNestedValue(state, 'weapons') || [];
+        if (!weaponsContainer) return;
+
+        // Get existing weapon rows
+        const existingRows = Array.from(weaponsContainer.querySelectorAll('.weapon-row'));
+
+        // If the counts match, update existing rows instead of recreating
+        if (existingRows.length === weapons.length) {
+            existingRows.forEach((row, index) => {
+                const weapon = weapons[index];
+                if (!weapon) return;
+
+                // Update each field only if not currently focused
+                const nameInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="name"]'));
+                if (nameInput && document.activeElement !== nameInput) {
+                    nameInput.value = weapon.name || '';
+                }
+
+                const statSelect = /** @type {HTMLSelectElement | null} */ (row.querySelector('[data-field="stat"]'));
+                if (statSelect && document.activeElement !== statSelect) {
+                    statSelect.value = weapon.stat || 'str';
+                }
+
+                const diceInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="dice"]'));
+                if (diceInput && document.activeElement !== diceInput) {
+                    diceInput.value = weapon.dice || '';
+                }
+
+                const bonusDamageInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="bonusDamage"]'));
+                if (bonusDamageInput && document.activeElement !== bonusDamageInput) {
+                    bonusDamageInput.value = weapon.bonusDamage || '';
+                }
+
+                const damageTypeInput = /** @type {HTMLInputElement | null} */ (row.querySelector('[data-field="damageType"]'));
+                if (damageTypeInput && document.activeElement !== damageTypeInput) {
+                    damageTypeInput.value = weapon.damageType || '';
+                }
+
+                // Update calculations
+                updateWeaponCalculations(/** @type {HTMLElement} */ (row));
+            });
+        } else {
+            // Count doesn't match, rebuild all
+            weaponsContainer.innerHTML = '';
+            weapons.forEach(/** @param {any} weapon */ (weapon) => {
+                weaponsContainer.appendChild(createWeaponRow(weapon));
+            });
+        }
+    }
+
+    addWeaponBtn?.addEventListener('click', () => {
+        if (weaponsContainer) {
+            weaponsContainer.appendChild(createWeaponRow());
+            saveWeapons();
+        }
+    });
+
+    // Update weapon calculations when ability scores change
+    function updateAllWeaponCalculations() {
+        document.querySelectorAll('.weapon-row').forEach(row => {
+            updateWeaponCalculations(/** @type {HTMLElement} */ (row));
+        });
+    }
 
     // Signal that the webview is ready to receive data
     vscode.postMessage({ type: 'ready' });

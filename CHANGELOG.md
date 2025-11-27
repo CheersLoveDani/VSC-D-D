@@ -15,6 +15,31 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 ## [Unreleased]
 
 ### Added
+
+### Improved
+
+### Fixed
+
+### Changed
+
+
+## [0.0.11] - 2025-11-27
+
+### Added
+- **Weapons Section in Character Sheet**: New dedicated section for tracking equipped weapons
+  - Weapon name input with autocomplete from SRD compendium (37 weapons) and custom `.dnditem` files
+  - Auto-calculated attack bonus (Ability Modifier + Proficiency Bonus)
+  - Auto-calculated damage bonus (Ability Modifier + Bonus Damage)
+  - Damage dice and damage type fields auto-populate from compendium data
+  - Stat selector (STR/DEX) with smart defaults for finesse and ranged weapons
+  - Hover tooltip showing weapon details (damage, properties, range, description)
+  - Open/Create button: blue arrow (→) to open existing weapon, green plus (+) to create new
+  - Ctrl+Click on weapon name to open weapon file
+  - Custom weapons marked with "★ Custom" badge in search results
+- **Custom Weapon Support**: `.dnditem` weapon files in workspace integrated into weapon search
+  - Weapon files with `type: "Weapon"` automatically loaded into compendium
+  - Real-time file watching for weapon file changes
+  - Custom weapons prioritized over SRD weapons in search results
 - **Temporary Compendium Preview**: Clicking compendium entries now opens them as temporary files
   - Opens in custom editors (spell editor, stat block editor, item editor) with full UI
   - Temp files are automatically deleted when closed without saving
@@ -302,7 +327,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.10...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.11...HEAD
+[0.0.11]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.7...v0.0.8
