@@ -1,0 +1,220 @@
+.compendium-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+}
+
+.page-header h1 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: var(--dnd-space-2);
+  border-bottom: 1px solid var(--dnd-border-light);
+  padding-bottom: var(--dnd-space-2);
+}
+
+.tab {
+  flex: 1;
+  background: transparent;
+  color: var(--dnd-text-muted);
+  border: none;
+  padding: var(--dnd-space-2) var(--dnd-space-3);
+  font-size: var(--dnd-text-sm);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tab:hover {
+  background: var(--dnd-bg-hover);
+  color: var(--dnd-text);
+}
+
+.tab.active {
+  color: var(--dnd-accent);
+  border-bottom: 2px solid var(--dnd-accent);
+  margin-bottom: -3px;
+}
+
+/* Search */
+.search-input {
+  width: 100%;
+  padding: var(--dnd-space-3);
+  font-size: var(--dnd-text-base);
+}
+
+/* Item List */
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-1);
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--dnd-space-3) var(--dnd-space-4);
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border-light);
+  border-radius: var(--dnd-radius);
+  cursor: pointer;
+  transition: all var(--dnd-transition);
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--dnd-font-body);
+  text-align: left;
+}
+
+.item-row:hover {
+  background: var(--dnd-bg-hover);
+  border-color: var(--dnd-border);
+}
+
+.item-name {
+  font-weight: 500;
+  color: var(--dnd-text);
+}
+
+.item-meta {
+  font-size: var(--dnd-text-sm);
+  color: var(--dnd-text-muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--dnd-space-8);
+  color: var(--dnd-text-muted);
+}
+
+/* Detail View */
+.detail-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+}
+
+.back-btn {
+  width: fit-content !important;
+  padding: var(--dnd-space-2) !important;
+}
+
+.detail-title {
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-2xl);
+  border-bottom: 2px solid var(--dnd-accent);
+  padding-bottom: var(--dnd-space-2);
+  margin: 0;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dnd-space-2);
+}
+
+.meta-tag {
+  display: inline-block;
+  padding: var(--dnd-space-1) var(--dnd-space-2);
+  background: var(--dnd-bg-secondary);
+  border-radius: var(--dnd-radius-sm);
+  font-size: var(--dnd-text-sm);
+  color: var(--dnd-text-muted);
+}
+
+.meta-tag.ritual {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.meta-tag.concentration {
+  background: rgba(234, 179, 8, 0.1);
+  color: #ca8a04;
+}
+
+.meta-tag.attunement {
+  background: rgba(168, 85, 247, 0.1);
+  color: #9333ea;
+}
+
+.detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--dnd-space-2);
+  padding: var(--dnd-space-3);
+  background: var(--dnd-bg-secondary);
+  border-radius: var(--dnd-radius);
+}
+
+.detail-description p {
+  margin-bottom: var(--dnd-space-3);
+  font-family: var(--dnd-font-serif);
+  font-size: var(--dnd-text-base);
+  line-height: 1.7;
+}
+
+.higher-levels {
+  padding: var(--dnd-space-3);
+  background: var(--dnd-accent-soft);
+  border-left: 3px solid var(--dnd-accent);
+  border-radius: var(--dnd-radius-sm);
+  font-family: var(--dnd-font-serif);
+}
+
+.detail-footer {
+  font-size: var(--dnd-text-sm);
+  color: var(--dnd-text-muted);
+  padding-top: var(--dnd-space-3);
+  border-top: 1px solid var(--dnd-border-light);
+}
+
+/* Monster Specific */
+.ability-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--dnd-space-2);
+  text-align: center;
+  padding: var(--dnd-space-3);
+  background: var(--dnd-bg-secondary);
+  border-radius: var(--dnd-radius);
+  font-size: var(--dnd-text-sm);
+}
+
+.traits-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-2);
+}
+
+.traits-section h4 {
+  margin: 0;
+  color: var(--dnd-accent);
+  border-bottom: 1px solid var(--dnd-border-light);
+  padding-bottom: var(--dnd-space-1);
+}
+
+.trait {
+  font-family: var(--dnd-font-serif);
+  line-height: 1.6;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .ability-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .detail-stats {
+    grid-template-columns: 1fr;
+  }
+}

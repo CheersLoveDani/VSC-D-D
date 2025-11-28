@@ -1,0 +1,221 @@
+{
+  "name": "critcode",
+  "displayName": "CritCode",
+  "description": "A VS Code extension for planning D&D campaigns with Maps, Character Sheets, and Item Databases.",
+  "version": "0.0.11",
+  "publisher": "DaniFullerton",
+  "author": {
+    "name": "Dani Fullerton"
+  },
+  "license": "GPL-3.0",
+  "icon": "extension/icon.png",
+  "galleryBanner": {
+    "color": "#8B0000",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CheersLoveDani/VSC-D-D"
+  },
+  "bugs": {
+    "url": "https://github.com/CheersLoveDani/VSC-D-D/issues"
+  },
+  "homepage": "https://github.com/CheersLoveDani/VSC-D-D#readme",
+  "keywords": [
+    "dnd",
+    "dungeons and dragons",
+    "rpg",
+    "campaign",
+    "tabletop",
+    "game master",
+    "dm tools",
+    "character sheet",
+    "map editor"
+  ],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "dndnotes",
+        "aliases": [
+          "D&D Notes",
+          "dndnotes"
+        ],
+        "extensions": [
+          ".dndnotes"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dndnotes",
+        "scopeName": "text.html.markdown",
+        "path": "./syntaxes/markdown.tmLanguage.json"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "dnd.mapEditor",
+        "displayName": "D&D Map Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.dndmap"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dnd.characterEditor",
+        "displayName": "D&D Character Sheet",
+        "selector": [
+          {
+            "filenamePattern": "*.dndchar"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dnd.itemEditor",
+        "displayName": "D&D Item Database",
+        "selector": [
+          {
+            "filenamePattern": "*.dnditem"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dnd.notesEditor",
+        "displayName": "D&D Notes Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.dndnotes"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dnd.statBlockEditor",
+        "displayName": "D&D Stat Block",
+        "selector": [
+          {
+            "filenamePattern": "*.dndstat"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dnd.spellEditor",
+        "displayName": "D&D Spell Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.dndspell"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "dnd-campaign-manager.createMap",
+        "title": "D&D: Create New Map"
+      },
+      {
+        "command": "dnd-campaign-manager.togglePlainText",
+        "title": "Toggle Plain Text Mode",
+        "category": "D&D Manager"
+      },
+      {
+        "command": "dnd-campaign-manager.createSetupFiles",
+        "title": "Create Setup Files",
+        "category": "D&D Manager"
+      },
+      {
+        "command": "dnd-campaign-manager.importCompendium",
+        "title": "Import Compendium (XML)",
+        "category": "D&D Manager"
+      },
+      {
+        "command": "dnd-campaign-manager.compendiumStats",
+        "title": "Show Compendium Stats",
+        "category": "D&D Manager"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dnd-manager",
+          "title": "D&D Manager",
+          "icon": "media/d20-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dnd-manager": [
+        {
+          "id": "dnd-plugin-manager",
+          "name": "Plugin Manager"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "D&D Campaign Manager",
+      "properties": {
+        "dnd.compendium.importedPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to an imported XML compendium file (e.g., Fight Club 5e format)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile && pnpm run build:webview",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build:webview": "node build-webview.js",
+    "watch:webview": "node build-webview.js --watch",
+    "pretest": "pnpm run compile && pnpm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "@vscode/test-electron": "^2.3.2",
+    "esbuild": "^0.27.0",
+    "eslint": "^8.41.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "@critcode/shared-core": "workspace:*",
+    "@tiptap/core": "^3.11.0",
+    "@tiptap/extension-highlight": "^3.11.0",
+    "@tiptap/extension-image": "^3.11.0",
+    "@tiptap/extension-link": "^3.11.0",
+    "@tiptap/extension-subscript": "^3.11.0",
+    "@tiptap/extension-superscript": "^3.11.0",
+    "@tiptap/extension-table": "^3.11.0",
+    "@tiptap/extension-table-cell": "^3.11.0",
+    "@tiptap/extension-table-header": "^3.11.0",
+    "@tiptap/extension-table-row": "^3.11.0",
+    "@tiptap/extension-task-item": "^3.11.0",
+    "@tiptap/extension-task-list": "^3.11.0",
+    "@tiptap/extension-typography": "^3.11.0",
+    "@tiptap/starter-kit": "^3.11.0"
+  }
+}

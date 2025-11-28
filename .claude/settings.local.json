@@ -24,7 +24,15 @@
       "Bash(git -C \"E:/development/VSC-D&D\" log --oneline v0.0.9..HEAD)",
       "Bash(git -C \"E:/development/VSC-D&D\" log --oneline -5)",
       "Bash(cat:*)",
-      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -50 {}')"
+      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -50 {}')",
+      "Bash(pnpm create:*)",
+      "Bash(npm:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm tauri android init:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(cargo check:*)"
     ],
     "deny": [],
     "ask": []

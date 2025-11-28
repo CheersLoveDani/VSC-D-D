@@ -1,7 +1,40 @@
+# Dependencies
+node_modules/
 /node_modules
-/package-lock.json
-/test-files
+
+# Build outputs
+dist/
+out/
+*.vsix
+
+# Lock files (using pnpm)
+package-lock.json
+yarn.lock
+
+# Test files
+test-files/
 
 # User-imported compendium files (not distributable)
 *.compendium.xml
 Complete_Compendium*.xml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tauri
+packages/tauri-app/src-tauri/target/
+packages/tauri-app/src-tauri/gen/
+
+# VS Code extension
+*.vsix

@@ -1,0 +1,46 @@
+[package]
+name = "critcode"
+version = "0.1.0"
+description = "CritCode - D&D Campaign Manager"
+authors = ["Dani Fullerton"]
+edition = "2021"
+
+[lib]
+name = "critcode_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri core
+tauri = { version = "2", features = [] }
+
+# Tauri plugins
+tauri-plugin-opener = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-os = "2"
+tauri-plugin-store = "2"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Git operations (will be enabled in Phase 4)
+# git2 = { version = "0.19", features = ["vendored-libgit2", "vendored-openssl"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# Desktop-only dependencies can go here
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

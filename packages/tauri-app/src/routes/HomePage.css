@@ -1,0 +1,111 @@
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dnd-space-4);
+}
+
+.page-header h1 {
+  margin: 0;
+  border: none;
+  padding: 0;
+  font-size: var(--dnd-text-2xl);
+}
+
+.back-btn {
+  padding: var(--dnd-space-2) var(--dnd-space-3) !important;
+  width: auto !important;
+}
+
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--dnd-accent);
+  border-radius: var(--dnd-radius);
+  padding: var(--dnd-space-4);
+  text-align: center;
+}
+
+.error-banner p {
+  margin-bottom: var(--dnd-space-3);
+  color: var(--dnd-accent);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--dnd-space-12) var(--dnd-space-4);
+  color: var(--dnd-text-muted);
+}
+
+.empty-state p {
+  margin-bottom: var(--dnd-space-4);
+}
+
+.loading {
+  text-align: center;
+  padding: var(--dnd-space-12);
+  color: var(--dnd-text-muted);
+}
+
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--dnd-space-3);
+}
+
+.file-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--dnd-space-2);
+  padding: var(--dnd-space-4) var(--dnd-space-2);
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border-light);
+  border-radius: var(--dnd-radius);
+  cursor: pointer;
+  transition: all var(--dnd-transition);
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--dnd-font-body);
+  font-weight: 400;
+}
+
+.file-item:hover {
+  background: var(--dnd-bg-hover);
+  border-color: var(--dnd-border);
+  transform: translateY(-2px);
+  box-shadow: var(--dnd-shadow-md);
+}
+
+.file-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.file-name {
+  font-size: var(--dnd-text-sm);
+  text-align: center;
+  word-break: break-word;
+  color: var(--dnd-text);
+}
+
+/* Mobile: larger touch targets */
+@media (max-width: 768px) {
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: var(--dnd-space-2);
+  }
+
+  .file-item {
+    padding: var(--dnd-space-3);
+  }
+
+  .file-icon {
+    font-size: 2rem;
+  }
+}

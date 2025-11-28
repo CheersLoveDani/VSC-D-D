@@ -1,0 +1,44 @@
+{
+  "name": "@critcode/shared-core",
+  "version": "0.0.1",
+  "description": "Shared types, calculations, and data for CritCode D&D tools",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.mjs",
+      "require": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./calculations": {
+      "import": "./dist/calculations/index.mjs",
+      "require": "./dist/calculations/index.js",
+      "types": "./dist/calculations/index.d.ts"
+    },
+    "./data": {
+      "import": "./dist/data/index.mjs",
+      "require": "./dist/data/index.js",
+      "types": "./dist/data/index.d.ts"
+    },
+    "./data/srd/*": "./src/data/srd/*"
+  },
+  "files": [
+    "dist",
+    "src/data/srd"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.1.3"
+  }
+}

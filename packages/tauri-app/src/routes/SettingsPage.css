@@ -1,0 +1,173 @@
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.page-header h1 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+/* Offline Banner */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--dnd-space-3);
+  padding: var(--dnd-space-3) var(--dnd-space-4);
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid #ca8a04;
+  border-radius: var(--dnd-radius);
+  color: #ca8a04;
+}
+
+.offline-icon {
+  font-size: 1.25rem;
+}
+
+/* Settings Sections */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-3);
+}
+
+.settings-section h2 {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: var(--dnd-text-lg);
+}
+
+.section-description {
+  margin: 0;
+  color: var(--dnd-text-muted);
+  font-size: var(--dnd-text-sm);
+}
+
+/* Campaign Path */
+.campaign-path {
+  padding: var(--dnd-space-3);
+  background: var(--dnd-bg-secondary);
+  border-radius: var(--dnd-radius);
+  font-family: var(--dnd-font-mono);
+  font-size: var(--dnd-text-sm);
+  word-break: break-all;
+}
+
+.path-placeholder {
+  color: var(--dnd-text-subtle);
+  font-style: italic;
+}
+
+/* GitHub */
+.github-connected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+}
+
+.github-user {
+  display: flex;
+  align-items: center;
+  gap: var(--dnd-space-3);
+}
+
+.github-avatar {
+  font-size: 2rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dnd-bg-secondary);
+  border-radius: var(--dnd-radius-full);
+}
+
+.github-username {
+  display: block;
+  font-weight: 600;
+}
+
+.github-status {
+  display: block;
+  font-size: var(--dnd-text-sm);
+  color: #22c55e;
+}
+
+.github-actions {
+  display: flex;
+  gap: var(--dnd-space-2);
+}
+
+.github-actions button {
+  flex: 1;
+}
+
+/* Theme Options */
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--dnd-space-2);
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--dnd-space-2);
+  padding: var(--dnd-space-4);
+  background: var(--dnd-bg-secondary);
+  border: 2px solid var(--dnd-border-light);
+  border-radius: var(--dnd-radius);
+  cursor: pointer;
+  transition: all var(--dnd-transition);
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--dnd-font-body);
+}
+
+.theme-option:hover {
+  border-color: var(--dnd-border);
+  background: var(--dnd-bg-hover);
+}
+
+.theme-option.active {
+  border-color: var(--dnd-accent);
+  background: var(--dnd-accent-soft);
+}
+
+.theme-icon {
+  font-size: 1.5rem;
+}
+
+.theme-label {
+  font-size: var(--dnd-text-sm);
+  font-weight: 500;
+  color: var(--dnd-text);
+}
+
+/* About */
+.about-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-2);
+}
+
+.about-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--dnd-space-2) 0;
+  border-bottom: 1px solid var(--dnd-border-light);
+}
+
+.about-row:last-child {
+  border-bottom: none;
+}
+
+.about-row span:first-child {
+  color: var(--dnd-text-muted);
+}

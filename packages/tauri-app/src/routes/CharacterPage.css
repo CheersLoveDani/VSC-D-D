@@ -1,0 +1,199 @@
+.character-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header .btn-ghost {
+  width: auto !important;
+  padding: var(--dnd-space-2) !important;
+}
+
+.page-header button:not(.btn-ghost) {
+  width: auto;
+  padding: var(--dnd-space-2) var(--dnd-space-4);
+}
+
+.loading, .error-banner {
+  text-align: center;
+  padding: var(--dnd-space-8);
+}
+
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--dnd-accent);
+  border-radius: var(--dnd-radius);
+}
+
+/* Character Header */
+.character-header {
+  text-align: center;
+}
+
+.character-name-input {
+  width: 100%;
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-2xl);
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  border-bottom: 2px solid var(--dnd-border-light);
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: var(--dnd-space-4);
+  padding-bottom: var(--dnd-space-2);
+}
+
+.character-name-input:focus {
+  border-color: var(--dnd-accent);
+  box-shadow: none;
+}
+
+.basic-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--dnd-space-3);
+}
+
+.info-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-1);
+}
+
+.info-field label {
+  font-size: var(--dnd-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dnd-text-muted);
+}
+
+.info-field input {
+  width: 100%;
+}
+
+/* Combat Stats */
+.combat-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--dnd-space-2);
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dnd-space-3);
+  background: var(--dnd-card-bg);
+  border: 2px solid var(--dnd-border);
+  border-radius: var(--dnd-radius);
+}
+
+.stat-value {
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-xl);
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: var(--dnd-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dnd-text-muted);
+  margin-top: var(--dnd-space-1);
+}
+
+.hp-box {
+  grid-column: span 2;
+}
+
+.hp-display {
+  display: flex;
+  align-items: center;
+  gap: var(--dnd-space-1);
+}
+
+.hp-current, .hp-max {
+  width: 50px;
+  text-align: center;
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-lg);
+  font-weight: 600;
+  padding: var(--dnd-space-1);
+}
+
+.hp-separator {
+  font-size: var(--dnd-text-lg);
+  color: var(--dnd-text-muted);
+}
+
+/* Ability Scores */
+.ability-scores {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--dnd-space-2);
+}
+
+.ability-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--dnd-space-3) var(--dnd-space-2);
+  background: var(--dnd-card-bg);
+  border: 2px solid var(--dnd-border);
+  border-radius: var(--dnd-radius);
+}
+
+.ability-name {
+  font-size: var(--dnd-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dnd-text-muted);
+}
+
+.ability-mod {
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-xl);
+  font-weight: 700;
+  margin: var(--dnd-space-1) 0;
+}
+
+.ability-score {
+  width: 40px;
+  text-align: center;
+  font-size: var(--dnd-text-sm);
+  padding: var(--dnd-space-1);
+  border-radius: var(--dnd-radius-sm);
+}
+
+/* Notes */
+.character-page textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+/* Mobile: Stack ability scores in 3x2 */
+@media (max-width: 480px) {
+  .ability-scores {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .combat-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hp-box {
+    grid-column: span 2;
+    order: -1;
+  }
+}
