@@ -1,0 +1,114 @@
+.item-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--dnd-space-4);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header .btn-ghost {
+  width: auto !important;
+  padding: var(--dnd-space-2) !important;
+}
+
+.page-header button:not(.btn-ghost) {
+  width: auto;
+  padding: var(--dnd-space-2) var(--dnd-space-4);
+}
+
+.item-header {
+  text-align: center;
+}
+
+.item-name-input {
+  width: 100%;
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-2xl);
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  border-bottom: 2px solid var(--dnd-border-light);
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: var(--dnd-space-4);
+  padding-bottom: var(--dnd-space-2);
+}
+
+.item-name-input:focus {
+  border-color: var(--dnd-accent);
+  box-shadow: none;
+}
+
+.item-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--dnd-space-3);
+  margin-bottom: var(--dnd-space-3);
+}
+
+.info-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-1);
+}
+
+.info-field label {
+  font-size: var(--dnd-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dnd-text-muted);
+}
+
+.info-field input,
+.info-field select {
+  width: 100%;
+}
+
+.inline-field {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--dnd-space-2);
+}
+
+.inline-field input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.card {
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border-light);
+  border-radius: var(--dnd-radius-lg);
+  padding: var(--dnd-space-6);
+  box-shadow: var(--dnd-shadow);
+}
+
+.card h3 {
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-lg);
+  margin-bottom: var(--dnd-space-3);
+  color: var(--dnd-accent);
+}
+
+.card textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.loading, .error-banner {
+  text-align: center;
+  padding: var(--dnd-space-8);
+}
+
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--dnd-accent);
+  border-radius: var(--dnd-radius);
+}

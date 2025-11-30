@@ -1,0 +1,331 @@
+/* ============================================
+   Modern D&D Theme - Premium Design System
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+
+:root {
+    /* ========== Typography ========== */
+    --dnd-font-header: 'Cinzel', 'Georgia', serif;
+    --dnd-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --dnd-font-serif: 'Crimson Text', 'Georgia', 'Times New Roman', serif;
+    --dnd-font-mono: 'Consolas', 'Courier New', monospace;
+    
+    /* Font Sizes */
+    --dnd-text-xs: 0.75rem;    /* 12px */
+    --dnd-text-sm: 0.875rem;   /* 14px */
+    --dnd-text-base: 1rem;     /* 16px */
+    --dnd-text-lg: 1.125rem;   /* 18px */
+    --dnd-text-xl: 1.25rem;    /* 20px */
+    --dnd-text-2xl: 1.5rem;    /* 24px */
+    --dnd-text-3xl: 2rem;      /* 32px */
+    
+    /* ========== Spacing ========== */
+    --dnd-space-1: 0.25rem;    /* 4px */
+    --dnd-space-2: 0.5rem;     /* 8px */
+    --dnd-space-3: 0.75rem;    /* 12px */
+    --dnd-space-4: 1rem;       /* 16px */
+    --dnd-space-5: 1.25rem;    /* 20px */
+    --dnd-space-6: 1.5rem;     /* 24px */
+    --dnd-space-8: 2rem;       /* 32px */
+    --dnd-space-10: 2.5rem;    /* 40px */
+    --dnd-space-12: 3rem;      /* 48px */
+    
+    /* ========== Border Radius ========== */
+    --dnd-radius-sm: 4px;
+    --dnd-radius: 8px;
+    --dnd-radius-md: 10px;
+    --dnd-radius-lg: 12px;
+    --dnd-radius-xl: 16px;
+    --dnd-radius-full: 9999px;
+    
+    /* ========== Shadows ========== */
+    --dnd-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --dnd-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+    --dnd-shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    --dnd-shadow-lg: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
+    --dnd-shadow-xl: 0 12px 32px 0 rgba(0, 0, 0, 0.15);
+    
+    /* ========== Colors - Light Mode ========== */
+    --dnd-bg: var(--vscode-editor-background);
+    --dnd-bg-secondary: rgba(0, 0, 0, 0.02);
+    --dnd-bg-hover: rgba(0, 0, 0, 0.04);
+    --dnd-text: var(--vscode-editor-foreground);
+    --dnd-text-muted: rgba(0, 0, 0, 0.5);
+    --dnd-text-subtle: rgba(0, 0, 0, 0.35);
+    
+    /* Accent Colors */
+    --dnd-accent: #DC2626;
+    --dnd-accent-hover: #B91C1C;
+    --dnd-accent-soft: rgba(220, 38, 38, 0.08);
+    
+    /* Borders */
+    --dnd-border: var(--vscode-panel-border);
+    --dnd-border-light: rgba(0, 0, 0, 0.08);
+    --dnd-border-strong: rgba(0, 0, 0, 0.15);
+    
+    /* Input & Cards */
+    --dnd-input-bg: var(--vscode-input-background);
+    --dnd-card-bg: var(--vscode-editor-background);
+    
+    /* Table Colors - Light Mode (Parchment D&D Style) */
+    --dnd-table-bg: linear-gradient(to bottom, #f4e8d8 0%, #ede0cf 100%);
+    --dnd-table-header-bg: linear-gradient(to bottom, #8b6f47 0%, #6d5838 100%);
+    --dnd-table-header-text: #f4e8d8;
+    --dnd-table-row-odd: rgba(255, 255, 255, 0.3);
+    --dnd-table-row-even: rgba(139, 111, 71, 0.08);
+    
+    /* ========== Transitions ========== */
+    --dnd-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --dnd-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --dnd-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.vscode-dark {
+    /* ========== Colors - Dark Mode ========== */
+    --dnd-bg-secondary: rgba(255, 255, 255, 0.04);
+    --dnd-bg-hover: rgba(255, 255, 255, 0.06);
+    --dnd-text-muted: rgba(255, 255, 255, 0.6);
+    --dnd-text-subtle: rgba(255, 255, 255, 0.4);
+    
+    /* Accent Colors */
+    --dnd-accent: #EF4444;
+    --dnd-accent-hover: #F87171;
+    --dnd-accent-soft: rgba(239, 68, 68, 0.12);
+    
+    /* Borders */
+    --dnd-border-light: rgba(255, 255, 255, 0.08);
+    --dnd-border-strong: rgba(255, 255, 255, 0.15);
+    
+    /* Shadows */
+    --dnd-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --dnd-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
+    --dnd-shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.5);
+    --dnd-shadow-lg: 0 8px 24px 0 rgba(0, 0, 0, 0.6);
+    --dnd-shadow-xl: 0 12px 32px 0 rgba(0, 0, 0, 0.7);
+    
+    /* Table Colors - Dark Mode */
+    --dnd-table-bg: var(--dnd-bg-secondary);
+    --dnd-table-header-bg: var(--dnd-accent);
+    --dnd-table-header-text: white;
+    --dnd-table-row-odd: rgba(255, 255, 255, 0.02);
+    --dnd-table-row-even: rgba(255, 255, 255, 0.05);
+}
+
+/* ========== Base Styles ========== */
+body {
+    background-color: var(--dnd-bg);
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-body);
+    font-size: var(--dnd-text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== Typography ========== */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--dnd-font-header);
+    color: var(--dnd-text);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+}
+
+h1 {
+    font-size: var(--dnd-text-3xl);
+    border-bottom: 2px solid var(--dnd-border-light);
+    margin-bottom: var(--dnd-space-6);
+    padding-bottom: var(--dnd-space-3);
+}
+
+h2 {
+    font-size: var(--dnd-text-2xl);
+    border-bottom: 1px solid var(--dnd-border-light);
+    margin-bottom: var(--dnd-space-5);
+    padding-bottom: var(--dnd-space-2);
+}
+
+h3 {
+    font-size: var(--dnd-text-xl);
+    margin-bottom: var(--dnd-space-4);
+}
+
+/* ========== Form Controls ========== */
+input, select, textarea {
+    background: var(--dnd-input-bg);
+    color: var(--dnd-text);
+    border: 1px solid var(--dnd-border-light);
+    border-radius: var(--dnd-radius);
+    padding: var(--dnd-space-2) var(--dnd-space-3);
+    font-family: inherit;
+    font-size: var(--dnd-text-sm);
+    transition: all var(--dnd-transition);
+    box-sizing: border-box;
+}
+
+input:hover, select:hover, textarea:hover {
+    border-color: var(--dnd-border);
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--dnd-text-subtle);
+}
+
+/* Number inputs */
+input[type="number"] {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Checkboxes */
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* Select dropdowns */
+select {
+    cursor: pointer;
+    padding-right: var(--dnd-space-8);
+}
+
+/* Textareas */
+textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+/* ========== Buttons ========== */
+.dnd-btn,
+button {
+    background: var(--dnd-accent);
+    color: white;
+    border: 2px solid var(--dnd-accent);
+    padding: var(--dnd-space-2) var(--dnd-space-5);
+    border-radius: var(--dnd-radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--dnd-text-sm);
+    font-family: var(--dnd-font-header);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all var(--dnd-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--dnd-space-2);
+    box-shadow: none;
+}
+
+.dnd-btn:hover,
+button:hover {
+    background: var(--dnd-accent-hover);
+    border-color: var(--dnd-accent-hover);
+    transform: none;
+}
+
+.dnd-btn:active,
+button:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
+.dnd-btn.secondary {
+    background: transparent;
+    color: var(--dnd-accent);
+    border: 2px solid var(--dnd-accent);
+}
+
+.dnd-btn.secondary:hover {
+    background: var(--dnd-accent-soft);
+    border-color: var(--dnd-accent-hover);
+}
+
+.dnd-btn.danger {
+    background: #DC2626;
+    border-color: #DC2626;
+}
+
+.dnd-btn.danger:hover {
+    background: #B91C1C;
+    border-color: #B91C1C;
+}
+
+/* ========== Cards ========== */
+.dnd-card {
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border-light);
+    border-radius: var(--dnd-radius-lg);
+    box-shadow: var(--dnd-shadow);
+    padding: var(--dnd-space-6);
+    transition: box-shadow var(--dnd-transition);
+}
+
+.dnd-card:hover {
+    box-shadow: var(--dnd-shadow-md);
+}
+
+/* ========== Dialog/Input Styles ========== */
+.dnd-select {
+    width: 100%;
+    padding: 6px;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: var(--dnd-radius-sm);
+}
+
+/* ========== Warning Popover ========== */
+.warning-popover {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-lg);
+    padding: var(--dnd-space-6);
+    box-shadow: var(--dnd-shadow-xl);
+    z-index: 1000;
+    text-align: center;
+    min-width: 320px;
+    max-width: 480px;
+    animation: popoverFadeIn var(--dnd-transition-slow);
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.warning-popover h3 {
+    margin-top: 0;
+    color: var(--dnd-accent);
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: var(--dnd-space-4);
+}
+
+.warning-popover .buttons {
+    display: flex;
+    justify-content: center;
+    gap: var(--dnd-space-3);
+    margin-top: var(--dnd-space-6);
+}

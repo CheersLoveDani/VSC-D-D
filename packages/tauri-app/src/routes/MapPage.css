@@ -1,0 +1,137 @@
+.map-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+  height: 100vh;
+  padding: var(--dnd-space-4);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--dnd-space-2);
+}
+
+.page-header .btn-ghost {
+  width: auto !important;
+  padding: var(--dnd-space-2) !important;
+}
+
+.page-header button:not(.btn-ghost) {
+  width: auto;
+  padding: var(--dnd-space-2) var(--dnd-space-4);
+}
+
+.map-controls {
+  display: flex;
+  gap: var(--dnd-space-2);
+  padding: var(--dnd-space-3);
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border-light);
+  border-radius: var(--dnd-radius);
+}
+
+.map-container {
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--dnd-border);
+  border-radius: var(--dnd-radius-lg);
+  background: var(--dnd-bg-secondary);
+}
+
+.map-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.map-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.map-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--dnd-space-4);
+  color: var(--dnd-text-muted);
+}
+
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 10;
+}
+
+.pin-marker {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform var(--dnd-transition);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.pin-marker:hover {
+  transform: scale(1.2);
+}
+
+.pin-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border);
+  border-radius: var(--dnd-radius-sm);
+  padding: var(--dnd-space-1) var(--dnd-space-2);
+  font-size: var(--dnd-text-xs);
+  white-space: nowrap;
+  margin-top: var(--dnd-space-1);
+  box-shadow: var(--dnd-shadow);
+}
+
+.pin-editor {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border);
+  border-radius: var(--dnd-radius);
+  padding: var(--dnd-space-3);
+  margin-top: var(--dnd-space-2);
+  min-width: 200px;
+  box-shadow: var(--dnd-shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-2);
+  z-index: 100;
+}
+
+.pin-editor input {
+  width: 100%;
+}
+
+.pin-editor button {
+  width: 100%;
+}
+
+.loading, .error-banner {
+  text-align: center;
+  padding: var(--dnd-space-8);
+}
+
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--dnd-accent);
+  border-radius: var(--dnd-radius);
+}

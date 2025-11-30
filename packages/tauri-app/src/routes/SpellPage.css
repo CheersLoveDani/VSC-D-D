@@ -1,0 +1,132 @@
+.spell-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-4);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--dnd-space-4);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header .btn-ghost {
+  width: auto !important;
+  padding: var(--dnd-space-2) !important;
+}
+
+.spell-container {
+  background: var(--dnd-card-bg);
+  border: 1px solid var(--dnd-border-light);
+  border-radius: var(--dnd-radius-lg);
+  padding: var(--dnd-space-6);
+  box-shadow: var(--dnd-shadow);
+}
+
+.spell-name-input {
+  width: 100%;
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-2xl);
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  border-bottom: 2px solid var(--dnd-border-light);
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: var(--dnd-space-4);
+  padding-bottom: var(--dnd-space-2);
+  color: var(--dnd-accent);
+}
+
+.spell-name-input:focus {
+  border-color: var(--dnd-accent);
+  box-shadow: none;
+}
+
+.spell-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--dnd-space-3);
+  margin-bottom: var(--dnd-space-4);
+}
+
+.info-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dnd-space-1);
+}
+
+.info-field label {
+  font-size: var(--dnd-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dnd-text-muted);
+  font-weight: 600;
+}
+
+.info-field input,
+.info-field select {
+  width: 100%;
+}
+
+.spell-flags {
+  display: flex;
+  gap: var(--dnd-space-4);
+  margin-bottom: var(--dnd-space-4);
+  padding: var(--dnd-space-3);
+  background: var(--dnd-bg-secondary);
+  border-radius: var(--dnd-radius);
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: var(--dnd-space-2);
+}
+
+.inline-field input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.section {
+  margin-bottom: var(--dnd-space-4);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.section h3 {
+  font-family: var(--dnd-font-header);
+  font-size: var(--dnd-text-lg);
+  color: var(--dnd-accent);
+  border-bottom: 2px solid var(--dnd-border-light);
+  margin-bottom: var(--dnd-space-3);
+  padding-bottom: var(--dnd-space-2);
+}
+
+.section textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.loading, .error-banner {
+  text-align: center;
+  padding: var(--dnd-space-8);
+}
+
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--dnd-accent);
+  border-radius: var(--dnd-radius);
+}
+
+@media (max-width: 600px) {
+  .spell-meta {
+    grid-template-columns: 1fr;
+  }
+}

@@ -26,11 +26,18 @@
       "require": "./dist/data/index.js",
       "types": "./dist/data/index.d.ts"
     },
-    "./data/srd/*": "./src/data/srd/*"
+    "./ui-logic": {
+      "import": "./dist/ui-logic/index.mjs",
+      "require": "./dist/ui-logic/index.js",
+      "types": "./dist/ui-logic/index.d.ts"
+    },
+    "./data/srd/*": "./src/data/srd/*",
+    "./styles/*": "./src/styles/*"
   },
   "files": [
     "dist",
-    "src/data/srd"
+    "src/data/srd",
+    "src/styles"
   ],
   "scripts": {
     "build": "tsup",
