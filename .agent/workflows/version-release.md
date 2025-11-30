@@ -52,7 +52,7 @@ git push origin main --tags
 ## 8. Package Extension (Optional)
 If publishing to marketplace:
 ```bash
-npm run package
+pnpm run package
 ```
 
 ---

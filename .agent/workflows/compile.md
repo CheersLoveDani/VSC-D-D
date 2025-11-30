@@ -22,6 +22,6 @@ node node_modules/typescript/bin/tsc -p .
 
 ## Notes
 
-- The `npm run watch` task should auto-compile, but if it's not working, use the manual compile command above
+- The `pnpm run watch` task should auto-compile, but if it's not working, use the manual compile command above
 - Always reload the VS Code window after compiling to load the new extension code
 - The compiled JavaScript files are in the `out/` directory
