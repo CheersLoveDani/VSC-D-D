@@ -1,0 +1,19 @@
+fix: resolve map image selection on Windows (v0.1.3)
+
+Fixed the "Change Image" button in the map editor not working on Windows
+due to case-sensitive path comparison. VS Code URIs can have either
+lowercase (/e:/) or uppercase (/E:/) drive letters, which caused the
+path matching to fail and generate incorrect relative paths.
+
+Changes:
+- Normalized both document and image paths to lowercase before comparison
+- Fixed relative path calculation to handle Windows drive letter case variations
+- Added comprehensive error handling and debug logging
+- Map images now load correctly regardless of drive letter case
+
+The issue manifested as:
+- Calculated path: ../../../../../E:/development/VSC-D&D/test-files/image.jpg
+- Correct path: ../image.jpg
+
+This fix ensures the map editor's image selection works reliably on
+Windows systems.

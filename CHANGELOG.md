@@ -12,6 +12,14 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.1.3] - 2025-11-30
+
+### Fixed
+- **Map Image Selection**: Fixed "Change Image" button not working on Windows
+  - Resolved case-sensitive path comparison issue where drive letters (`/e:/` vs `/E:/`) caused incorrect relative path calculation
+  - Map images now load correctly after selection regardless of drive letter case
+  - Added improved error handling and debug logging for image path resolution
+
 ## [0.1.2] - 2025-11-30
 
 ### Fixed
@@ -366,7 +374,11 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.11...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.11...v0.1.0
 [0.0.11]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.0.8...v0.0.9

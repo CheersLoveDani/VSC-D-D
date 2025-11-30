@@ -129,42 +129,65 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
         if (uris && uris[0]) {
             const imageUri = uris[0];
             const docDir = vscode.Uri.joinPath(document.uri, '..');
-            // Calculate relative path manually for web compatibility
-            const docPath = docDir.path;
-            const imagePath = imageUri.path;
             
-            // Simple relative path calculation (assumes same scheme/authority)
-            // This is a basic implementation and might need robustness for complex cases
-            let relativePath = imagePath;
+            console.log('Selected image:', imageUri.toString());
+            console.log('Document directory:', docDir.toString());
+            
+            // Calculate relative path manually for web compatibility
+            // VS Code URIs always use forward slashes in the path property, even on Windows
+            // Normalize to lowercase for case-insensitive comparison (Windows drive letters can vary)
+            const docPath = docDir.path.toLowerCase();
+            const imagePath = imageUri.path.toLowerCase();
+            
+            console.log('Doc path (normalized):', docPath);
+            console.log('Image path (normalized):', imagePath);
+            
+            let relativePath = '';
+            
+            // Check if image is in the same directory or a subdirectory
             if (imagePath.startsWith(docPath)) {
-                relativePath = './' + imagePath.substring(docPath.length);
-                if (relativePath.startsWith('.//')) {
-                    relativePath = './' + relativePath.substring(3);
+                // Remove the document directory path and add ./
+                relativePath = imagePath.substring(docPath.length);
+                // Remove leading slash if present
+                if (relativePath.startsWith('/')) {
+                    relativePath = relativePath.substring(1);
                 }
+                relativePath = './' + relativePath;
             } else {
-                 // Fallback to absolute path if not in subfolder
-                 // Or try to find common ancestor (omitted for brevity, assuming images are usually in same folder or subfolder)
-                 // For now, just use the name if it's in the same folder
-                 const docDirParts = docPath.split('/');
-                 const imageParts = imagePath.split('/');
-                 
-                 // Find common prefix
-                 let i = 0;
-                 while (i < docDirParts.length && i < imageParts.length && docDirParts[i] === imageParts[i]) {
-                     i++;
-                 }
-                 
-                 const backSteps = docDirParts.length - i;
-                 const forwardPath = imageParts.slice(i).join('/');
-                 relativePath = (backSteps > 0 ? '../'.repeat(backSteps) : './') + forwardPath;
+                // Calculate relative path using common ancestor
+                const docDirParts = docPath.split('/').filter(p => p.length > 0);
+                const imageParts = imagePath.split('/').filter(p => p.length > 0);
+                
+                // Find common prefix
+                let i = 0;
+                while (i < docDirParts.length && i < imageParts.length && docDirParts[i] === imageParts[i]) {
+                    i++;
+                }
+                
+                // Calculate how many directories to go back
+                const backSteps = docDirParts.length - i;
+                // Get the forward path from common ancestor to image
+                const forwardPath = imageParts.slice(i).join('/');
+                
+                if (backSteps > 0) {
+                    relativePath = '../'.repeat(backSteps) + forwardPath;
+                } else {
+                    relativePath = './' + forwardPath;
+                }
             }
+            
+            console.log('Calculated relative path:', relativePath);
 
             const text = document.getText();
             try {
                 const json = JSON.parse(text);
                 json.imagePath = relativePath;
-                this.updateDocumentJson(document, json);
-            } catch { /* ignore parse errors */ }
+                await this.updateDocumentJson(document, json);
+                console.log('Successfully updated map image path');
+            } catch (error) {
+                console.error('Error updating map image:', error);
+                vscode.window.showErrorMessage('Failed to update map image: ' + error);
+            }
         }
     }
 
