@@ -12,6 +12,13 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.1.2] - 2025-11-30
+
+### Fixed
+- **Compendium Item Previews**: Fixed compendium item hover previews to show full details matching linked file previews
+  - Now displays all item properties including weight, value, damage, armor class, and attunement requirements
+  - Previously only showed basic info (name, type, rarity, description)
+
 ## [0.1.1] - 2025-11-30
 
 ### Improved

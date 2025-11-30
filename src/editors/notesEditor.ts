@@ -181,8 +181,15 @@ export class NotesEditorProvider extends BaseCustomTextEditorProvider {
                     type: 'item',
                     name: item.name,
                     itemType: item.type,
+                    subtype: item.subtype,
                     rarity: item.rarity,
+                    weight: item.weight,
+                    value: item.value,
                     attunement: item.attunement,
+                    attunementRequirement: item.attunementRequirement,
+                    properties: item.properties,
+                    damage: item.damage,
+                    armorClass: item.armorClass,
                     description: item.description
                 };
             }
