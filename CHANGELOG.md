@@ -12,6 +12,19 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.1.1] - 2025-11-30
+
+### Improved
+- **Item Previews**: Enhanced `.dnditem` hover previews to show comprehensive details
+  - Displays Rarity, Weight, Value, and Properties
+  - Shows Damage dice and type for weapons
+  - Shows AC and Dex bonus for armor
+  - Includes Attunement requirements
+- **Character Previews**: Enhanced `.dndchar` hover previews to show key character stats
+  - Displays Race, Class, Level, Background, and Alignment
+  - Shows AC, HP, Speed, and full Ability Scores (STR/DEX/etc.) with modifiers
+- **Example Files**: Cleaned up `example.dndstat` to use the simplified string format for speed and standard stats object, matching the compendium format
+
 ## [0.1.0] - 2025-11-30
 
 ### Added

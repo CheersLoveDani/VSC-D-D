@@ -64,14 +64,29 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
                 type: 'item',
                 name: json.name,
                 itemType: json.type,
+                subtype: json.subtype,
+                rarity: json.rarity,
+                weight: json.weight,
                 value: json.value,
+                attunement: json.attunement,
+                attunementRequirement: json.attunementRequirement,
+                properties: json.properties,
+                damage: json.damage,
+                armorClass: json.armorClass,
                 description: json.description
             };
         } else if (relativePath.endsWith('.dndchar')) {
             return {
                 type: 'character',
                 name: json.name,
+                race: json.race,
                 class: json.class,
+                level: json.level,
+                background: json.background,
+                alignment: json.alignment,
+                stats: json.stats,
+                ac: json.ac,
+                speed: json.speed,
                 hp: `${json.hp?.current}/${json.hp?.max}`
             };
         } else if (relativePath.endsWith('.dndmap')) {

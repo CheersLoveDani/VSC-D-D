@@ -1964,6 +1964,82 @@ const globalWindow = window;
      * @param {number} x 
      * @param {number} y 
      */
+    function renderItemPreview(data) {
+        let details = [];
+        if (data.damage) {
+            details.push(`<b>Damage:</b> ${data.damage.dice} ${data.damage.type}`);
+        }
+        if (data.armorClass) {
+            let acText = `${data.armorClass.base}`;
+            if (data.armorClass.dexBonus) acText += ' + Dex';
+            if (data.armorClass.maxBonus) acText += ` (max ${data.armorClass.maxBonus})`;
+            details.push(`<b>AC:</b> ${acText}`);
+        }
+        if (data.properties && data.properties.length > 0) {
+            details.push(`<b>Properties:</b> ${data.properties.join(', ')}`);
+        }
+        
+        let meta = [];
+        if (data.weight) meta.push(`Weight: ${data.weight} lb.`);
+        if (data.value) meta.push(`Value: ${data.value} gp`);
+
+        let attunementText = '';
+        if (data.attunement) {
+            attunementText = ' (Requires Attunement';
+            if (data.attunementRequirement) attunementText += ` by ${data.attunementRequirement}`;
+            attunementText += ')';
+        }
+
+        return `
+            <div class="popover-title">${data.name}</div>
+            <div class="popover-detail" style="font-style: italic;">
+                ${data.rarity || ''} ${data.itemType || ''} ${data.subtype ? `(${data.subtype})` : ''}${attunementText}
+            </div>
+            ${details.map(d => `<div class="popover-detail">${d}</div>`).join('')}
+            ${meta.length ? `<div class="popover-detail">${meta.join(' | ')}</div>` : ''}
+            <div class="popover-detail" style="margin-top: 8px; max-height: 100px; overflow-y: auto;">
+                ${(data.description || '').substring(0, 300)}${data.description?.length > 300 ? '...' : ''}
+            </div>
+        `;
+    }
+
+    /**
+     * @param {any} data
+     */
+    function renderCharacterPreview(data) {
+        let statsHtml = '';
+        if (data.stats) {
+            const mod = (score) => {
+                const m = Math.floor((score - 10) / 2);
+                return m >= 0 ? `+${m}` : `${m}`;
+            };
+            statsHtml = `
+                <div class="popover-detail" style="margin-top: 8px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; text-align: center; font-size: 11px;">
+                    <div><b>STR</b><br>${data.stats.str} (${mod(data.stats.str)})</div>
+                    <div><b>DEX</b><br>${data.stats.dex} (${mod(data.stats.dex)})</div>
+                    <div><b>CON</b><br>${data.stats.con} (${mod(data.stats.con)})</div>
+                    <div><b>INT</b><br>${data.stats.int} (${mod(data.stats.int)})</div>
+                    <div><b>WIS</b><br>${data.stats.wis} (${mod(data.stats.wis)})</div>
+                    <div><b>CHA</b><br>${data.stats.cha} (${mod(data.stats.cha)})</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="popover-title">${data.name}</div>
+            <div class="popover-detail" style="font-style: italic;">
+                ${data.race || ''} ${data.class || ''} ${data.level ? `Level ${data.level}` : ''}
+            </div>
+            <div class="popover-detail" style="font-style: italic; font-size: 12px; margin-bottom: 4px;">
+                ${data.background || ''} • ${data.alignment || ''}
+            </div>
+            <div class="popover-detail">
+                <b>AC:</b> ${data.ac || '?'} &nbsp;|&nbsp; <b>HP:</b> ${data.hp} &nbsp;|&nbsp; <b>Spd:</b> ${data.speed || '?'}
+            </div>
+            ${statsHtml}
+        `;
+    }
+
     function renderMonsterPreview(data) {
         const sizeMap = { 'T': 'Tiny', 'S': 'Small', 'M': 'Medium', 'L': 'Large', 'H': 'Huge', 'G': 'Gargantuan' };
         const size = sizeMap[data.size] || data.size;
@@ -2008,18 +2084,9 @@ const globalWindow = window;
 
         let html = '';
         if (data.type === 'item') {
-            html = `
-                <div class="popover-title">${data.name}</div>
-                <div class="popover-detail"><b>Type:</b> ${data.itemType}</div>
-                <div class="popover-detail"><b>Value:</b> ${data.value} gp</div>
-                <div class="popover-detail"><i>${data.description}</i></div>
-            `;
+            html = renderItemPreview(data);
         } else if (data.type === 'character') {
-            html = `
-                <div class="popover-title">${data.name}</div>
-                <div class="popover-detail"><b>Class:</b> ${data.class}</div>
-                <div class="popover-detail"><b>HP:</b> ${data.hp}</div>
-            `;
+            html = renderCharacterPreview(data);
         } else if (data.type === 'map') {
             html = `
                 <div class="popover-title">Map</div>
@@ -2265,15 +2332,7 @@ const globalWindow = window;
         } else if (data.type === 'monster') {
             html = renderMonsterPreview(data);
         } else if (data.type === 'item') {
-            html = `
-                <div class="popover-title">${data.name}</div>
-                <div class="popover-detail" style="font-style: italic;">
-                    ${data.itemType}${data.rarity ? ', ' + data.rarity : ''}${data.attunement ? ' (requires attunement)' : ''}
-                </div>
-                <div class="popover-detail" style="margin-top: 8px; max-height: 100px; overflow-y: auto;">
-                    ${(data.description || '').substring(0, 300)}${data.description?.length > 300 ? '...' : ''}
-                </div>
-            `;
+            html = renderItemPreview(data);
         }
 
         compendiumTooltip.innerHTML = html;
