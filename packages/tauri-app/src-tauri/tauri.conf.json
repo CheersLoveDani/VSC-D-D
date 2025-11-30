@@ -5,7 +5,7 @@
   "identifier": "com.critcode.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:1422",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:1422"
     }
   },
   "bundle": {
@@ -37,13 +37,5 @@
     "shortDescription": "D&D Campaign Manager",
     "longDescription": "A cross-platform D&D campaign management tool with character sheets, compendium browser, and GitHub sync."
   },
-  "plugins": {
-    "fs": {
-      "scope": ["$APPDATA/**", "$DOCUMENT/**", "$HOME/**"]
-    },
-    "dialog": {
-      "all": true
-    },
-    "store": {}
-  }
+  "plugins": {}
 }

@@ -1,40 +1,57 @@
-# Dependencies
+# General Node.js
 node_modules/
-/node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+coverage/
+*.log
 
-# Build outputs
+# Build Outputs
 dist/
 out/
+build/
 *.vsix
 
-# Lock files (using pnpm)
-package-lock.json
-yarn.lock
-
-# Test files
-test-files/
-
-# User-imported compendium files (not distributable)
-*.compendium.xml
-Complete_Compendium*.xml
-
-# Environment files
+# Environment Variables
 .env
 .env.local
 .env.*.local
 
-# IDE
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
 .idea/
 *.swp
 *.swo
+*.swn
 
-# OS
-.DS_Store
-Thumbs.db
+# VS Code Extension
+.vscode-test/
+packages/vscode-extension/out/
+packages/vscode-extension/dist/
+packages/vscode-extension/.vscode-test/
 
-# Tauri
+# Tauri / Rust
 packages/tauri-app/src-tauri/target/
 packages/tauri-app/src-tauri/gen/
+packages/tauri-app/src-tauri/schemas/
+**/*.rs.bk
+*.pdb
 
-# VS Code extension
-*.vsix
+# Project Specific
+test-files/
+*.compendium.xml
+Complete_Compendium*.xml
+
+# Lock files (Force pnpm)
+package-lock.json
+yarn.lock
