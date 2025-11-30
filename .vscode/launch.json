@@ -25,6 +25,20 @@
 				"${workspaceFolder}/out/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}"
+		},
+		{
+			"name": "Run Web Extension",
+			"type": "pwa-extensionHost",
+			"debugWebviews": true,
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/dist/web/test/suite/index"
+			],
+			"outFiles": [
+				"${workspaceFolder}/dist/web/**/*.js"
+			],
+			"preLaunchTask": "npm: package-web"
 		}
 	]
 }

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MapEditorProvider = void 0;
 const vscode = require("vscode");
-const path = require("path");
+// Removed path import for web compatibility
 const baseEditor_1 = require("./baseEditor");
 const preview_1 = require("../utils/preview");
 class MapEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
@@ -65,6 +65,9 @@ class MapEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 case 'openFile':
                     this.openFile(document, msg.path ?? '');
                     return;
+                case 'openExternal':
+                    this.openExternal(msg.url ?? '');
+                    return;
                 case 'getPreview':
                     const data = await (0, preview_1.getPreviewData)(document, msg.path ?? '', webviewPanel.webview);
                     webviewPanel.webview.postMessage({
@@ -109,7 +112,33 @@ class MapEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
         if (uris && uris[0]) {
             const imageUri = uris[0];
             const docDir = vscode.Uri.joinPath(document.uri, '..');
-            const relativePath = './' + path.relative(docDir.fsPath, imageUri.fsPath).replace(/\\/g, '/');
+            // Calculate relative path manually for web compatibility
+            const docPath = docDir.path;
+            const imagePath = imageUri.path;
+            // Simple relative path calculation (assumes same scheme/authority)
+            // This is a basic implementation and might need robustness for complex cases
+            let relativePath = imagePath;
+            if (imagePath.startsWith(docPath)) {
+                relativePath = './' + imagePath.substring(docPath.length);
+                if (relativePath.startsWith('.//')) {
+                    relativePath = './' + relativePath.substring(3);
+                }
+            }
+            else {
+                // Fallback to absolute path if not in subfolder
+                // Or try to find common ancestor (omitted for brevity, assuming images are usually in same folder or subfolder)
+                // For now, just use the name if it's in the same folder
+                const docDirParts = docPath.split('/');
+                const imageParts = imagePath.split('/');
+                // Find common prefix
+                let i = 0;
+                while (i < docDirParts.length && i < imageParts.length && docDirParts[i] === imageParts[i]) {
+                    i++;
+                }
+                const backSteps = docDirParts.length - i;
+                const forwardPath = imageParts.slice(i).join('/');
+                relativePath = (backSteps > 0 ? '../'.repeat(backSteps) : './') + forwardPath;
+            }
             const text = document.getText();
             try {
                 const json = JSON.parse(text);

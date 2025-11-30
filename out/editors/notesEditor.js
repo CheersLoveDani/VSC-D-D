@@ -53,6 +53,9 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 case 'openFile':
                     this.openFile(document, msg.path ?? '');
                     return;
+                case 'openExternal':
+                    this.openExternal(msg.path ?? msg.text ?? msg.url ?? '');
+                    return;
                 case 'getPreview':
                     const data = await (0, preview_1.getPreviewData)(document, msg.path ?? '', webviewPanel.webview);
                     webviewPanel.webview.postMessage({

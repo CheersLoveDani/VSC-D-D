@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import * as os from 'os';
-import * as path from 'path';
+// Removed os and path imports for web compatibility
 
 /**
  * Service to manage temporary D&D compendium files.
@@ -12,9 +11,11 @@ export class TempFileService {
     private disposables: vscode.Disposable[] = [];
     private tempDir: vscode.Uri;
 
-    private constructor() {
-        // Create a temp directory for our extension
-        this.tempDir = vscode.Uri.file(path.join(os.tmpdir(), 'vscode-dnd-compendium'));
+    private constructor(context: vscode.ExtensionContext) {
+        // Create a temp directory for our extension in the workspace storage
+        // Fallback to global storage if workspace storage is not available
+        const storageRoot = context.storageUri || context.globalStorageUri;
+        this.tempDir = vscode.Uri.joinPath(storageRoot, 'temp');
         this.ensureTempDir();
 
         // Listen for document close events to clean up temp files
@@ -32,9 +33,12 @@ export class TempFileService {
         );
     }
 
-    public static getInstance(): TempFileService {
+    public static getInstance(context?: vscode.ExtensionContext): TempFileService {
         if (!TempFileService.instance) {
-            TempFileService.instance = new TempFileService();
+            if (!context) {
+                throw new Error('TempFileService must be initialized with context first');
+            }
+            TempFileService.instance = new TempFileService(context);
         }
         return TempFileService.instance;
     }

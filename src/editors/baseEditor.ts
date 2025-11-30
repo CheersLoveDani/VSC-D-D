@@ -157,6 +157,20 @@ export abstract class BaseCustomTextEditorProvider implements vscode.CustomTextE
             return;
         }
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
-        vscode.commands.executeCommand('vscode.open', targetUri);
+        // Open in a new tab (preview: false ensures it doesn't replace the current preview tab)
+        vscode.commands.executeCommand('vscode.open', targetUri, { preview: false });
+    }
+
+    /**
+     * Open an external URL in the Simple Browser.
+     * @param url The URL to open
+     */
+    protected openExternal(url: string): void {
+        if (!url) {
+            return;
+        }
+        console.log('Opening external URL:', url);
+        // Use Simple Browser to open within VS Code
+        vscode.commands.executeCommand('simpleBrowser.show', url);
     }
 }

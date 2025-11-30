@@ -21,7 +21,7 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
         
         if (relativePath.endsWith('.dndnotes')) {
             // Parse markdown to extract headers
-            const markdown = Buffer.from(content).toString('utf8');
+            const markdown = new TextDecoder().decode(content);
             const headers: Array<{level: number, text: string}> = [];
             let title = 'Note';
             
@@ -54,7 +54,7 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
         }
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const json = safeParseJSON<Record<string, any>>(Buffer.from(content).toString('utf8'));
+        const json = safeParseJSON<Record<string, any>>(new TextDecoder().decode(content));
         if (!json) {
             return null;
         }
@@ -92,13 +92,63 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
                 imageSrc: imageSrc
             };
         } else if (relativePath.endsWith('.dndstat')) {
+            // Normalize speed
+            let speed = json.speed;
+            if (Array.isArray(speed)) {
+                speed = speed.map((s: any) => `${s.name} ${s.description}`).join(', ');
+            } else if (typeof speed === 'object' && speed !== null) {
+                speed = Object.entries(speed)
+                    .map(([k, v]) => `${k} ${v} ft.`)
+                    .join(', ');
+            }
+
+            // Normalize stats
+            let stats = json.stats;
+            if (!stats && json.abilityScores) {
+                stats = {
+                    str: json.abilityScores.strength,
+                    dex: json.abilityScores.dexterity,
+                    con: json.abilityScores.constitution,
+                    int: json.abilityScores.intelligence,
+                    wis: json.abilityScores.wisdom,
+                    cha: json.abilityScores.charisma
+                };
+            }
+
             return {
-                type: 'stat',
+                type: 'stat', // Keep type as 'stat' for the frontend to distinguish if needed, or switch to 'monster' to match compendium?
+                              // User said "compendium preview doesnt match our linked files preview".
+                              // If I change this to 'monster', the frontend will use the 'monster' block in showPopover (if it exists).
+                              // But showPopover currently has 'stat'.
+                              // I will keep 'stat' but normalize the FIELDS to match what renderMonsterPreview will expect.
                 name: json.name,
                 size: json.size,
-                creatureType: json.type,
-                cr: json.challengeRating,
-                hp: json.hitPoints
+                monsterType: json.type, // Map type to monsterType
+                alignment: json.alignment,
+                ac: json.ac || json.armorClass, // Handle aliases
+                hp: json.hitPoints || json.hp,
+                speed: speed,
+                stats: stats,
+                cr: json.challengeRating || json.cr
+            };
+        } else if (relativePath.endsWith('.dndspell')) {
+            return {
+                type: 'spell',
+                name: json.name,
+                level: json.level,
+                school: json.school,
+                castingTime: json.castingTime,
+                range: json.range,
+                components: [
+                    json.componentV ? 'V' : '',
+                    json.componentS ? 'S' : '',
+                    json.componentM ? 'M' : '',
+                    json.materials ? `(${json.materials})` : ''
+                ].filter(Boolean).join(', '),
+                duration: json.duration,
+                description: json.description,
+                ritual: json.ritual,
+                concentration: json.concentration
             };
         }
     } catch (e) {

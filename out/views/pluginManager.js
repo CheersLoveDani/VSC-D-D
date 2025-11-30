@@ -39,8 +39,8 @@ class PluginManagerProvider {
                 vscode.window.showErrorMessage('No workspace folder open. Please open a folder first.');
                 return;
             }
-            const rootPath = workspaceFolders[0].uri.fsPath;
-            const examplesPath = vscode.Uri.file(`${rootPath}/examples`);
+            const rootUri = workspaceFolders[0].uri;
+            const examplesPath = vscode.Uri.joinPath(rootUri, 'examples');
             // Create examples folder
             await vscode.workspace.fs.createDirectory(examplesPath);
             // Create example character file
@@ -313,12 +313,12 @@ You can use **bold**, *italic*, and other markdown formatting.
                 ]
             };
             // Write example files
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndchar`), new TextEncoder().encode(JSON.stringify(exampleChar, null, 2)));
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dnditem`), new TextEncoder().encode(JSON.stringify(exampleItem, null, 2)));
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndmap`), new TextEncoder().encode(JSON.stringify(exampleMap, null, 2)));
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndnotes`), new TextEncoder().encode(exampleNotes));
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndstat`), new TextEncoder().encode(JSON.stringify(exampleStat, null, 2)));
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/examples/example.dndspell`), new TextEncoder().encode(JSON.stringify(exampleSpell, null, 2)));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(examplesPath, 'example.dndchar'), new TextEncoder().encode(JSON.stringify(exampleChar, null, 2)));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(examplesPath, 'example.dnditem'), new TextEncoder().encode(JSON.stringify(exampleItem, null, 2)));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(examplesPath, 'example.dndmap'), new TextEncoder().encode(JSON.stringify(exampleMap, null, 2)));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(examplesPath, 'example.dndnotes'), new TextEncoder().encode(exampleNotes));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(examplesPath, 'example.dndstat'), new TextEncoder().encode(JSON.stringify(exampleStat, null, 2)));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(examplesPath, 'example.dndspell'), new TextEncoder().encode(JSON.stringify(exampleSpell, null, 2)));
             // Create instruction file
             const instructions = `# CritCode Instructions
 
@@ -459,10 +459,10 @@ Check the \`examples\` folder for sample files of each type to help you get star
 
 Happy adventuring! 🎲
 `;
-            await vscode.workspace.fs.writeFile(vscode.Uri.file(`${rootPath}/CRITCODE_INSTRUCTIONS.md`), new TextEncoder().encode(instructions));
+            await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(rootUri, 'CRITCODE_INSTRUCTIONS.md'), new TextEncoder().encode(instructions));
             vscode.window.showInformationMessage('Setup files created successfully! Check the examples folder and CRITCODE_INSTRUCTIONS.md');
             // Open the instructions file
-            const instructionsUri = vscode.Uri.file(`${rootPath}/CRITCODE_INSTRUCTIONS.md`);
+            const instructionsUri = vscode.Uri.joinPath(rootUri, 'CRITCODE_INSTRUCTIONS.md');
             await vscode.window.showTextDocument(instructionsUri);
         }
         catch (error) {

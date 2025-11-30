@@ -1,6 +1,7 @@
 /node_modules
 /package-lock.json
 /test-files
+/.vscode-test-web
 
 # User-imported compendium files (not distributable)
 *.compendium.xml

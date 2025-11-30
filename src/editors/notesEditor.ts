@@ -67,6 +67,7 @@ export class NotesEditorProvider extends BaseCustomTextEditorProvider {
                 requestId?: string;
                 entryType?: string;
                 name?: string;
+                url?: string;
             };
 
             switch (msg.type) {
@@ -80,6 +81,10 @@ export class NotesEditorProvider extends BaseCustomTextEditorProvider {
 
                 case 'openFile':
                     this.openFile(document, msg.path ?? '');
+                    return;
+
+                case 'openExternal':
+                    this.openExternal(msg.path ?? msg.text ?? (msg as any).url ?? '');
                     return;
 
                 case 'getPreview':

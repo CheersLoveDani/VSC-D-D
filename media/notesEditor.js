@@ -236,7 +236,7 @@ const globalWindow = window;
             // state.content has relative paths, but we need webview URIs for images to display
             const preview = document.createElement('div');
             preview.className = 'markdown-preview';
-            const html = simpleMarkdownToHTML(state.content);
+            const html = convertMarkdownToHTML(state.content);
             preview.innerHTML = html;
             container.appendChild(preview);
             attachLinkListeners(preview);
@@ -1898,13 +1898,51 @@ const globalWindow = window;
      * @param {HTMLElement} container 
      */
     function attachLinkListeners(container) {
+        console.log('attachLinkListeners called');
+        
+        // Use event delegation for click handling to catch all links
+        container.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            // Prevent default browser navigation for ALL links in the webview
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('Intercepted click on:', href);
+
+            // Check if it's an external link
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                vscode.postMessage({
+                    type: 'openExternal',
+                    url: href
+                });
+                return;
+            }
+            
+            // Internal link - assume openFile
+            vscode.postMessage({
+                type: 'openFile',
+                path: href
+            });
+        });
+
+        // Keep mouseenter/mouseleave for preview popovers on specific file types
         const links = container.querySelectorAll('a');
+        console.log('Found links count:', links.length);
+        
         links.forEach(link => {
             const href = link.getAttribute('href');
-            
+            if (!href) return;
+
             // Check if it's a D&D file link (relative path)
-            if (href && (href.endsWith('.dndchar') || href.endsWith('.dnditem') ||
-                        href.endsWith('.dndmap') || href.endsWith('.dndnotes') || href.endsWith('.dndstat'))) {
+            if (href.endsWith('.dndchar') || href.endsWith('.dnditem') ||
+                href.endsWith('.dndmap') || href.endsWith('.dndnotes') || 
+                href.endsWith('.dndstat') || href.endsWith('.dndspell')) {
+                
                 link.addEventListener('mouseenter', (e) => {
                     vscode.postMessage({
                         type: 'getPreview',
@@ -1917,14 +1955,6 @@ const globalWindow = window;
                 link.addEventListener('mouseleave', () => {
                     popover.classList.remove('visible');
                 });
-
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    vscode.postMessage({
-                        type: 'openFile',
-                        path: href
-                    });
-                });
             }
         });
     }
@@ -1932,6 +1962,45 @@ const globalWindow = window;
     /**
      * @param {any} data 
      * @param {number} x 
+     * @param {number} y 
+     */
+    function renderMonsterPreview(data) {
+        const sizeMap = { 'T': 'Tiny', 'S': 'Small', 'M': 'Medium', 'L': 'Large', 'H': 'Huge', 'G': 'Gargantuan' };
+        const size = sizeMap[data.size] || data.size;
+        
+        let statsHtml = '';
+        if (data.stats) {
+            const mod = (score) => {
+                const m = Math.floor((score - 10) / 2);
+                return m >= 0 ? `+${m}` : `${m}`;
+            };
+            statsHtml = `
+                <div class="popover-detail" style="margin-top: 8px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; text-align: center; font-size: 11px;">
+                    <div><b>STR</b><br>${data.stats.str} (${mod(data.stats.str)})</div>
+                    <div><b>DEX</b><br>${data.stats.dex} (${mod(data.stats.dex)})</div>
+                    <div><b>CON</b><br>${data.stats.con} (${mod(data.stats.con)})</div>
+                    <div><b>INT</b><br>${data.stats.int} (${mod(data.stats.int)})</div>
+                    <div><b>WIS</b><br>${data.stats.wis} (${mod(data.stats.wis)})</div>
+                    <div><b>CHA</b><br>${data.stats.cha} (${mod(data.stats.cha)})</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="popover-title">${data.name}</div>
+            <div class="popover-detail" style="font-style: italic;">${size} ${data.monsterType}, ${data.alignment || 'Unaligned'}</div>
+            <div class="popover-detail">
+                <b>AC:</b> ${data.ac} &nbsp;|&nbsp; <b>HP:</b> ${data.hp} &nbsp;|&nbsp; <b>Spd:</b> ${data.speed}
+            </div>
+            ${statsHtml}
+            <div class="popover-detail" style="margin-top: 8px;"><b>CR:</b> ${data.cr}</div>
+        `;
+    }
+
+    /**
+     * @param {any} data 
+     * @param {number} x 
+     * @param {number} y 
      * @param {number} y 
      */
     function showPopover(data, x, y) {
@@ -1969,11 +2038,31 @@ const globalWindow = window;
             } else {
                 html += '<div class="popover-detail"><i>No headers found</i></div>';
             }
-        } else if (data.type === 'stat') {
             html = `
                 <div class="popover-title">${data.name}</div>
                 <div class="popover-detail"><i>${data.size} ${data.creatureType}</i></div>
                 <div class="popover-detail"><b>HP:</b> ${data.hp} | <b>CR:</b> ${data.cr}</div>
+            `;
+        } else if (data.type === 'stat') {
+            html = renderMonsterPreview(data);
+        } else if (data.type === 'spell') {
+            const levelText = data.level === 0 ? 'Cantrip' : `Level ${data.level}`;
+            let tags = [];
+            if (data.concentration) tags.push('Concentration');
+            if (data.ritual) tags.push('Ritual');
+
+            html = `
+                <div class="popover-title">${data.name}</div>
+                <div class="popover-detail" style="font-style: italic; margin-bottom: 8px;">
+                    ${levelText} ${data.school}${tags.length ? ' (' + tags.join(', ') + ')' : ''}
+                </div>
+                <div class="popover-detail"><b>Casting Time:</b> ${data.castingTime}</div>
+                <div class="popover-detail"><b>Range:</b> ${data.range}</div>
+                <div class="popover-detail"><b>Components:</b> ${data.components}</div>
+                <div class="popover-detail"><b>Duration:</b> ${data.duration}</div>
+                <div class="popover-detail" style="margin-top: 8px; max-height: 100px; overflow-y: auto;">
+                    ${(data.description || '').substring(0, 300)}${data.description?.length > 300 ? '...' : ''}
+                </div>
             `;
         }
 
@@ -2174,15 +2263,7 @@ const globalWindow = window;
                 </div>
             `;
         } else if (data.type === 'monster') {
-            const sizeMap = { 'T': 'Tiny', 'S': 'Small', 'M': 'Medium', 'L': 'Large', 'H': 'Huge', 'G': 'Gargantuan' };
-            const size = sizeMap[data.size] || data.size;
-
-            html = `
-                <div class="popover-title">${data.name}</div>
-                <div class="popover-detail" style="font-style: italic;">${size} ${data.monsterType}, ${data.alignment}</div>
-                <div class="popover-detail"><b>AC:</b> ${data.ac} | <b>HP:</b> ${data.hp} | <b>CR:</b> ${data.cr}</div>
-                <div class="popover-detail"><b>Speed:</b> ${data.speed}</div>
-            `;
+            html = renderMonsterPreview(data);
         } else if (data.type === 'item') {
             html = `
                 <div class="popover-title">${data.name}</div>

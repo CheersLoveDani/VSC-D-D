@@ -16,6 +16,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const compendium = CompendiumService.getInstance(context);
 	compendium.initialize();
 
+    // Initialize TempFileService
+    TempFileService.getInstance(context);
+
 	// Register Custom Editors
 	context.subscriptions.push(MapEditorProvider.register(context));
 	context.subscriptions.push(CharacterSheetProvider.register(context));
@@ -78,7 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
                 title: 'Importing Compendium...',
                 cancellable: false
             }, async () => {
-                const counts = await compendium.importXmlCompendium(filePath);
+                const counts = await compendium.importXmlCompendium(fileUri[0]);
                 vscode.window.showInformationMessage(
                     `Compendium imported: ${counts.spells} spells, ${counts.monsters} monsters, ${counts.items} items`
                 );

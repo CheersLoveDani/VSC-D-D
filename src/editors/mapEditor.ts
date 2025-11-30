@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
+// Removed path import for web compatibility
 import { BaseCustomTextEditorProvider } from './baseEditor';
 import { getPreviewData } from '../utils/preview';
 
@@ -64,7 +64,7 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
         });
 
         webviewPanel.webview.onDidReceiveMessage(async (message: unknown) => {
-            const msg = message as { type: string; data?: unknown; path?: string; x?: number; y?: number };
+            const msg = message as { type: string; data?: unknown; path?: string; x?: number; y?: number; url?: string };
             switch (msg.type) {
                 case 'ready':
                     updateWebview();
@@ -77,6 +77,9 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
                     return;
                 case 'openFile':
                     this.openFile(document, msg.path ?? '');
+                    return;
+                case 'openExternal':
+                    this.openExternal(msg.url ?? '');
                     return;
                 case 'getPreview':
                     const data = await getPreviewData(document, msg.path ?? '', webviewPanel.webview);
@@ -126,7 +129,35 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
         if (uris && uris[0]) {
             const imageUri = uris[0];
             const docDir = vscode.Uri.joinPath(document.uri, '..');
-            const relativePath = './' + path.relative(docDir.fsPath, imageUri.fsPath).replace(/\\/g, '/');
+            // Calculate relative path manually for web compatibility
+            const docPath = docDir.path;
+            const imagePath = imageUri.path;
+            
+            // Simple relative path calculation (assumes same scheme/authority)
+            // This is a basic implementation and might need robustness for complex cases
+            let relativePath = imagePath;
+            if (imagePath.startsWith(docPath)) {
+                relativePath = './' + imagePath.substring(docPath.length);
+                if (relativePath.startsWith('.//')) {
+                    relativePath = './' + relativePath.substring(3);
+                }
+            } else {
+                 // Fallback to absolute path if not in subfolder
+                 // Or try to find common ancestor (omitted for brevity, assuming images are usually in same folder or subfolder)
+                 // For now, just use the name if it's in the same folder
+                 const docDirParts = docPath.split('/');
+                 const imageParts = imagePath.split('/');
+                 
+                 // Find common prefix
+                 let i = 0;
+                 while (i < docDirParts.length && i < imageParts.length && docDirParts[i] === imageParts[i]) {
+                     i++;
+                 }
+                 
+                 const backSteps = docDirParts.length - i;
+                 const forwardPath = imageParts.slice(i).join('/');
+                 relativePath = (backSteps > 0 ? '../'.repeat(backSteps) : './') + forwardPath;
+            }
 
             const text = document.getText();
             try {

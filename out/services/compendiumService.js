@@ -2,8 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CompendiumService = void 0;
 const vscode = require("vscode");
-const path = require("path");
-const fs = require("fs");
 // School abbreviation mapping
 const SCHOOL_MAP = {
     'A': 'Abjuration',
@@ -98,8 +96,11 @@ class CompendiumService {
         // Check for user-imported compendium
         const config = vscode.workspace.getConfiguration('dnd.compendium');
         const importedPath = config.get('importedPath');
-        if (importedPath && fs.existsSync(importedPath)) {
-            await this.importXmlCompendium(importedPath);
+        if (importedPath) {
+            const importedUri = vscode.Uri.file(importedPath);
+            if (await this.fileExists(importedUri)) {
+                await this.importXmlCompendium(importedUri);
+            }
         }
         // Load custom spells from workspace
         await this.loadCustomSpells();
@@ -283,25 +284,28 @@ class CompendiumService {
     async loadSrdData() {
         try {
             // Load bundled SRD spells
-            const srdSpellsPath = path.join(this.context.extensionPath, 'src', 'data', 'srd-spells.json');
-            if (fs.existsSync(srdSpellsPath)) {
-                const data = JSON.parse(fs.readFileSync(srdSpellsPath, 'utf8'));
+            const srdSpellsUri = vscode.Uri.joinPath(this.context.extensionUri, 'src', 'data', 'srd-spells.json');
+            if (await this.fileExists(srdSpellsUri)) {
+                const content = await vscode.workspace.fs.readFile(srdSpellsUri);
+                const data = JSON.parse(new TextDecoder().decode(content));
                 for (const spell of data.spells || []) {
                     this.spells.set(spell.name.toLowerCase(), spell);
                 }
             }
             // Load bundled SRD items
-            const srdItemsPath = path.join(this.context.extensionPath, 'src', 'data', 'srd-items.json');
-            if (fs.existsSync(srdItemsPath)) {
-                const data = JSON.parse(fs.readFileSync(srdItemsPath, 'utf8'));
+            const srdItemsUri = vscode.Uri.joinPath(this.context.extensionUri, 'src', 'data', 'srd-items.json');
+            if (await this.fileExists(srdItemsUri)) {
+                const content = await vscode.workspace.fs.readFile(srdItemsUri);
+                const data = JSON.parse(new TextDecoder().decode(content));
                 for (const item of data.items || []) {
                     this.items.set(item.name.toLowerCase(), item);
                 }
             }
             // Load bundled SRD monsters
-            const srdMonstersPath = path.join(this.context.extensionPath, 'src', 'data', 'srd-monsters.json');
-            if (fs.existsSync(srdMonstersPath)) {
-                const data = JSON.parse(fs.readFileSync(srdMonstersPath, 'utf8'));
+            const srdMonstersUri = vscode.Uri.joinPath(this.context.extensionUri, 'src', 'data', 'srd-monsters.json');
+            if (await this.fileExists(srdMonstersUri)) {
+                const content = await vscode.workspace.fs.readFile(srdMonstersUri);
+                const data = JSON.parse(new TextDecoder().decode(content));
                 for (const monster of data.monsters || []) {
                     this.monsters.set(monster.name.toLowerCase(), monster);
                 }
@@ -311,10 +315,20 @@ class CompendiumService {
             console.error('Error loading SRD data:', error);
         }
     }
-    async importXmlCompendium(filePath) {
+    async fileExists(uri) {
+        try {
+            await vscode.workspace.fs.stat(uri);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
+    async importXmlCompendium(fileUri) {
         const counts = { spells: 0, monsters: 0, items: 0 };
         try {
-            const content = fs.readFileSync(filePath, 'utf8');
+            const contentBytes = await vscode.workspace.fs.readFile(fileUri);
+            const content = new TextDecoder().decode(contentBytes);
             // Parse spells (don't overwrite SRD spells which have better data)
             const spellMatches = content.matchAll(/<spell>([\s\S]*?)<\/spell>/g);
             for (const match of spellMatches) {

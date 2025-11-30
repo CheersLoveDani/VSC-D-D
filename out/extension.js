@@ -18,6 +18,8 @@ function activate(context) {
     // Initialize Compendium Service
     const compendium = compendiumService_1.CompendiumService.getInstance(context);
     compendium.initialize();
+    // Initialize TempFileService
+    tempFileService_1.TempFileService.getInstance(context);
     // Register Custom Editors
     context.subscriptions.push(mapEditor_1.MapEditorProvider.register(context));
     context.subscriptions.push(characterEditor_1.CharacterSheetProvider.register(context));
@@ -60,7 +62,7 @@ function activate(context) {
                 title: 'Importing Compendium...',
                 cancellable: false
             }, async () => {
-                const counts = await compendium.importXmlCompendium(filePath);
+                const counts = await compendium.importXmlCompendium(fileUri[0]);
                 vscode.window.showInformationMessage(`Compendium imported: ${counts.spells} spells, ${counts.monsters} monsters, ${counts.items} items`);
             });
         }

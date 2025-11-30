@@ -12,15 +12,34 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
-## [Unreleased]
+## [0.1.0] - 2025-11-30
 
 ### Added
+- **Web Extension Support**: Full support for running the extension in VS Code for Web
+  - Added `package-web` and `run-web` scripts for building and testing web version
+  - Configured webpack for webworker target with necessary polyfills
+  - Added "Run Web Extension" launch configuration
+- **Spell Previews**: Hover over `.dndspell` links to see spell details
+  - Shows Level, School, Casting Time, Range, Components, Duration, and Description
+  - Consistent styling with character sheet previews
+- **Stat Block Previews**: Hover over `.dndstat` links to see monster stats
+  - Shows AC, HP, Speed, Stats (STR/DEX/etc.), Alignment, and CR
+  - Unified rendering for both linked files and compendium entries
+- **Link Handling**: Improved link behavior in webviews
+  - External links (http/https) now open in VS Code's Simple Browser (web) or default browser (desktop)
+  - Internal D&D file links open in new VS Code editor tabs instead of replacing the current one
 
 ### Improved
+- **Preview System**: Unified `preview.ts` utility to handle data extraction for all file types
+- **Stat Block Data**: Normalized data handling for `.dndstat` files
+  - Supports both string and object formats for `speed`
+  - Supports both `stats` (short keys) and `abilityScores` (long keys) objects
+  - Handles `ac` vs `armorClass` aliases
 
 ### Fixed
-
-### Changed
+- **Webview Links**: Fixed links opening in new browser tabs instead of VS Code tabs in web version
+- **Stat Previews**: Fixed blank previews for linked `.dndstat` files
+- **Stat Schema**: Fixed "object Object" display for speed and missing stats in some monster files
 
 
 ## [0.0.11] - 2025-11-27
