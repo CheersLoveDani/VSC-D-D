@@ -491,7 +491,7 @@ const globalWindow = window;
                     html += '</ul>';
                     inTaskList = false;
                 }
-                html += '<p></p>';
+                // Don't add empty paragraphs - they create visible blank lines in edit mode
                 continue;
             }
             
