@@ -264,7 +264,7 @@ body {
 
 .ProseMirror ul[data-type="taskList"] li {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     gap: var(--dnd-space-2);
 }
 
@@ -272,6 +272,7 @@ body {
     flex: 0 0 auto;
     margin-right: 0.5rem;
     user-select: none;
+    cursor: pointer;
 }
 
 .ProseMirror ul[data-type="taskList"] li > div {
@@ -282,7 +283,21 @@ body {
     cursor: pointer;
     width: 16px;
     height: 16px;
-    margin-top: 0.25em;
+    margin: 0;
+    pointer-events: auto;
+    accent-color: var(--dnd-accent);
+    position: relative;
+    top: 2px;
+}
+
+/* Strikethrough for checked task items */
+/* Use both data-checked attribute (for edit mode) and :has() selector (for view mode) */
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div,
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > p,
+.ProseMirror ul[data-type="taskList"] li:has(input:checked) > div,
+.ProseMirror ul[data-type="taskList"] li:has(input:checked) > p {
+    text-decoration: line-through;
+    color: var(--dnd-text-muted);
 }
 
 /* Links */
@@ -382,165 +397,6 @@ body {
     color: var(--dnd-text-muted);
     pointer-events: none;
     height: 0;
-}
-
-/* ========== Read Mode (Markdown Preview) ========== */
-.markdown-preview {
-    font-family: var(--dnd-font-body);
-    line-height: 1.7;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.markdown-preview h1, 
-.markdown-preview h2, 
-.markdown-preview h3,
-.markdown-preview h4,
-.markdown-preview h5,
-.markdown-preview h6 {
-    font-family: var(--dnd-font-header);
-    color: var(--dnd-text);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin-top: var(--dnd-space-8);
-    margin-bottom: var(--dnd-space-4);
-}
-
-.markdown-preview h1 {
-    font-size: var(--dnd-text-3xl);
-    border-bottom: 2px solid var(--dnd-border-light);
-    padding-bottom: var(--dnd-space-3);
-}
-
-.markdown-preview h2 {
-    font-size: var(--dnd-text-2xl);
-    border-bottom: 1px solid var(--dnd-border-light);
-    padding-bottom: var(--dnd-space-2);
-}
-
-.markdown-preview h3 {
-    font-size: var(--dnd-text-xl);
-}
-
-.markdown-preview p {
-    margin-bottom: var(--dnd-space-4);
-    line-height: 1.7;
-}
-
-.markdown-preview a {
-    color: var(--dnd-accent);
-    text-decoration: none;
-    font-weight: 500;
-    position: relative;
-    cursor: pointer;
-    transition: color var(--dnd-transition);
-}
-
-.markdown-preview a:hover {
-    color: var(--dnd-accent-hover);
-    text-decoration: underline;
-}
-
-.markdown-preview ul, 
-.markdown-preview ol {
-    margin-bottom: var(--dnd-space-4);
-    padding-left: var(--dnd-space-6);
-}
-
-.markdown-preview li {
-    margin-bottom: var(--dnd-space-2);
-}
-
-/* Task list in view mode - display as bullet points */
-.markdown-preview ul[data-type="taskList"] {
-    list-style: disc;
-    padding-left: var(--dnd-space-6);
-}
-
-.markdown-preview ul[data-type="taskList"] li {
-    display: list-item;
-}
-
-.markdown-preview ul[data-type="taskList"] li[data-checked="true"] {
-    text-decoration: line-through;
-    color: var(--dnd-text-muted);
-}
-
-.markdown-preview code {
-    background: var(--dnd-bg-secondary);
-    padding: var(--dnd-space-1) var(--dnd-space-2);
-    border-radius: var(--dnd-radius-sm);
-    font-family: var(--dnd-font-mono);
-    font-size: 0.9em;
-}
-
-.markdown-preview pre {
-    background: var(--dnd-bg-secondary);
-    padding: var(--dnd-space-4);
-    border-radius: var(--dnd-radius);
-    overflow-x: auto;
-    margin-bottom: var(--dnd-space-4);
-    border: 1px solid var(--dnd-border-light);
-}
-
-.markdown-preview pre code {
-    background: transparent;
-    padding: 0;
-}
-
-/* Blockquote in view mode */
-.markdown-preview blockquote {
-    border-left: 4px solid var(--dnd-accent);
-    padding-left: var(--dnd-space-4);
-    margin-left: 0;
-    margin-bottom: var(--dnd-space-4);
-    font-style: italic;
-    color: var(--dnd-text-muted);
-}
-
-/* Tables - D&D Style */
-.markdown-preview table {
-    border-collapse: collapse;
-    table-layout: auto;
-    width: 100%;
-    margin: var(--dnd-space-6) 0;
-    overflow: hidden;
-    border: 2px solid var(--dnd-border-strong);
-    border-radius: var(--dnd-radius);
-    background: var(--dnd-table-bg);
-    box-shadow: var(--dnd-shadow-md);
-    font-family: var(--dnd-font-body);
-}
-
-.markdown-preview table td,
-.markdown-preview table th {
-    border: 1px solid var(--dnd-border-light);
-    padding: var(--dnd-space-3) var(--dnd-space-4);
-    vertical-align: top;
-}
-
-.markdown-preview table th {
-    font-weight: 700;
-    text-align: center;
-    background: var(--dnd-table-header-bg);
-    color: var(--dnd-table-header-text);
-    font-family: var(--dnd-font-header);
-    font-size: var(--dnd-text-base);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    border-bottom: 2px solid var(--dnd-border-strong);
-}
-
-.markdown-preview table tbody tr:nth-child(odd) {
-    background: var(--dnd-table-row-odd);
-}
-
-.markdown-preview table tbody tr:nth-child(even) {
-    background: var(--dnd-table-row-even);
-}
-
-.markdown-preview table tbody tr:hover {
-    background: var(--dnd-bg-hover);
 }
 
 /* ========== Hover Popover ========== */

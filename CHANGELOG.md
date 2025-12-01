@@ -12,6 +12,32 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.1.8] - 2025-12-01
+
+### Changed
+- **Unified Notes Rendering**: Refactored view mode to use TipTap in read-only mode instead of regex-based markdown converter
+  - Edit and view modes now use identical rendering engine for visual consistency
+  - Eliminates styling inconsistencies between modes (tables, blockquotes, lists, etc.)
+  - Removed ~230 lines of duplicate code (`convertMarkdownToHTML()`, `.markdown-preview` CSS)
+
+### Added
+- **Interactive Checkboxes in View Mode**: Task list checkboxes can now be toggled while viewing notes
+  - Uses TipTap's `onReadOnlyChecked` handler for native checkbox interaction
+  - Changes are automatically saved to the document
+  - Strikethrough styling applied to checked items using CSS `:has()` selector
+- **Highlight Syntax Support**: Added `==text==` markdown syntax for highlighted text
+  - Converts to `<mark>` tags in both edit and view modes
+  - Properly round-trips between markdown and HTML
+- **Compendium References in View Mode**: `@spell[name]`, `@monster[name]`, `@item[name]` now work in view mode
+
+### Fixed
+- **Checkbox Vertical Alignment**: Fixed task list checkbox alignment with text using `align-items: baseline`
+
+### Removed
+- Deprecated `convertMarkdownToHTML()` regex-based converter
+- Deprecated `.markdown-preview` CSS styles (now uses `.ProseMirror` for both modes)
+- Deprecated `attachLinkListeners()` function (replaced by `attachViewModeLinkListeners()`)
+
 ## [0.1.7] - 2025-12-01
 
 ### Fixed

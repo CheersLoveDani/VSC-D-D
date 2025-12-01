@@ -97,6 +97,8 @@ const globalWindow = window;
 
     /** @type {TipTapEditor | null} */
     let editor = null;
+    /** @type {TipTapEditor | null} */
+    let viewEditor = null;
     /** @type {HTMLTextAreaElement | null} */
     let rawTextarea = null;
     let toolbarListenersSetup = false;
@@ -171,8 +173,18 @@ const globalWindow = window;
                     rawTextarea.value = unconvertedContent;
                 }
                 if (state.mode === 'read') {
-                    // Re-render view mode with updated content
-                    render();
+                    // Update view editor content directly if it exists
+                    if (viewEditor) {
+                        const html = simpleMarkdownToHTML(state.content);
+                        viewEditor.commands.setContent(html);
+                        // Re-attach link listeners after content update
+                        const viewElement = document.querySelector('#tiptap-viewer .ProseMirror');
+                        if (viewElement) {
+                            attachViewModeLinkListeners(viewElement);
+                        }
+                    } else {
+                        render();
+                    }
                 }
                 return;
             case 'previewData':
@@ -188,6 +200,14 @@ const globalWindow = window;
             // Use helper to convert and strip webview URIs
             const converted = htmlToStorageMarkdown(html);
             state.content = converted;
+            editor.destroy();
+            editor = null;
+        }
+
+        // If switching FROM read mode, destroy the view editor
+        if (state.mode === 'read' && viewEditor) {
+            viewEditor.destroy();
+            viewEditor = null;
         }
 
         state.mode = state.mode === 'read' ? 'edit' : 'read';
@@ -225,6 +245,12 @@ const globalWindow = window;
     function render() {
         container.innerHTML = '';
 
+        // Destroy any existing view editor before re-rendering
+        if (viewEditor) {
+            viewEditor.destroy();
+            viewEditor = null;
+        }
+
         if (state.mode === 'edit') {
             if (state.rawMode) {
                 renderRawEditor();
@@ -232,14 +258,8 @@ const globalWindow = window;
                 renderRichEditor();
             }
         } else {
-            // For view mode, we need to convert relative paths to webview URIs for display
-            // state.content has relative paths, but we need webview URIs for images to display
-            const preview = document.createElement('div');
-            preview.className = 'markdown-preview';
-            const html = convertMarkdownToHTML(state.content);
-            preview.innerHTML = html;
-            container.appendChild(preview);
-            attachLinkListeners(preview);
+            // Use TipTap in read-only mode for visual consistency with edit mode
+            renderViewMode();
         }
     }
 
@@ -413,6 +433,141 @@ const globalWindow = window;
             setupToolbarListeners();
             toolbarListenersSetup = true;
         }
+    }
+
+    /**
+     * Render view mode using TipTap in read-only mode for visual consistency with edit mode
+     */
+    function renderViewMode() {
+        const editorDiv = document.createElement('div');
+        editorDiv.id = 'tiptap-viewer';
+        editorDiv.className = 'tiptap-container';
+        container.appendChild(editorDiv);
+
+        // Initialize TipTap in read-only mode with same extensions as edit mode
+        viewEditor = new globalWindow.TipTap.Editor({
+            element: editorDiv,
+            editable: false,
+            extensions: [
+                globalWindow.TipTap.StarterKit.configure({
+                    heading: {
+                        levels: [1, 2, 3, 4, 5, 6]
+                    }
+                }),
+                globalWindow.TipTap.Table.configure({
+                    resizable: false,
+                }),
+                globalWindow.TipTap.TableRow,
+                globalWindow.TipTap.TableHeader,
+                globalWindow.TipTap.TableCell,
+                globalWindow.TipTap.TaskList,
+                globalWindow.TipTap.TaskItem.configure({
+                    nested: true,
+                    // Allow checkbox interaction in read-only mode
+                    // See: https://tiptap.dev/docs/editor/extensions/nodes/task-item
+                    onReadOnlyChecked: (node, checked) => {
+                        // Return true to allow the visual toggle
+                        // We'll save after a small delay since onUpdate doesn't fire in readonly mode
+                        setTimeout(() => {
+                            if (viewEditor) {
+                                const html = viewEditor.getHTML();
+                                const markdown = htmlToStorageMarkdown(html);
+                                state.content = markdown;
+                                state.lastSavedContent = markdown;
+                                state.pendingUpdate = true;
+                                vscode.postMessage({ type: 'updateData', text: markdown });
+                            }
+                        }, 10);
+                        return true;
+                    },
+                }),
+                globalWindow.TipTap.Highlight,
+                globalWindow.TipTap.Superscript,
+                globalWindow.TipTap.Subscript,
+                globalWindow.TipTap.Image.configure({
+                    inline: true,
+                    allowBase64: true,
+                }),
+            ],
+            content: '',
+        });
+
+        // Set content using same conversion as edit mode
+        if (state.content) {
+            const html = simpleMarkdownToHTML(state.content);
+            viewEditor.commands.setContent(html);
+        }
+
+        // Attach view-specific link handlers
+        const viewElement = editorDiv.querySelector('.ProseMirror');
+        if (viewElement) {
+            attachViewModeLinkListeners(viewElement);
+        }
+    }
+
+    /**
+     * Attach link listeners for view mode - handles navigation instead of editing
+     * @param {HTMLElement} container
+     */
+    function attachViewModeLinkListeners(container) {
+        // Use event delegation for click handling to catch all links
+        container.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            // Prevent default and navigate
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('View mode link clicked:', href);
+
+            // Check if it's an external link
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                vscode.postMessage({
+                    type: 'openExternal',
+                    url: href
+                });
+                return;
+            }
+
+            // Internal link - open the file
+            vscode.postMessage({
+                type: 'openFile',
+                path: href
+            });
+        });
+
+        // Keep mouseenter/mouseleave for preview popovers on D&D file types
+        const links = container.querySelectorAll('a');
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            // Check if it's a D&D file link
+            if (href.endsWith('.dndchar') || href.endsWith('.dnditem') ||
+                href.endsWith('.dndmap') || href.endsWith('.dndnotes') ||
+                href.endsWith('.dndstat') || href.endsWith('.dndspell')) {
+
+                link.addEventListener('mouseenter', (e) => {
+                    vscode.postMessage({
+                        type: 'getPreview',
+                        path: href,
+                        x: e.clientX,
+                        y: e.clientY
+                    });
+                });
+
+                link.addEventListener('mouseleave', () => {
+                    popover.classList.remove('visible');
+                });
+            }
+        });
+
+        // Also attach compendium reference listeners (@spell[name], @monster[name], etc.)
+        attachCompendiumListeners(container);
     }
 
     /**
@@ -772,6 +927,8 @@ const globalWindow = window;
             .replace(/\*(.+?)\*/g, '<em>$1</em>')
             // Strikethrough
             .replace(/~~(.+?)~~/g, '<s>$1</s>')
+            // Highlight
+            .replace(/==(.+?)==/g, '<mark>$1</mark>')
             // Inline code
             .replace(/`(.+?)`/g, '<code>$1</code>');
             
@@ -874,6 +1031,14 @@ const globalWindow = window;
                     innerContent += convertNodeToMarkdown(child);
                 }
                 return '~~' + innerContent + '~~';
+            }
+
+            case 'mark': {
+                let innerContent = '';
+                for (const child of element.childNodes) {
+                    innerContent += convertNodeToMarkdown(child);
+                }
+                return '==' + innerContent + '==';
             }
 
             case 'code':
@@ -1897,154 +2062,6 @@ const globalWindow = window;
     }
 
     /**
-     * Simple Markdown to HTML converter
-     * @param {string} text
-     */
-    function convertMarkdownToHTML(text) {
-        if (!text) return '';
-
-        // Handle fenced code blocks first (before HTML escaping)
-        // Use a placeholder to protect code block content
-        const codeBlocks = [];
-        let processedText = text.replace(/```(\w*)\n([\s\S]*?)```/gm, (match, lang, code) => {
-            const index = codeBlocks.length;
-            // Escape HTML inside code blocks
-            const escapedCode = code
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            codeBlocks.push(`<pre><code>${escapedCode}</code></pre>`);
-            return `%%CODEBLOCK_${index}%%`;
-        });
-
-        let html = processedText
-            // Escape HTML
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            // Headers
-            .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
-            .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
-            .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
-            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-            // Bold + Italic + Strikethrough combinations
-            .replace(/\*\*\*~~(.+?)~~\*\*\*/g, '<strong><em><s>$1</s></em></strong>')
-            .replace(/~~\*\*\*(.+?)\*\*\*~~/g, '<s><strong><em>$1</em></strong></s>')
-            .replace(/\*\*~~(.+?)~~\*\*/g, '<strong><s>$1</s></strong>')
-            .replace(/~~\*\*(.+?)\*\*~~/g, '<s><strong>$1</strong></s>')
-            .replace(/\*~~(.+?)~~\*/g, '<em><s>$1</s></em>')
-            .replace(/~~\*(.+?)\*~~/g, '<s><em>$1</em></s>')
-            // Bold + Italic
-            .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            // Italic
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            // Strikethrough
-            .replace(/~~(.+?)~~/g, '<s>$1</s>')
-            // Inline code
-            .replace(/`(.+?)`/g, '<code>$1</code>')
-            // Task lists
-            .replace(/^- \[ \] (.*$)/gim, '<ul data-type="taskList"><li data-type="taskItem" data-checked="false">$1</li></ul>')
-            .replace(/^- \[x\] (.*$)/gim, '<ul data-type="taskList"><li data-type="taskItem" data-checked="true">$1</li></ul>')
-            // Merge adjacent task lists
-            .replace(/<\/ul>\s*<ul data-type="taskList">/gim, '')
-            // Lists
-            .replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>')
-            .replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>')
-            .replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>')
-            // Merge adjacent lists
-            .replace(/<\/ul>\s*<ul>/gim, '')
-            .replace(/<\/ol>\s*<ol>/gim, '')
-            // Blockquote - handle with or without space after >
-            .replace(/^&gt;\s?(.*$)/gim, '<blockquote>$1</blockquote>')
-            .replace(/<\/blockquote>\s*<blockquote>/gim, '<br>')
-            // Horizontal rule
-            .replace(/^---$/gim, '<hr>')
-            // Links [text](url)
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>')
-            // Images ![alt](url)
-            .replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1" />')
-            // Paragraphs
-            .replace(/\n\n/gim, '</p><p>')
-            .replace(/\n/gim, '<br>');
-
-        // Restore code blocks
-        codeBlocks.forEach((block, index) => {
-            html = html.replace(`%%CODEBLOCK_${index}%%`, block);
-        });
-
-        return '<p>' + html + '</p>';
-    }
-
-
-    /**
-     * @param {HTMLElement} container 
-     */
-    function attachLinkListeners(container) {
-        console.log('attachLinkListeners called');
-        
-        // Use event delegation for click handling to catch all links
-        container.addEventListener('click', (e) => {
-            const link = e.target.closest('a');
-            if (!link) return;
-
-            const href = link.getAttribute('href');
-            if (!href) return;
-
-            // Prevent default browser navigation for ALL links in the webview
-            e.preventDefault();
-            e.stopPropagation();
-
-            console.log('Intercepted click on:', href);
-
-            // Check if it's an external link
-            if (href.startsWith('http://') || href.startsWith('https://')) {
-                vscode.postMessage({
-                    type: 'openExternal',
-                    url: href
-                });
-                return;
-            }
-            
-            // Internal link - assume openFile
-            vscode.postMessage({
-                type: 'openFile',
-                path: href
-            });
-        });
-
-        // Keep mouseenter/mouseleave for preview popovers on specific file types
-        const links = container.querySelectorAll('a');
-        console.log('Found links count:', links.length);
-        
-        links.forEach(link => {
-            const href = link.getAttribute('href');
-            if (!href) return;
-
-            // Check if it's a D&D file link (relative path)
-            if (href.endsWith('.dndchar') || href.endsWith('.dnditem') ||
-                href.endsWith('.dndmap') || href.endsWith('.dndnotes') || 
-                href.endsWith('.dndstat') || href.endsWith('.dndspell')) {
-                
-                link.addEventListener('mouseenter', (e) => {
-                    vscode.postMessage({
-                        type: 'getPreview',
-                        path: href,
-                        x: e.clientX,
-                        y: e.clientY
-                    });
-                });
-
-                link.addEventListener('mouseleave', () => {
-                    popover.classList.remove('visible');
-                });
-            }
-        });
-    }
-
-    /**
      * @param {any} data 
      * @param {number} x 
      * @param {number} y 
@@ -2535,13 +2552,5 @@ const globalWindow = window;
             name: name
         });
     }
-
-    // Override attachLinkListeners to also attach compendium listeners
-    const originalAttachLinkListeners = attachLinkListeners;
-    // @ts-ignore
-    attachLinkListeners = function(container) {
-        originalAttachLinkListeners(container);
-        attachCompendiumListeners(container);
-    };
 
 }());
