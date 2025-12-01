@@ -156,7 +156,9 @@ export abstract class BaseCustomTextEditorProvider implements vscode.CustomTextE
         if (!relativePath) {
             return;
         }
-        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
+        // Decode the path first because it comes from a markdown link which is already encoded
+        const decodedPath = decodeURIComponent(relativePath);
+        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', decodedPath);
         // Open in a new tab (preview: false ensures it doesn't replace the current preview tab)
         vscode.commands.executeCommand('vscode.open', targetUri, { preview: false });
     }

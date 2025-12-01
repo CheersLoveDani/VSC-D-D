@@ -12,6 +12,13 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.1.9] - 2025-12-01
+
+### Fixed
+- **Link Click URL Decoding**: Fixed clicking links with encoded characters (e.g., `this%20file.file`) now correctly opens `this file.file`
+  - Added `decodeURIComponent()` to the `openFile` handler in `baseEditor.ts`
+  - Matches the fix previously applied to link previews
+
 ## [0.1.8] - 2025-12-01
 
 ### Changed
