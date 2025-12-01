@@ -26,7 +26,9 @@ class DndLinkProvider {
                     // Use vscode.Uri.joinPath for browser compatibility
                     // This handles URL encoding automatically, including special characters
                     // like spaces (%20), ampersands (%26), hashes (%23), parentheses, brackets, unicode, etc.
-                    const targetUri = vscode.Uri.joinPath(document.uri, '..', linkPath);
+                    // We must decode the path first because it comes from a markdown link which is already encoded.
+                    const decodedPath = decodeURIComponent(linkPath);
+                    const targetUri = vscode.Uri.joinPath(document.uri, '..', decodedPath);
                     // Extract filename for tooltip (handle paths with special characters)
                     const pathParts = linkPath.split('/');
                     const filename = pathParts[pathParts.length - 1];

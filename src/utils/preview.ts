@@ -18,7 +18,9 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
     try {
         // vscode.Uri.joinPath handles URL encoding automatically, including special characters
         // like spaces (%20), ampersands (%26), hashes (%23), parentheses, brackets, unicode, etc.
-        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
+        // We must decode the path first because it comes from a markdown link which is already encoded.
+        const decodedPath = decodeURIComponent(relativePath);
+        const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', decodedPath);
         
         // Log for debugging path resolution with special characters
         console.log('[getPreviewData] Resolving preview for:', relativePath);

@@ -743,12 +743,26 @@ const globalWindow = window;
      * @returns {string}
      */
     function processInlineMarkdown(text) {
-        return text
+        // console.log('[processInlineMarkdown] Input:', text);
+        const result = text
             // Images (paths are already converted server-side)
             .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
             // Links - handles spaces, ampersands, hashes, brackets, unicode
             // Note: Does not support parentheses in filenames
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+                try {
+                    console.log('[processInlineMarkdown] Processing link:', { text, url });
+                    // Encode the URL to ensure spaces are %20, etc.
+                    // We decode first to avoid double-encoding if it's already encoded
+                    const decoded = decodeURI(url);
+                    const encodedUrl = encodeURI(decoded);
+                    console.log('[processInlineMarkdown] Link transformation:', { original: url, decoded, encoded: encodedUrl });
+                    return `<a href="${encodedUrl}">${text}</a>`;
+                } catch (e) {
+                    console.warn('[processInlineMarkdown] Failed to encode url:', url, e);
+                    return `<a href="${url}">${text}</a>`;
+                }
+            })
 
             // Bold + Italic
             .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
@@ -760,6 +774,9 @@ const globalWindow = window;
             .replace(/~~(.+?)~~/g, '<s>$1</s>')
             // Inline code
             .replace(/`(.+?)`/g, '<code>$1</code>');
+            
+        // console.log('[processInlineMarkdown] Output:', result);
+        return result;
     }
 
     /**
@@ -806,8 +823,7 @@ const globalWindow = window;
 
         const element = /** @type {HTMLElement} */ (node);
         const tagName = element.tagName.toLowerCase();
-        console.log('[convertNodeToMarkdown] Processing element:', tagName);
-        
+
         switch (tagName) {
             case 'h1':
             case 'h2':
@@ -817,16 +833,20 @@ const globalWindow = window;
             case 'h6':
                 const level = parseInt(tagName[1]);
                 return '#'.repeat(level) + ' ' + element.textContent + '\n\n';
-            
+
             case 'p':
-                // Process child nodes to preserve inline markdown (links, bold, italic, etc.)
+                // Check if paragraph is empty or just whitespace
+                if (!element.textContent?.trim() && element.children.length === 0) {
+                    return '\n'; // Return single newline for empty paragraphs to maintain spacing
+                }
                 let pContent = '';
                 for (const child of element.childNodes) {
                     pContent += convertNodeToMarkdown(child);
                 }
-                // Only add content if paragraph is not empty
-                if (!pContent.trim()) return '';
                 return pContent + '\n\n';
+            
+            case 'br':
+                return '\n';
             
             case 'strong':
             case 'b':
@@ -837,16 +857,14 @@ const globalWindow = window;
                 return '*' + element.textContent + '*';
             
             case 's':
+            case 'strike':
+            case 'del':
                 return '~~' + element.textContent + '~~';
             
             case 'code':
                 return '`' + element.textContent + '`';
             
             case 'pre':
-                const codeElement = element.querySelector('code');
-                if (codeElement) {
-                    return '```\n' + codeElement.textContent + '\n```\n\n';
-                }
                 return '```\n' + element.textContent + '\n```\n\n';
             
             case 'blockquote':
@@ -895,17 +913,25 @@ const globalWindow = window;
                 return olMarkdown + '\n';
             
             case 'a':
-                const href = element.getAttribute('href') || '';
-                console.log('[convertNodeToMarkdown] Link - href:', href);
-                console.log('[convertNodeToMarkdown] Link - element.childNodes.length:', element.childNodes.length);
+                let href = element.getAttribute('href') || '';
+                console.log('[convertNodeToMarkdown] Processing link element:', { href, text: element.textContent });
+                try {
+                    // Ensure the URL is properly encoded for storage (e.g. spaces -> %20)
+                    // Decode first to avoid double-encoding
+                    const decoded = decodeURI(href);
+                    href = encodeURI(decoded);
+                    console.log('[convertNodeToMarkdown] Link encoding:', { original: element.getAttribute('href'), decoded, encoded: href });
+                } catch (e) {
+                    console.warn('[convertNodeToMarkdown] Failed to encode href:', href, e);
+                }
+
                 // Process child nodes to preserve images and other inline elements
                 let linkContent = '';
                 for (const child of element.childNodes) {
                     const childResult = convertNodeToMarkdown(child);
-                    console.log('[convertNodeToMarkdown] Link child result:', childResult);
                     linkContent += childResult;
                 }
-                console.log('[convertNodeToMarkdown] Final link content:', linkContent);
+                
                 const result = `[${linkContent}](${href})`;
                 console.log('[convertNodeToMarkdown] Final link markdown:', result);
                 return result;
