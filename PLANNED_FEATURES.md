@@ -39,10 +39,10 @@ Dynamic campaign overview page with filtering capabilities.
 - Quick navigation to filtered results
 
 ### Shop File Type
-New `.shop` file type for merchant inventories.
-- Item slots with gold amounts displayed
-- Spell book slots (for spell-selling merchants)
-- Hover previews for quick item/spell inspection
+~~New `.shop` file type for merchant inventories.~~ (Complete)
+- ~~Item slots with gold amounts displayed~~ (Complete)
+- ~~Spell book slots (for spell-selling merchants)~~ (Complete)
+- ~~Hover previews for quick item/spell inspection~~ (Complete)
 - **Stretch Goal**: Shop generator with options:
   - Item/spell type filters
   - Rarity/level range settings
