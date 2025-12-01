@@ -2,7 +2,7 @@
   "name": "critcode",
   "displayName": "CritCode",
   "description": "A VS Code extension for planning D&D campaigns with Maps, Character Sheets, and Item Databases.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "DaniFullerton",
   "author": {
     "name": "Dani Fullerton"
@@ -118,6 +118,16 @@
         "selector": [
           {
             "filenamePattern": "*.dndspell"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "dnd.shopEditor",
+        "displayName": "D&D Shop",
+        "selector": [
+          {
+            "filenamePattern": "*.dndshop"
           }
         ],
         "priority": "default"

@@ -12,6 +12,32 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.2.1] - 2025-12-01
+
+### Added
+- **Shop Editor (.dndshop)**: New custom editor for creating and managing shop inventories
+  - Shop details: name, type, owner, location, and description
+  - Inventory management with item search from compendium and custom `.dnditem` files
+  - Spellbooks/Scrolls section with spell search from compendium
+  - Item autocomplete with hover tooltips showing full item details
+  - Spell autocomplete with level, school, and pricing information
+  - Default spell scroll pricing based on D&D 5e rules (25gp cantrip to 25,000gp 9th level)
+  - Spell type dropdown: Scroll, Spellbook, or Service
+  - Open/Create buttons: blue arrow (→) to open existing files, green plus (+) to create new
+  - Ctrl+Click on item/spell names to open their files directly
+  - Custom items marked with "★ Custom" badge in search results
+  - Live preview card with D&D-styled shop formatting
+- **Custom Items in Search**: All `.dnditem` files now appear in item search autocomplete
+  - Previously only weapons were indexed; now all item types are searchable
+  - Custom items prioritized and sorted before compendium entries
+
+### Fixed
+- **Item Search**: Fixed custom items not appearing in character sheet and shop editor searches
+  - Added `customItems` map to CompendiumService for all item types (not just weapons)
+  - Search results now properly include and prioritize custom items
+- **Input Focus**: Fixed item and spell input fields losing focus after typing one character
+  - Added `isLocalUpdate` flag to prevent DOM re-rendering during user input
+
 ## [0.2.0] - 2025-12-01
 
 ### Added
@@ -465,7 +491,8 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.9...v0.2.0
 [0.1.9]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.7...v0.1.8

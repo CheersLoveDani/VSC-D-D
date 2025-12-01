@@ -5,6 +5,7 @@ import { ItemEditorProvider } from './editors/itemEditor';
 import { SpellEditorProvider } from './editors/spellEditor';
 import { NotesEditorProvider } from './editors/notesEditor';
 import { StatBlockEditorProvider } from './editors/statBlockEditor';
+import { ShopEditorProvider } from './editors/shopEditor';
 import { DndHoverProvider } from './providers/hoverProvider';
 import { DndLinkProvider } from './providers/linkProvider';
 import { PluginManagerProvider } from './views/pluginManager';
@@ -26,6 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(SpellEditorProvider.register(context));
     context.subscriptions.push(NotesEditorProvider.register(context));
 	context.subscriptions.push(StatBlockEditorProvider.register(context));
+	context.subscriptions.push(ShopEditorProvider.register(context));
 
     // Register Hover Provider
     context.subscriptions.push(

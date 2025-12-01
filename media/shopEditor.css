@@ -1,0 +1,381 @@
+@import 'dnd-theme.css';
+
+/* ========== Layout ========== */
+body {
+    padding: var(--dnd-space-6);
+}
+
+.container {
+    display: flex;
+    gap: var(--dnd-space-10);
+    max-width: 1400px;
+    margin: 0 auto;
+    background: var(--dnd-card-bg);
+    padding: var(--dnd-space-6);
+    border-radius: var(--dnd-radius-lg);
+    box-shadow: var(--dnd-shadow-md);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.editor-pane {
+    flex: 1;
+    min-width: 500px;
+}
+
+.preview-pane {
+    flex: 1;
+    min-width: 350px;
+    max-width: 450px;
+}
+
+/* ========== Editor Pane ========== */
+.editor-pane h2, .preview-pane h2 {
+    font-size: var(--dnd-text-2xl);
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: var(--dnd-space-6);
+    color: var(--dnd-text);
+    border-bottom: 2px solid var(--dnd-border-light);
+    padding-bottom: var(--dnd-space-3);
+}
+
+.form-row {
+    display: flex;
+    gap: var(--dnd-space-4);
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-row .form-group-small {
+    flex: 0 0 auto;
+    min-width: 150px;
+}
+
+.form-group {
+    margin-bottom: var(--dnd-space-4);
+}
+
+.form-section {
+    margin-top: var(--dnd-space-6);
+    padding: var(--dnd-space-4);
+    background: var(--dnd-bg-secondary);
+    border-radius: var(--dnd-radius-md);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.form-section h3 {
+    margin-top: 0;
+    margin-bottom: var(--dnd-space-3);
+    font-size: var(--dnd-text-lg);
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-header);
+}
+
+.section-hint {
+    margin: 0 0 var(--dnd-space-3) 0;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    font-style: italic;
+}
+
+label {
+    display: block;
+    margin-bottom: var(--dnd-space-2);
+    font-weight: 600;
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+input, select, textarea {
+    width: 100%;
+}
+
+textarea {
+    min-height: 80px;
+}
+
+.checkbox-row {
+    display: flex;
+    gap: var(--dnd-space-4);
+    margin-bottom: var(--dnd-space-2);
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dnd-space-2);
+    font-weight: 500;
+    font-size: var(--dnd-text-base);
+    color: var(--dnd-text);
+    text-transform: none;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* ========== Inventory & Spellbook Rows ========== */
+.inventory-row,
+.spellbook-row {
+    display: flex;
+    gap: var(--dnd-space-2);
+    margin-bottom: var(--dnd-space-2);
+    align-items: center;
+}
+
+.inv-input,
+.spell-input {
+    font-size: var(--dnd-text-sm);
+    padding: var(--dnd-space-2);
+}
+
+.inv-name,
+.spell-name {
+    flex: 2;
+    min-width: 180px;
+}
+
+.inv-qty {
+    flex: 0 0 60px;
+    text-align: center;
+}
+
+.inv-price,
+.spell-price {
+    flex: 0 0 90px;
+}
+
+.spell-type {
+    flex: 0 0 100px;
+}
+
+.spell-level {
+    flex: 0 0 50px;
+    text-align: center;
+}
+
+.empty-list {
+    padding: var(--dnd-space-4);
+    text-align: center;
+    color: var(--dnd-text-muted);
+    font-style: italic;
+}
+
+/* ========== Buttons ========== */
+.btn {
+    padding: var(--dnd-space-2) var(--dnd-space-4);
+    border-radius: var(--dnd-radius-md);
+    border: none;
+    cursor: pointer;
+    font-size: var(--dnd-text-sm);
+    font-weight: 600;
+    transition: all var(--dnd-transition);
+}
+
+.btn-secondary {
+    background: var(--dnd-bg-secondary);
+    color: var(--dnd-text);
+    border: 1px solid var(--dnd-border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--dnd-border-light);
+}
+
+.btn-remove {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+    background: transparent;
+    color: var(--dnd-text-muted);
+    cursor: pointer;
+    font-size: var(--dnd-text-lg);
+    line-height: 1;
+    transition: all var(--dnd-transition);
+    flex-shrink: 0;
+}
+
+.btn-remove:hover {
+    background: #c62828;
+    color: white;
+    border-color: #c62828;
+}
+
+/* Open/Create buttons for items and spells */
+.open-item,
+.open-spell {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--dnd-radius-sm);
+    border: 1px solid var(--dnd-border-light);
+    background: transparent;
+    cursor: pointer;
+    font-size: var(--dnd-text-base);
+    line-height: 1;
+    transition: all var(--dnd-transition);
+    flex-shrink: 0;
+}
+
+.item-btn-disabled,
+.spell-btn-disabled {
+    color: var(--dnd-text-muted);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.item-btn-open,
+.spell-btn-open {
+    color: var(--vscode-textLink-foreground, #3794ff);
+    border-color: var(--vscode-textLink-foreground, #3794ff);
+}
+
+.item-btn-open:hover,
+.spell-btn-open:hover {
+    background: var(--vscode-textLink-foreground, #3794ff);
+    color: white;
+}
+
+.item-btn-create,
+.spell-btn-create {
+    color: #4caf50;
+    border-color: #4caf50;
+}
+
+.item-btn-create:hover,
+.spell-btn-create:hover {
+    background: #4caf50;
+    color: white;
+}
+
+/* ========== Shop Card Preview ========== */
+.shop-card {
+    border: 1px solid var(--dnd-border-light);
+    border-radius: var(--dnd-radius-lg);
+    background: var(--dnd-card-bg);
+    color: var(--dnd-text);
+    overflow: hidden;
+    box-shadow: var(--dnd-shadow-md);
+    transition: all var(--dnd-transition);
+}
+
+.shop-card:hover {
+    box-shadow: var(--dnd-shadow-lg);
+}
+
+.card-header.shop-header {
+    background: linear-gradient(135deg, #5d4037 0%, #795548 100%);
+    color: white;
+    padding: var(--dnd-space-4) var(--dnd-space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: var(--dnd-text-lg);
+    font-family: var(--dnd-font-header);
+}
+
+.card-header span {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.shop-type {
+    font-size: var(--dnd-text-sm);
+    background: rgba(255, 255, 255, 0.2);
+    padding: var(--dnd-space-1) var(--dnd-space-3);
+    border-radius: var(--dnd-radius-full);
+}
+
+.card-subheader {
+    background: var(--dnd-bg-secondary);
+    padding: var(--dnd-space-2) var(--dnd-space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-style: italic;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    border-bottom: 1px solid var(--dnd-border-light);
+}
+
+.card-body {
+    padding: var(--dnd-space-5);
+}
+
+.shop-description {
+    margin-bottom: var(--dnd-space-4);
+    line-height: 1.6;
+}
+
+.shop-description p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.shop-inventory,
+.shop-spellbooks {
+    border-top: 1px solid var(--dnd-border-light);
+    padding-top: var(--dnd-space-4);
+    margin-top: var(--dnd-space-4);
+}
+
+.shop-inventory h4,
+.shop-spellbooks h4 {
+    margin: 0 0 var(--dnd-space-3) 0;
+    font-size: var(--dnd-text-base);
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-header);
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--dnd-text-sm);
+}
+
+.preview-table th {
+    text-align: left;
+    padding: var(--dnd-space-2);
+    border-bottom: 1px solid var(--dnd-border-light);
+    color: var(--dnd-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: var(--dnd-text-xs);
+}
+
+.preview-table td {
+    padding: var(--dnd-space-2);
+    border-bottom: 1px solid var(--dnd-border-light);
+}
+
+.preview-table tr:last-child td {
+    border-bottom: none;
+}
+
+.preview-table .item-link,
+.preview-table .spell-link {
+    color: var(--dnd-accent);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.preview-table .item-link:hover,
+.preview-table .spell-link:hover {
+    text-decoration: underline;
+}
+
+/* Gold/Price highlighting */
+.preview-table .price-cell {
+    color: #d4af37;
+    font-weight: 600;
+}

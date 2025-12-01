@@ -9,6 +9,7 @@ const itemEditor_1 = require("./editors/itemEditor");
 const spellEditor_1 = require("./editors/spellEditor");
 const notesEditor_1 = require("./editors/notesEditor");
 const statBlockEditor_1 = require("./editors/statBlockEditor");
+const shopEditor_1 = require("./editors/shopEditor");
 const hoverProvider_1 = require("./providers/hoverProvider");
 const linkProvider_1 = require("./providers/linkProvider");
 const pluginManager_1 = require("./views/pluginManager");
@@ -27,6 +28,7 @@ function activate(context) {
     context.subscriptions.push(spellEditor_1.SpellEditorProvider.register(context));
     context.subscriptions.push(notesEditor_1.NotesEditorProvider.register(context));
     context.subscriptions.push(statBlockEditor_1.StatBlockEditorProvider.register(context));
+    context.subscriptions.push(shopEditor_1.ShopEditorProvider.register(context));
     // Register Hover Provider
     context.subscriptions.push(vscode.languages.registerHoverProvider([{ scheme: 'file', language: 'dndnotes' }, { scheme: 'file', language: 'markdown' }], new hoverProvider_1.DndHoverProvider()));
     // Register Document Link Provider

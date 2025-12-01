@@ -13,7 +13,8 @@ const CUSTOM_FOLDER_NAMES = {
     '.dndstat': 'custom monsters',
     '.dndchar': 'custom characters',
     '.dndmap': 'custom maps',
-    '.dndnotes': 'custom notes'
+    '.dndnotes': 'custom notes',
+    '.dndshop': 'custom shops'
 };
 /**
  * Gets the appropriate custom folder URI for a given file extension.

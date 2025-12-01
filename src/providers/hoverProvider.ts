@@ -40,7 +40,7 @@ export class DndHoverProvider implements vscode.HoverProvider {
         }
 
         const linkPath = match[2];
-        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap') && !linkPath.endsWith('.dndstat') && !linkPath.endsWith('.dndspell')) {
+        if (!linkPath.endsWith('.dnditem') && !linkPath.endsWith('.dndchar') && !linkPath.endsWith('.dndmap') && !linkPath.endsWith('.dndstat') && !linkPath.endsWith('.dndspell') && !linkPath.endsWith('.dndshop')) {
             return null;
         }
 
@@ -68,6 +68,8 @@ export class DndHoverProvider implements vscode.HoverProvider {
                 this.formatStatBlockHover(markdown, data);
             } else if (linkPath.endsWith('.dndspell')) {
                 this.formatSpellFileHover(markdown, data);
+            } else if (linkPath.endsWith('.dndshop')) {
+                this.formatShopHover(markdown, data);
             }
 
             return new vscode.Hover(markdown);
@@ -259,5 +261,32 @@ export class DndHoverProvider implements vscode.HoverProvider {
             ? data.description.substring(0, 500) + '...'
             : (data.description || 'No description.');
         md.appendMarkdown(`${desc}\n`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private formatShopHover(md: vscode.MarkdownString, data: any) {
+        md.appendMarkdown(`### ${data.name || 'Unknown Shop'}\n`);
+        md.appendMarkdown(`*${data.type || 'Shop'}*\n\n`);
+
+        if (data.owner) {
+            md.appendMarkdown(`**Proprietor:** ${data.owner}\n\n`);
+        }
+
+        if (data.location) {
+            md.appendMarkdown(`**Location:** ${data.location}\n\n`);
+        }
+
+        // Truncate description for hover
+        if (data.description) {
+            const desc = data.description.length > 300
+                ? data.description.substring(0, 300) + '...'
+                : data.description;
+            md.appendMarkdown(`${desc}\n\n`);
+        }
+
+        // Show inventory count
+        if (data.inventory && data.inventory.length > 0) {
+            md.appendMarkdown(`**Inventory:** ${data.inventory.length} items\n`);
+        }
     }
 }

@@ -23,7 +23,8 @@ export class DndLinkProvider implements vscode.DocumentLinkProvider {
                 linkPath.endsWith('.dndmap') ||
                 linkPath.endsWith('.dndstat') ||
                 linkPath.endsWith('.dndnotes') ||
-                linkPath.endsWith('.dndspell')) {
+                linkPath.endsWith('.dndspell') ||
+                linkPath.endsWith('.dndshop')) {
 
                 // Calculate the position of the link in the document
                 const startPos = document.positionAt(match.index);

@@ -229,6 +229,7 @@ export class CompendiumService {
     private items: Map<string, Item> = new Map();
     private customSpells: Map<string, CustomSpell> = new Map();
     private customWeapons: Map<string, CustomWeapon> = new Map();
+    private customItems: Map<string, CustomWeapon> = new Map(); // All custom items (using CustomWeapon type which works for all items)
     private initialized: boolean = false;
     private context: vscode.ExtensionContext;
     private customSpellWatcher: vscode.FileSystemWatcher | undefined;
@@ -355,6 +356,7 @@ export class CompendiumService {
      */
     private async loadCustomWeapons(): Promise<void> {
         this.customWeapons.clear();
+        this.customItems.clear();
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
@@ -380,11 +382,10 @@ export class CompendiumService {
             const text = new TextDecoder().decode(content);
             const data = JSON.parse(text);
 
-            // Only load items of type "Weapon"
-            if (data.name && data.type === 'Weapon') {
-                const weapon: CustomWeapon = {
+            if (data.name) {
+                const customItem: CustomWeapon = {
                     name: data.name,
-                    type: data.type,
+                    type: data.type || 'Adventuring Gear',
                     subtype: data.subtype,
                     rarity: data.rarity || 'Common',
                     magic: data.magic || false,
@@ -398,7 +399,12 @@ export class CompendiumService {
                     description: data.description || '',
                     filePath: uri.fsPath
                 };
-                this.customWeapons.set(data.name.toLowerCase(), weapon);
+                // Store in customItems (all items)
+                this.customItems.set(data.name.toLowerCase(), customItem);
+                // Also store weapons in customWeapons for character sheet compatibility
+                if (data.type === 'Weapon') {
+                    this.customWeapons.set(data.name.toLowerCase(), customItem);
+                }
             }
         } catch (error) {
             console.error(`Error loading custom weapon from ${uri.fsPath}:`, error);
@@ -424,10 +430,11 @@ export class CompendiumService {
         });
 
         this.customItemWatcher.onDidDelete((uri) => {
-            // Find and remove the weapon that was in this file
-            for (const [key, weapon] of this.customWeapons) {
-                if (weapon.filePath === uri.fsPath) {
-                    this.customWeapons.delete(key);
+            // Find and remove the item that was in this file
+            for (const [key, item] of this.customItems) {
+                if (item.filePath === uri.fsPath) {
+                    this.customItems.delete(key);
+                    this.customWeapons.delete(key); // Also remove from weapons if it was there
                     break;
                 }
             }
@@ -1025,23 +1032,61 @@ export class CompendiumService {
     }
 
     public getItem(name: string): Item | undefined {
-        return this.items.get(name.toLowerCase());
+        const lowerName = name.toLowerCase();
+        // Check custom items first
+        const customItem = this.customItems.get(lowerName);
+        if (customItem) {
+            return this.customWeaponToItem(customItem);
+        }
+        return this.items.get(lowerName);
     }
 
     public searchItems(query: string, limit: number = 20): Item[] {
         const results: Item[] = [];
         const lowerQuery = query.toLowerCase();
+        const addedNames = new Set<string>();
 
-        for (const [key, item] of this.items) {
-            if (key.includes(lowerQuery)) {
-                results.push(item);
+        // Search custom items first (they take priority)
+        for (const [key, customItem] of this.customItems) {
+            if (key.includes(lowerQuery) || customItem.name.toLowerCase().includes(lowerQuery)) {
+                results.push(this.customWeaponToItem(customItem));
+                addedNames.add(key);
                 if (results.length >= limit) {
                     break;
                 }
             }
         }
 
-        return results.sort((a, b) => a.name.localeCompare(b.name));
+        // Then search compendium items
+        if (results.length < limit) {
+            for (const [key, item] of this.items) {
+                // Skip if already added from custom items
+                if (addedNames.has(key)) {
+                    continue;
+                }
+                if (key.includes(lowerQuery) || item.name.toLowerCase().includes(lowerQuery)) {
+                    results.push(item);
+                    if (results.length >= limit) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return results.sort((a, b) => {
+            // Prioritize custom items
+            const aIsCustom = a.source === 'Custom';
+            const bIsCustom = b.source === 'Custom';
+            if (aIsCustom && !bIsCustom) return -1;
+            if (!aIsCustom && bIsCustom) return 1;
+
+            // Then prioritize exact prefix matches
+            const aStartsWith = a.name.toLowerCase().startsWith(lowerQuery);
+            const bStartsWith = b.name.toLowerCase().startsWith(lowerQuery);
+            if (aStartsWith && !bStartsWith) return -1;
+            if (!aStartsWith && bStartsWith) return 1;
+            return a.name.localeCompare(b.name);
+        });
     }
 
     /**
@@ -1325,6 +1370,13 @@ export class CompendiumService {
     }
 
     /**
+     * Check if an item is a custom item from a .dnditem file.
+     */
+    public isCustomItem(name: string): boolean {
+        return this.customItems.has(name.toLowerCase());
+    }
+
+    /**
      * Get full item info formatted for webview display.
      */
     public getItemInfo(name: string): {
@@ -1342,7 +1394,11 @@ export class CompendiumService {
         properties: string[];
         range?: Item['range'];
         description: string;
+        isCustom: boolean;
+        filePath?: string;
     } | null {
+        const isCustom = this.isCustomItem(name);
+        const customItem = isCustom ? this.customItems.get(name.toLowerCase()) : undefined;
         const item = this.getItem(name);
         if (!item) {
             return null;
@@ -1361,7 +1417,9 @@ export class CompendiumService {
             armorClass: item.armorClass,
             properties: item.properties,
             range: item.range,
-            description: item.description
+            description: item.description,
+            isCustom,
+            filePath: customItem?.filePath
         };
     }
 

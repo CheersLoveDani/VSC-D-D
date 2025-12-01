@@ -9,7 +9,8 @@ const CUSTOM_FOLDER_NAMES: Record<string, string> = {
     '.dndstat': 'custom monsters',
     '.dndchar': 'custom characters',
     '.dndmap': 'custom maps',
-    '.dndnotes': 'custom notes'
+    '.dndnotes': 'custom notes',
+    '.dndshop': 'custom shops'
 };
 
 /**

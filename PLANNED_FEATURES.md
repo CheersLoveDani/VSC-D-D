@@ -4,7 +4,7 @@ This document outlines planned features for VSC-D&D, organized by priority.
 
 ---
 
-## Priority: High
+## Priority: Medium (Future Additions)
 
 ### Templates System
 A system to quickly create new files based on user-defined templates.
@@ -12,10 +12,6 @@ A system to quickly create new files based on user-defined templates.
 - "Create Monster" with pre-populated stat block structure
 - Custom template creation and management
 - Template variables (e.g., `{{name}}`, `{{date}}`)
-
----
-
-## Priority: Medium (Future Additions)
 
 ### Enhanced Linking & Backlinks
 Robust wiki-link support across all custom editors.
@@ -51,6 +47,16 @@ New `.shop` file type for merchant inventories.
   - Item/spell type filters
   - Rarity/level range settings
   - Random inventory generation
+
+### Change Extension Naming Conventions
+- `.dndstat` -> `.ccstat`
+- `.dnditem` -> `.ccitem`
+- `.dndspell` -> `.ccspell`
+- `.dndshop` -> `.ccshop`
+- `.dndmap` -> `.ccmap`
+- `.dndnote` -> `.ccnote`
+- Keep the old extensions for now, but add a panel tool to convert them to the new extensions.
+- Add warning that the old extensions will be removed in a future version.
 
 ---
 
