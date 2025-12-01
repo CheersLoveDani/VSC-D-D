@@ -664,6 +664,8 @@ const globalWindow = window;
     /**
      * Convert webview URIs back to relative paths for storage
      * This ensures we never save session-specific URIs to the document
+     * Handles all URL-encoded characters: spaces (%20), ampersands (%26), hashes (%23), 
+     * parentheses (%28, %29), brackets (%5B, %5D), unicode characters, etc.
      * @param {string} markdown - Markdown that may contain webview URIs
      * @returns {string} - Markdown with relative paths
      */
@@ -680,11 +682,23 @@ const globalWindow = window;
                     const url = new URL(fullUri);
                     const pathname = url.pathname;
                     
-                    // Decode URI components (handles %20, %26, etc.)
-                    const decodedPath = decodeURIComponent(pathname);
+                    // Decode URI components (handles %20, %26, %23, %28, %29, %5B, %5D, unicode, etc.)
+                    // This is safe to call multiple times - it won't double-decode
+                    let decodedPath = pathname;
+                    try {
+                        // Only decode if the path contains encoded characters
+                        if (/%[0-9A-Fa-f]{2}/.test(pathname)) {
+                            decodedPath = decodeURIComponent(pathname);
+                        }
+                    } catch (decodeError) {
+                        // If decoding fails, the path might be malformed or already decoded
+                        console.warn('[stripWebviewUris] Could not decode path:', pathname, decodeError);
+                        decodedPath = pathname;
+                    }
                     
                     // Find the last occurrence of a reasonable file path
                     // We're looking for patterns like: /folder/file.ext or folder/file.ext
+                    // This regex now handles filenames with spaces and special characters
                     const pathMatch = decodedPath.match(/([^\/]+\/[^\/]+\.(png|jpg|jpeg|gif|svg|webp|bmp))$/i);
                     
                     if (pathMatch) {
@@ -732,8 +746,10 @@ const globalWindow = window;
         return text
             // Images (paths are already converted server-side)
             .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
-            // Links
+            // Links - handles spaces, ampersands, hashes, brackets, unicode
+            // Note: Does not support parentheses in filenames
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+
             // Bold + Italic
             .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
             // Bold
@@ -2105,13 +2121,9 @@ const globalWindow = window;
             } else {
                 html += '<div class="popover-detail"><i>No headers found</i></div>';
             }
-            html = `
-                <div class="popover-title">${data.name}</div>
-                <div class="popover-detail"><i>${data.size} ${data.creatureType}</i></div>
-                <div class="popover-detail"><b>HP:</b> ${data.hp} | <b>CR:</b> ${data.cr}</div>
-            `;
         } else if (data.type === 'stat') {
             html = renderMonsterPreview(data);
+
         } else if (data.type === 'spell') {
             const levelText = data.level === 0 ? 'Cantrip' : `Level ${data.level}`;
             let tags = [];

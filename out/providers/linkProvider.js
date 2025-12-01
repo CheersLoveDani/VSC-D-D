@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DndLinkProvider = void 0;
 const vscode = require("vscode");
-const path = require("path");
 class DndLinkProvider {
     provideDocumentLinks(document, token) {
         const links = [];
@@ -23,13 +22,22 @@ class DndLinkProvider {
                 const startPos = document.positionAt(match.index);
                 const endPos = document.positionAt(match.index + match[0].length);
                 const range = new vscode.Range(startPos, endPos);
-                // Resolve the absolute path
-                const currentDir = path.dirname(document.uri.fsPath);
-                const absPath = path.resolve(currentDir, linkPath);
-                const targetUri = vscode.Uri.file(absPath);
-                const docLink = new vscode.DocumentLink(range, targetUri);
-                docLink.tooltip = `Open ${path.basename(linkPath)}`;
-                links.push(docLink);
+                try {
+                    // Use vscode.Uri.joinPath for browser compatibility
+                    // This handles URL encoding automatically, including special characters
+                    // like spaces (%20), ampersands (%26), hashes (%23), parentheses, brackets, unicode, etc.
+                    const targetUri = vscode.Uri.joinPath(document.uri, '..', linkPath);
+                    // Extract filename for tooltip (handle paths with special characters)
+                    const pathParts = linkPath.split('/');
+                    const filename = pathParts[pathParts.length - 1];
+                    const docLink = new vscode.DocumentLink(range, targetUri);
+                    docLink.tooltip = `Open ${filename}`;
+                    links.push(docLink);
+                }
+                catch (error) {
+                    // Log error but don't break link provider for other links
+                    console.error('[DndLinkProvider] Error creating link for:', linkPath, error);
+                }
             }
         }
         return links;

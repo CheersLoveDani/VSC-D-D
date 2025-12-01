@@ -16,7 +16,14 @@ function safeParseJSON<T = unknown>(text: string, fallback?: T): T | null {
 
 export async function getPreviewData(currentDoc: vscode.TextDocument, relativePath: string, webview: vscode.Webview): Promise<unknown> {
     try {
+        // vscode.Uri.joinPath handles URL encoding automatically, including special characters
+        // like spaces (%20), ampersands (%26), hashes (%23), parentheses, brackets, unicode, etc.
         const targetUri = vscode.Uri.joinPath(currentDoc.uri, '..', relativePath);
+        
+        // Log for debugging path resolution with special characters
+        console.log('[getPreviewData] Resolving preview for:', relativePath);
+        console.log('[getPreviewData] Target URI:', targetUri.toString());
+        
         const content = await vscode.workspace.fs.readFile(targetUri);
         
         if (relativePath.endsWith('.dndnotes')) {
@@ -167,7 +174,9 @@ export async function getPreviewData(currentDoc: vscode.TextDocument, relativePa
             };
         }
     } catch (e) {
-        console.error('Error fetching preview data', e);
+        // Enhanced error logging for debugging issues with special characters in file paths
+        console.error('[getPreviewData] Error fetching preview data for:', relativePath);
+        console.error('[getPreviewData] Error details:', e);
         return null;
     }
 }
