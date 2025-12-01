@@ -451,6 +451,21 @@ body {
     margin-bottom: var(--dnd-space-2);
 }
 
+/* Task list in view mode - display as bullet points */
+.markdown-preview ul[data-type="taskList"] {
+    list-style: disc;
+    padding-left: var(--dnd-space-6);
+}
+
+.markdown-preview ul[data-type="taskList"] li {
+    display: list-item;
+}
+
+.markdown-preview ul[data-type="taskList"] li[data-checked="true"] {
+    text-decoration: line-through;
+    color: var(--dnd-text-muted);
+}
+
 .markdown-preview code {
     background: var(--dnd-bg-secondary);
     padding: var(--dnd-space-1) var(--dnd-space-2);
@@ -471,6 +486,16 @@ body {
 .markdown-preview pre code {
     background: transparent;
     padding: 0;
+}
+
+/* Blockquote in view mode */
+.markdown-preview blockquote {
+    border-left: 4px solid var(--dnd-accent);
+    padding-left: var(--dnd-space-4);
+    margin-left: 0;
+    margin-bottom: var(--dnd-space-4);
+    font-style: italic;
+    color: var(--dnd-text-muted);
 }
 
 /* Tables - D&D Style */

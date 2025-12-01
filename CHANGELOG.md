@@ -12,6 +12,22 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.1.7] - 2025-12-01
+
+### Fixed
+- **Combined Text Formatting**: Fixed bold, italic, and strikethrough not working in combination
+  - `convertNodeToMarkdown()` now recursively processes child nodes for nested formatting
+  - Supports all combinations like `***bold italic***`, `**~~bold strikethrough~~**`, etc.
+- **Checkboxes in View Mode**: Task lists now display as styled bullet points instead of raw checkbox HTML
+  - Added CSS styles for `.markdown-preview ul[data-type="taskList"]`
+  - Checked items show strikethrough with muted color
+- **Blockquotes in View Mode**: Fixed blockquotes not displaying with proper styling
+  - Added blockquote CSS for view mode with border-left accent, italic style, and padding
+  - Fixed regex to handle `>` with or without trailing space
+- **Code Blocks in View Mode**: Fenced code blocks (```) now render correctly
+  - Added placeholder-based processing to handle multi-line code blocks before HTML escaping
+  - Code block content is properly escaped and displayed in `<pre><code>` tags
+
 ## [0.1.5] - 2025-12-01
 
 ### Fixed

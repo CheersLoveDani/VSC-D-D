@@ -849,18 +849,33 @@ const globalWindow = window;
                 return '\n';
             
             case 'strong':
-            case 'b':
-                return '**' + element.textContent + '**';
-            
+            case 'b': {
+                let innerContent = '';
+                for (const child of element.childNodes) {
+                    innerContent += convertNodeToMarkdown(child);
+                }
+                return '**' + innerContent + '**';
+            }
+
             case 'em':
-            case 'i':
-                return '*' + element.textContent + '*';
-            
+            case 'i': {
+                let innerContent = '';
+                for (const child of element.childNodes) {
+                    innerContent += convertNodeToMarkdown(child);
+                }
+                return '*' + innerContent + '*';
+            }
+
             case 's':
             case 'strike':
-            case 'del':
-                return '~~' + element.textContent + '~~';
-            
+            case 'del': {
+                let innerContent = '';
+                for (const child of element.childNodes) {
+                    innerContent += convertNodeToMarkdown(child);
+                }
+                return '~~' + innerContent + '~~';
+            }
+
             case 'code':
                 return '`' + element.textContent + '`';
             
@@ -1883,12 +1898,26 @@ const globalWindow = window;
 
     /**
      * Simple Markdown to HTML converter
-     * @param {string} text 
+     * @param {string} text
      */
     function convertMarkdownToHTML(text) {
         if (!text) return '';
-        
-        let html = text
+
+        // Handle fenced code blocks first (before HTML escaping)
+        // Use a placeholder to protect code block content
+        const codeBlocks = [];
+        let processedText = text.replace(/```(\w*)\n([\s\S]*?)```/gm, (match, lang, code) => {
+            const index = codeBlocks.length;
+            // Escape HTML inside code blocks
+            const escapedCode = code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            codeBlocks.push(`<pre><code>${escapedCode}</code></pre>`);
+            return `%%CODEBLOCK_${index}%%`;
+        });
+
+        let html = processedText
             // Escape HTML
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -1900,7 +1929,14 @@ const globalWindow = window;
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
             .replace(/^## (.*$)/gim, '<h2>$1</h2>')
             .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-            // Bold
+            // Bold + Italic + Strikethrough combinations
+            .replace(/\*\*\*~~(.+?)~~\*\*\*/g, '<strong><em><s>$1</s></em></strong>')
+            .replace(/~~\*\*\*(.+?)\*\*\*~~/g, '<s><strong><em>$1</em></strong></s>')
+            .replace(/\*\*~~(.+?)~~\*\*/g, '<strong><s>$1</s></strong>')
+            .replace(/~~\*\*(.+?)\*\*~~/g, '<s><strong>$1</strong></s>')
+            .replace(/\*~~(.+?)~~\*/g, '<em><s>$1</s></em>')
+            .replace(/~~\*(.+?)\*~~/g, '<s><em>$1</em></s>')
+            // Bold + Italic
             .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             // Italic
@@ -1912,6 +1948,8 @@ const globalWindow = window;
             // Task lists
             .replace(/^- \[ \] (.*$)/gim, '<ul data-type="taskList"><li data-type="taskItem" data-checked="false">$1</li></ul>')
             .replace(/^- \[x\] (.*$)/gim, '<ul data-type="taskList"><li data-type="taskItem" data-checked="true">$1</li></ul>')
+            // Merge adjacent task lists
+            .replace(/<\/ul>\s*<ul data-type="taskList">/gim, '')
             // Lists
             .replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>')
             .replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>')
@@ -1919,9 +1957,9 @@ const globalWindow = window;
             // Merge adjacent lists
             .replace(/<\/ul>\s*<ul>/gim, '')
             .replace(/<\/ol>\s*<ol>/gim, '')
-            // Blockquote
-            .replace(/^&gt; (.*$)/gim, '<blockquote><p>$1</p></blockquote>')
-            .replace(/<\/blockquote>\s*<blockquote>/gim, '')
+            // Blockquote - handle with or without space after >
+            .replace(/^&gt;\s?(.*$)/gim, '<blockquote>$1</blockquote>')
+            .replace(/<\/blockquote>\s*<blockquote>/gim, '<br>')
             // Horizontal rule
             .replace(/^---$/gim, '<hr>')
             // Links [text](url)
@@ -1931,7 +1969,12 @@ const globalWindow = window;
             // Paragraphs
             .replace(/\n\n/gim, '</p><p>')
             .replace(/\n/gim, '<br>');
-        
+
+        // Restore code blocks
+        codeBlocks.forEach((block, index) => {
+            html = html.replace(`%%CODEBLOCK_${index}%%`, block);
+        });
+
         return '<p>' + html + '</p>';
     }
 
