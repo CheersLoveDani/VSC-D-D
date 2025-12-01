@@ -12,6 +12,21 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.2.0] - 2025-12-01
+
+### Added
+- **Navigation Pane (Table of Contents)**: Google Docs-style collapsible sidebar for the Notes Editor
+  - Lists all headings (H1-H6) extracted from the document
+  - Click any heading to jump directly to that section
+  - Active heading automatically highlights based on scroll position using IntersectionObserver
+  - Hierarchical indentation based on heading level for visual structure
+  - Expanded by default on large screens, collapsible via toggle button
+  - Collapse/expand state persists across sessions via localStorage
+  - **Responsive Design**: On small viewports (<600px), pane opens as overlay with backdrop blur
+  - Overlay auto-closes after clicking a heading for streamlined navigation
+  - Popovers automatically close when overlay opens to prevent visual conflicts
+  - **Raw Markdown Support**: Parses `#` headings from raw text when in raw markdown mode
+
 ## [0.1.9] - 2025-12-01
 
 ### Fixed
@@ -450,7 +465,11 @@ Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 - Support for toggling between custom editor and plain text modes
 - Rich text editing capabilities with TipTap extensions
 
-[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.9...v0.2.0
+[0.1.9]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.8...v0.1.9
+[0.1.8]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.7...v0.1.8
+[0.1.7]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.5...v0.1.7
 [0.1.5]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/CheersLoveDani/VSC-D-D/compare/v0.1.2...v0.1.3

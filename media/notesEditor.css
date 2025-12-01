@@ -90,6 +90,7 @@ body {
     position: relative;
     display: flex;
     flex-direction: column;
+    min-width: 0; /* Allow shrinking in flex container */
 }
 
 /* ========== Raw Markdown Editor ========== */

@@ -301,7 +301,9 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
     getHtmlForWebview(webview) {
         const scriptUri = this.getMediaUri(webview, 'notesEditor.js');
         const tiptapBundleUri = this.getMediaUri(webview, 'tiptap-bundle.js');
+        const navPaneScriptUri = this.getMediaUri(webview, 'navPane.js');
         const styleUri = this.getMediaUri(webview, 'notesEditor.css');
+        const navPaneStyleUri = this.getMediaUri(webview, 'navPane.css');
         const nonce = this.getNonce();
         return `
             <!DOCTYPE html>
@@ -311,6 +313,7 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource} https: data:;">
                 <link href="${styleUri}" rel="stylesheet" />
+                <link href="${navPaneStyleUri}" rel="stylesheet" />
                 <title>D&D Notes</title>
             </head>
             <body>
@@ -374,7 +377,18 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                         </div>
                     </div>
                 </div>
-                <div class="content-area" id="app"></div>
+                <div class="main-wrapper">
+                    <div class="nav-pane">
+                        <div class="nav-pane-header">
+                            <span class="nav-pane-title">Contents</span>
+                            <button class="nav-pane-toggle" title="Collapse">&#9664;</button>
+                        </div>
+                        <div class="nav-pane-content"></div>
+                    </div>
+                    <button class="nav-pane-expand-btn">&#9654; Contents</button>
+                    <div class="content-area" id="app"></div>
+                </div>
+                <div class="nav-pane-backdrop"></div>
                 <div id="popover" class="popover"></div>
 
                 <!-- Context Menu -->
@@ -461,6 +475,7 @@ class NotesEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 <div id="compendium-tooltip" class="popover" style="max-width: 400px; display: none;"></div>
 
                 <script nonce="${nonce}" src="${tiptapBundleUri}"></script>
+                <script nonce="${nonce}" src="${navPaneScriptUri}"></script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
                 <script nonce="${nonce}">
                     // Show/hide raw toggle button based on edit mode

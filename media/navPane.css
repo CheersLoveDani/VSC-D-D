@@ -1,0 +1,311 @@
+/* ========== Navigation Pane ========== */
+
+/* Main wrapper for sidebar + content */
+.main-wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Navigation Pane Sidebar */
+.nav-pane {
+    width: 220px;
+    min-width: 220px;
+    background: var(--dnd-bg-secondary);
+    border-right: 1px solid var(--dnd-border-light);
+    display: flex;
+    flex-direction: column;
+    transition: width var(--dnd-transition), min-width var(--dnd-transition), opacity var(--dnd-transition);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.nav-pane.collapsed {
+    width: 0;
+    min-width: 0;
+    border-right: none;
+}
+
+.nav-pane.collapsed .nav-pane-header,
+.nav-pane.collapsed .nav-pane-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Header */
+.nav-pane-header {
+    padding: var(--dnd-space-3) var(--dnd-space-4);
+    border-bottom: 1px solid var(--dnd-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    background: var(--dnd-card-bg);
+}
+
+.nav-pane-title {
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-sm);
+    font-weight: 600;
+    color: var(--dnd-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.nav-pane-toggle {
+    background: transparent;
+    border: 1px solid var(--dnd-border-light);
+    color: var(--dnd-text-muted);
+    cursor: pointer;
+    padding: var(--dnd-space-1) var(--dnd-space-2);
+    border-radius: var(--dnd-radius-sm);
+    transition: all var(--dnd-transition);
+    font-size: var(--dnd-text-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+}
+
+.nav-pane-toggle:hover {
+    background: var(--dnd-bg-hover);
+    color: var(--dnd-text);
+    border-color: var(--dnd-border);
+}
+
+.nav-pane-toggle:active {
+    background: var(--dnd-accent-soft);
+}
+
+/* Content area */
+.nav-pane-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--dnd-space-2) 0;
+}
+
+/* Empty state message */
+.nav-pane-empty {
+    padding: var(--dnd-space-4);
+    color: var(--dnd-text-muted);
+    font-size: var(--dnd-text-sm);
+    font-style: italic;
+    text-align: center;
+}
+
+/* Navigation Items */
+.nav-item {
+    display: block;
+    width: 100%;
+    padding: var(--dnd-space-2) var(--dnd-space-4);
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--dnd-font-body);
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text);
+    transition: all var(--dnd-transition-fast);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.nav-item:hover {
+    background: var(--dnd-bg-hover);
+    border-left-color: var(--dnd-border);
+}
+
+.nav-item.active {
+    background: var(--dnd-accent-soft);
+    color: var(--dnd-accent);
+    border-left-color: var(--dnd-accent);
+    font-weight: 500;
+}
+
+/* Indentation based on heading level */
+.nav-item[data-level="1"] {
+    padding-left: var(--dnd-space-4);
+    font-weight: 600;
+    font-size: var(--dnd-text-sm);
+}
+
+.nav-item[data-level="2"] {
+    padding-left: calc(var(--dnd-space-4) + var(--dnd-space-3));
+}
+
+.nav-item[data-level="3"] {
+    padding-left: calc(var(--dnd-space-4) + var(--dnd-space-6));
+    font-size: var(--dnd-text-xs);
+}
+
+.nav-item[data-level="4"] {
+    padding-left: calc(var(--dnd-space-4) + var(--dnd-space-8));
+    font-size: var(--dnd-text-xs);
+    color: var(--dnd-text-muted);
+}
+
+.nav-item[data-level="5"] {
+    padding-left: calc(var(--dnd-space-4) + var(--dnd-space-10));
+    font-size: var(--dnd-text-xs);
+    color: var(--dnd-text-muted);
+}
+
+.nav-item[data-level="6"] {
+    padding-left: calc(var(--dnd-space-4) + var(--dnd-space-12));
+    font-size: var(--dnd-text-xs);
+    color: var(--dnd-text-muted);
+}
+
+/* Active state overrides muted colors */
+.nav-item.active[data-level="4"],
+.nav-item.active[data-level="5"],
+.nav-item.active[data-level="6"] {
+    color: var(--dnd-accent);
+}
+
+/* ========== Expand Button Base Styles ========== */
+.nav-pane-expand-btn {
+    display: none;
+    background: var(--dnd-bg-secondary);
+    border: 1px solid var(--dnd-border-light);
+    border-left: none;
+    border-radius: 0 var(--dnd-radius) var(--dnd-radius) 0;
+    padding: var(--dnd-space-3) var(--dnd-space-2);
+    box-shadow: var(--dnd-shadow);
+    cursor: pointer;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transition: all var(--dnd-transition);
+    flex-shrink: 0;
+    align-self: center;
+    margin-left: -1px;
+}
+
+.nav-pane-expand-btn:hover {
+    background: var(--dnd-bg-hover);
+    color: var(--dnd-text);
+    border-color: var(--dnd-border);
+}
+
+/* Show expand button when nav pane is collapsed (large screens) */
+.nav-pane.collapsed + .nav-pane-expand-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--dnd-space-1);
+}
+
+/* ========== Small Viewport / Overlay Mode ========== */
+@media (max-width: 600px) {
+    .nav-pane {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 100;
+        box-shadow: var(--dnd-shadow-xl);
+        width: 0;
+        min-width: 0;
+        border-right: none;
+    }
+
+    .nav-pane.expanded {
+        width: 260px;
+        min-width: 260px;
+        border-right: 1px solid var(--dnd-border-light);
+    }
+
+    .nav-pane.expanded .nav-pane-header,
+    .nav-pane.expanded .nav-pane-content {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Overlay backdrop */
+    .nav-pane-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 99;
+        display: none;
+    }
+
+    .nav-pane-backdrop.visible {
+        display: block;
+        animation: fadeIn var(--dnd-transition);
+    }
+
+    /* Override expand button styles for small screens */
+    .nav-pane-expand-btn {
+        position: fixed !important;
+        left: var(--dnd-space-3);
+        bottom: var(--dnd-space-3);
+        z-index: 50;
+        background: var(--dnd-card-bg);
+        border: 1px solid var(--dnd-border);
+        border-radius: var(--dnd-radius);
+        padding: var(--dnd-space-2) var(--dnd-space-3);
+        box-shadow: var(--dnd-shadow-md);
+        font-size: var(--dnd-text-xs);
+        font-family: var(--dnd-font-header);
+        color: var(--dnd-text);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        writing-mode: horizontal-tb;
+        margin-left: 0;
+        align-self: auto;
+    }
+
+    .nav-pane-expand-btn:hover {
+        background: var(--dnd-accent);
+        color: white;
+        border-color: var(--dnd-accent);
+    }
+
+    .nav-pane.expanded + .nav-pane-expand-btn {
+        display: none !important;
+    }
+
+    .nav-pane-backdrop {
+        display: none;
+    }
+}
+
+/* Hide backdrop on large screens */
+@media (min-width: 601px) {
+    .nav-pane-backdrop {
+        display: none !important;
+    }
+}
+
+/* ========== Scrollbar Styling ========== */
+.nav-pane-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nav-pane-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.nav-pane-content::-webkit-scrollbar-thumb {
+    background: var(--dnd-border-light);
+    border-radius: 3px;
+}
+
+.nav-pane-content::-webkit-scrollbar-thumb:hover {
+    background: var(--dnd-border);
+}

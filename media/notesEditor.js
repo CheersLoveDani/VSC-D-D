@@ -109,6 +109,9 @@ const globalWindow = window;
     let isLinkContextMenu = false;
     let selectedLink = null;
 
+    // NavPane refresh debounce timeout
+    let navPaneRefreshTimeout = null;
+
     // Initialize
     vscode.postMessage({ type: 'ready' });
 
@@ -233,12 +236,16 @@ const globalWindow = window;
             editor = null;
             container.innerHTML = '';
             renderRawEditor();
+            // Update NavPane for raw mode
+            requestAnimationFrame(() => initNavPane());
         } else if (!state.rawMode && rawTextarea) {
             // Switch to rich editor
             state.content = rawTextarea.value;
             rawTextarea = null;
             container.innerHTML = '';
             renderRichEditor();
+            // Update NavPane for rich editor mode
+            requestAnimationFrame(() => initNavPane());
         }
     });
 
@@ -261,6 +268,48 @@ const globalWindow = window;
             // Use TipTap in read-only mode for visual consistency with edit mode
             renderViewMode();
         }
+
+        // Initialize/refresh NavPane after render
+        requestAnimationFrame(() => {
+            initNavPane();
+        });
+    }
+
+    /**
+     * Initialize or refresh the navigation pane
+     */
+    function initNavPane() {
+        if (!window.NavPane) return;
+
+        const scrollEl = document.querySelector('.content-area');
+        const editorEl = document.querySelector('#tiptap-editor, #tiptap-viewer');
+        const textarea = rawTextarea;
+
+        let mode = 'view';
+        if (state.mode === 'edit') {
+            mode = state.rawMode ? 'raw' : 'edit';
+        }
+
+        window.NavPane.init({
+            scrollContainer: scrollEl,
+            editorContainer: editorEl,
+            rawTextarea: textarea,
+            mode: mode
+        });
+    }
+
+    /**
+     * Debounced refresh for NavPane (called on editor content changes)
+     */
+    function refreshNavPaneDebounced() {
+        if (navPaneRefreshTimeout) {
+            clearTimeout(navPaneRefreshTimeout);
+        }
+        navPaneRefreshTimeout = setTimeout(() => {
+            if (window.NavPane) {
+                window.NavPane.refresh();
+            }
+        }, 300);
     }
 
     function renderRawEditor() {
@@ -276,6 +325,8 @@ const globalWindow = window;
                 type: 'updateData',
                 text: state.content
             });
+            // Refresh navigation pane (debounced)
+            refreshNavPaneDebounced();
         });
         container.appendChild(textarea);
         rawTextarea = textarea;
@@ -332,6 +383,8 @@ const globalWindow = window;
                     type: 'updateData',
                     text: state.content
                 });
+                // Refresh navigation pane (debounced)
+                refreshNavPaneDebounced();
             },
         });
 
