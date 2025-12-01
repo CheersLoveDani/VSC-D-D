@@ -4,6 +4,37 @@ All notable changes to the "CritCode" extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+
+<!-- 
+IMPORTANT: Always update this changelog when making changes!
+Add entries under [Unreleased] section as you work.
+Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
+-->
+
+## [0.1.5] - 2025-12-01
+
+### Fixed
+- **URL Encoding for File Paths**: Fixed handling of special characters in file paths and links
+  - Enhanced URL decoding in `stripWebviewUris()` to handle spaces (`%20`), ampersands (`%26`), hashes (`%23`), brackets (`%5B`, `%5D`), and unicode characters
+  - Added double-encoding prevention to avoid `%20` becoming `%2520`
+  - Fixed preview popover showing "undefined" values due to incorrect code block in `showPopover()`
+  - Improved error handling for malformed URIs with try-catch blocks
+- **Browser Compatibility**: Replaced Node.js `path` module with `vscode.Uri` in link provider
+  - Extension now works correctly in both desktop VS Code and browser VS Code (vscode.dev)
+  - All URL encoding/decoding uses standard web APIs (`URL`, `encodeURIComponent`, `decodeURIComponent`)
+  - Added comprehensive logging for debugging path resolution issues
+
+### Changed
+- **Link Parsing**: Simplified link regex to not support parentheses in filenames
+  - Parentheses in filenames conflict with markdown link syntax `[text](url)`
+  - Supported special characters: spaces, ampersands, hashes, brackets, unicode
+  - Added comment documenting this limitation
+
+## [0.1.4] - 2025-12-01
+
+### Fixed
+- **Notes Editor**: Fixed blank lines appearing between text lines in edit mode
   - Removed empty paragraph tag generation in markdown-to-HTML conversion
   - Edit mode now displays content with same spacing as view mode
   - Resolved double-spacing issue caused by `<p></p>` tags being rendered for markdown blank lines
