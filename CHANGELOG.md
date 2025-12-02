@@ -12,6 +12,14 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.2.2] - 2025-12-02
+
+### Fixed
+- **Map Editor Empty File Error**: Fixed "SyntaxError: Unexpected end of JSON input" when creating new `.dndmap` files
+  - Backend now gracefully handles empty files by creating default JSON structure
+  - Added empty state UI with centered "Choose Map Image" button for new maps
+  - Toolbar hidden until an image is selected for cleaner initial experience
+
 ## [0.2.1] - 2025-12-01
 
 ### Added

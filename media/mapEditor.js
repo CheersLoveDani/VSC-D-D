@@ -42,6 +42,9 @@
     let hoveredPinIndex = -1;
     /** @type {HTMLElement | null} */
     let previewPopover = null;
+
+    // Track if map is empty (no image set)
+    let isEmptyMap = true;
     
     // Animation state for smooth pin hover
     let pinHoverScale = 1.0;
@@ -51,6 +54,7 @@
 
     // Initialize UI
     createToolbar();
+    createEmptyState();
     setupCanvas();
     setupEventListeners();
 
@@ -81,6 +85,43 @@
             resetView.textContent = 'Reset View';
             resetView.onclick = resetViewport;
             toolbar.appendChild(resetView);
+        }
+    }
+
+    function createEmptyState() {
+        let emptyState = document.querySelector('.empty-state');
+        if (!emptyState) {
+            emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            emptyState.innerHTML = `
+                <div class="empty-state-icon">🗺️</div>
+                <div class="empty-state-title">No Map Image</div>
+                <div class="empty-state-text">Choose an image to get started with your map</div>
+                <button class="dnd-btn empty-state-btn" id="choose-image-btn">Choose Map Image</button>
+            `;
+            mapContainer.appendChild(emptyState);
+
+            const chooseBtn = emptyState.querySelector('#choose-image-btn');
+            if (chooseBtn) {
+                chooseBtn.addEventListener('click', () => {
+                    vscode.postMessage({ type: 'selectImage' });
+                });
+            }
+        }
+    }
+
+    function updateEmptyState() {
+        const emptyState = document.querySelector('.empty-state');
+        const toolbar = document.querySelector('.toolbar');
+
+        if (emptyState) {
+            if (isEmptyMap) {
+                emptyState.classList.remove('hidden');
+                if (toolbar) toolbar.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                if (toolbar) toolbar.classList.remove('hidden');
+            }
         }
     }
 
@@ -394,7 +435,17 @@
         switch (message.type) {
             case 'update':
                 try {
-                    const newState = JSON.parse(message.text);
+                    const text = message.text.trim();
+                    // Handle empty file
+                    if (!text) {
+                        state = { imagePath: '', pins: [] };
+                        isEmptyMap = true;
+                        updateEmptyState();
+                        render();
+                        return;
+                    }
+
+                    const newState = JSON.parse(text);
                     state = newState || {};
                     // Ensure pins is an array
                     if (!Array.isArray(state.pins)) {
@@ -402,7 +453,11 @@
                     }
                     // @ts-ignore
                     const resolvedImageUri = message.resolvedImageUri;
-                    
+
+                    // Check if map has an image
+                    isEmptyMap = !state.imagePath && !resolvedImageUri;
+                    updateEmptyState();
+
                     if (resolvedImageUri) {
                         // Only reload image if URI has changed
                         if (resolvedImageUri !== currentImageUri) {
@@ -413,11 +468,14 @@
                         }
                     } else {
                         imageLoaded = false;
-                        imageError = true;
+                        imageError = false; // Not an error, just no image yet
                         render();
                     }
-                } catch (e) { 
+                } catch (e) {
                     console.error('Error parsing state:', e);
+                    // Show empty state on parse error
+                    isEmptyMap = true;
+                    updateEmptyState();
                 }
                 return;
             case 'previewData':
@@ -490,8 +548,8 @@
             ctx.save();
             ctx.translate(viewport.translateX, viewport.translateY);
             ctx.scale(viewport.scale, viewport.scale);
-        } else {
-            // Draw loading message
+        } else if (!isEmptyMap) {
+            // Only show loading if we expect an image
             ctx.restore();
             ctx.fillStyle = '#666';
             ctx.font = '16px sans-serif';

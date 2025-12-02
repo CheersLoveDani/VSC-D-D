@@ -153,17 +153,24 @@ class MapEditorProvider extends baseEditor_1.BaseCustomTextEditorProvider {
                 }
             }
             console.log('Calculated relative path:', relativePath);
-            const text = document.getText();
-            try {
-                const json = JSON.parse(text);
-                json.imagePath = relativePath;
-                await this.updateDocumentJson(document, json);
-                console.log('Successfully updated map image path');
+            const text = document.getText().trim();
+            let json;
+            // Handle empty file or invalid JSON by creating default structure
+            if (!text) {
+                json = { imagePath: '', pins: [] };
             }
-            catch (error) {
-                console.error('Error updating map image:', error);
-                vscode.window.showErrorMessage('Failed to update map image: ' + error);
+            else {
+                try {
+                    json = JSON.parse(text);
+                }
+                catch {
+                    // If JSON is invalid, create fresh structure
+                    json = { imagePath: '', pins: [] };
+                }
             }
+            json.imagePath = relativePath;
+            await this.updateDocumentJson(document, json);
+            console.log('Successfully updated map image path');
         }
     }
 }

@@ -161,3 +161,48 @@ body {
     line-height: 1.6;
     color: var(--dnd-text);
 }
+
+/* ========== Empty State ========== */
+.empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 50;
+    padding: var(--dnd-space-8);
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-xl);
+    box-shadow: var(--dnd-shadow-xl);
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: var(--dnd-space-4);
+    opacity: 0.8;
+}
+
+.empty-state-title {
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-xl);
+    font-weight: 600;
+    color: var(--dnd-text);
+    margin-bottom: var(--dnd-space-2);
+}
+
+.empty-state-text {
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+    margin-bottom: var(--dnd-space-6);
+    max-width: 280px;
+}
+
+.empty-state-btn {
+    padding: var(--dnd-space-3) var(--dnd-space-6);
+    font-size: var(--dnd-text-base);
+}
