@@ -1477,11 +1477,9 @@ const globalWindow = window;
         linkTextInput.value = '';
         linkUrlInput.value = '';
         linkTextInput.disabled = false; // Re-enable in case it was disabled for image links
-        
-        // Restore normal insert behavior
-        if (linkInsertBtn) {
-            linkInsertBtn.onclick = insertLink;
-        }
+
+        // Clear selected link reference to avoid stale edits
+        selectedLink = null;
     }
 
     function insertLink() {
@@ -1492,18 +1490,49 @@ const globalWindow = window;
 
         if (!url) return;
 
-        const { state } = editor;
-        const { from, to } = state.selection;
-        const selectedText = state.doc.textBetween(from, to, ' ');
+        // Check if we're editing an existing link
+        if (selectedLink && text) {
+            const originalText = selectedLink.textContent || '';
 
-        if (selectedText) {
-            // If there was selected text, apply link to it
-            editor.chain().focus().setLink({ href: url }).run();
-        } else if (text) {
-            // No selection, insert new link with text
-            editor.chain().focus()
-                .insertContent(`<a href="${url}">${text}</a>`)
-                .run();
+            if (text !== originalText) {
+                // Text changed - need to replace the entire link
+                console.log('insertLink: Link text changed, replacing link');
+
+                // Find and select the link node
+                const pos = editor.view.posAtDOM(selectedLink, 0);
+                const endPos = pos + originalText.length;
+
+                // Select the link text and replace it
+                editor.chain()
+                    .focus()
+                    .setTextSelection({ from: pos, to: endPos })
+                    .deleteSelection()
+                    .insertContent(`<a href="${url}">${text}</a>`)
+                    .run();
+            } else {
+                // Only URL changed - select the link and update href
+                const pos = editor.view.posAtDOM(selectedLink, 0);
+                const endPos = pos + originalText.length;
+                editor.chain()
+                    .focus()
+                    .setTextSelection({ from: pos, to: endPos })
+                    .setLink({ href: url })
+                    .run();
+            }
+        } else {
+            const { state } = editor;
+            const { from, to } = state.selection;
+            const selectedText = state.doc.textBetween(from, to, ' ');
+
+            if (selectedText) {
+                // If there was selected text, apply link to it
+                editor.chain().focus().setLink({ href: url }).run();
+            } else if (text) {
+                // No selection, insert new link with text
+                editor.chain().focus()
+                    .insertContent(`<a href="${url}">${text}</a>`)
+                    .run();
+            }
         }
 
         hideLinkDialog();
@@ -1547,28 +1576,28 @@ const globalWindow = window;
         linkCancelBtn.addEventListener('click', hideLinkDialog);
         linkInsertBtn.addEventListener('click', () => {
             console.log('linkInsertBtn clicked', { isImageContextMenu, isLinkContextMenu, selectedImage });
-            
+
             const linkUrl = linkUrlInput.value.trim();
             console.log('Link URL:', linkUrl);
-            
+
             if ((isImageContextMenu || (isLinkContextMenu && selectedImage)) && selectedImage) {
                 // Wrap image in link using TipTap commands
                 console.log('Link insert clicked for image');
-                
+
                 if (linkUrl && editor) {
                     console.log('Applying link to image via TipTap');
-                    
+
                     // Find the position of the image in the editor
                     const pos = editor.view.posAtDOM(selectedImage, 0);
                     console.log('Image position found:', pos);
-                    
+
                     if (pos > -1) {
                         // Select the image node
                         const tr = editor.state.tr.setSelection(
                             globalWindow.TipTap.TextSelection.create(editor.state.doc, pos, pos + 1)
                         );
                         editor.view.dispatch(tr);
-                        
+
                         // Apply the link mark
                         editor.chain().focus().setLink({ href: linkUrl }).run();
                         console.log('Link mark applied to image');
@@ -1576,18 +1605,9 @@ const globalWindow = window;
                 }
                 hideLinkDialog();
             } else {
-                // Normal link insertion/editing for text
+                // Normal link insertion/editing for text - delegate to insertLink()
                 console.log('Calling insertLink for text');
-                
-                if (linkUrl) {
-                    // If we're editing an existing link, setLink will update it
-                    // If we're creating a new one, it will create it
-                    editor.chain().focus().setLink({ href: linkUrl }).run();
-                } else {
-                    // If URL is empty, remove link
-                    editor.chain().focus().unsetLink().run();
-                }
-                hideLinkDialog();
+                insertLink();
             }
         });
         linkUrlInput.addEventListener('keydown', (e) => {

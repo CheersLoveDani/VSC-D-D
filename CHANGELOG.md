@@ -12,6 +12,13 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.2.3] - 2025-12-02
+
+### Fixed
+- **Notes Editor Link Editing**: Fixed issue where editing an existing link's text via the link dialog would not apply changes
+  - Clicking Insert after modifying link text now correctly updates both text and URL
+  - Fixed duplicate event handler conflict that was preventing edits from being saved
+
 ## [0.2.2] - 2025-12-02
 
 ### Fixed
