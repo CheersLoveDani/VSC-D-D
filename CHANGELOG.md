@@ -12,6 +12,14 @@ Add entries under [Unreleased] section as you work.
 Categories: Added, Improved, Fixed, Changed, Deprecated, Removed, Security
 -->
 
+## [0.2.4] - 2025-12-03
+
+### Fixed
+- **Notes Editor Multiline Blockquotes**: Fixed blockquotes not preserving line breaks
+  - Multiple lines starting with `>` now correctly combine into a single blockquote
+  - Each line renders as a separate paragraph within the blockquote
+  - Fixed round-trip conversion losing line breaks when switching between edit and view modes
+
 ## [0.2.3] - 2025-12-02
 
 ### Fixed

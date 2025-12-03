@@ -663,6 +663,8 @@ const globalWindow = window;
         let codeBlockContent = '';
         let inTable = false;
         let tableRows = [];
+        let inBlockquote = false;
+        let blockquoteLines = [];
         
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
@@ -698,6 +700,11 @@ const globalWindow = window;
                 if (inTaskList) {
                     html += '</ul>';
                     inTaskList = false;
+                }
+                if (inBlockquote) {
+                    html += `<blockquote>${blockquoteLines.map(l => `<p>${processInlineMarkdown(l)}</p>`).join('')}</blockquote>`;
+                    blockquoteLines = [];
+                    inBlockquote = false;
                 }
                 // Don't add empty paragraphs - they create visible blank lines in edit mode
                 continue;
@@ -759,7 +766,23 @@ const globalWindow = window;
             }
             // Blockquotes
             else if (trimmed.startsWith('>')) {
-                html += `<blockquote><p>${processInlineMarkdown(trimmed.substring(1).trim())}</p></blockquote>`;
+                // Start collecting blockquote lines
+                if (!inBlockquote) {
+                    inBlockquote = true;
+                    blockquoteLines = [];
+                }
+                blockquoteLines.push(trimmed.substring(1).trim());
+
+                // Check if next line exists and is a blockquote continuation
+                const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+                const isNextLineBlockquote = nextLine.startsWith('>');
+
+                // If next line is not a blockquote, output the collected blockquote
+                if (!isNextLineBlockquote) {
+                    html += `<blockquote>${blockquoteLines.map(l => `<p>${processInlineMarkdown(l)}</p>`).join('')}</blockquote>`;
+                    blockquoteLines = [];
+                    inBlockquote = false;
+                }
             }
             // Tables - detect lines with pipe characters
             else if (trimmed.includes('|')) {
@@ -811,6 +834,7 @@ const globalWindow = window;
         if (inOrderedList) html += '</ol>';
         if (inTaskList) html += '</ul>';
         if (inCodeBlock) html += `<pre><code>${codeBlockContent}</code></pre>`;
+        if (inBlockquote) html += `<blockquote>${blockquoteLines.map(l => `<p>${processInlineMarkdown(l)}</p>`).join('')}</blockquote>`;
         
         return html || '<p></p>';
     }
@@ -1101,8 +1125,23 @@ const globalWindow = window;
                 return '```\n' + element.textContent + '\n```\n\n';
             
             case 'blockquote':
-                const lines = element.textContent?.split('\n') || [];
-                return lines.map(line => '> ' + line).join('\n') + '\n\n';
+                // Process child paragraphs to preserve line structure
+                const blockquoteLines = [];
+                for (const child of element.children) {
+                    if (child.tagName.toLowerCase() === 'p') {
+                        let lineContent = '';
+                        for (const node of child.childNodes) {
+                            lineContent += convertNodeToMarkdown(node);
+                        }
+                        blockquoteLines.push('> ' + lineContent);
+                    }
+                }
+                // Fallback if no <p> children (plain text content)
+                if (blockquoteLines.length === 0) {
+                    const textLines = element.textContent?.split('\n') || [];
+                    return textLines.map(line => '> ' + line).join('\n') + '\n\n';
+                }
+                return blockquoteLines.join('\n') + '\n\n';
             
             case 'ul':
                 let ulMarkdown = '';
