@@ -43,6 +43,53 @@ function resolveRelativeUri(baseUri: vscode.Uri, relativePath: string): vscode.U
     return baseUri.with({ path: resolvedPath });
 }
 
+interface PathValidation {
+    valid: boolean;
+    type: 'empty' | 'relative' | 'external' | 'insecure' | 'absolute';
+    error?: string;
+    showWarning?: boolean;
+}
+
+function validateImagePath(imagePath: string): PathValidation {
+    if (!imagePath || imagePath.trim() === '') {
+        return { valid: true, type: 'empty' };
+    }
+
+    // External HTTPS URLs - allowed with warning
+    if (imagePath.startsWith('https://')) {
+        return { valid: true, type: 'external', showWarning: true };
+    }
+
+    // HTTP URLs - not allowed (insecure)
+    if (imagePath.startsWith('http://')) {
+        return {
+            valid: false,
+            type: 'insecure',
+            error: 'HTTP URLs are not supported for security reasons. Please use HTTPS or a local image file.'
+        };
+    }
+
+    // Absolute Windows paths (C:\, D:\, etc.)
+    if (/^[a-zA-Z]:[\\/]/.test(imagePath)) {
+        return {
+            valid: false,
+            type: 'absolute',
+            error: 'Absolute file paths are not portable. Please use a relative path like: ./images/map.png'
+        };
+    }
+
+    // Absolute Unix paths
+    if (imagePath.startsWith('/') && !imagePath.startsWith('./')) {
+        return {
+            valid: false,
+            type: 'absolute',
+            error: 'Absolute file paths are not portable. Please use a relative path like: ./images/map.png'
+        };
+    }
+
+    return { valid: true, type: 'relative' };
+}
+
 export class MapEditorProvider extends BaseCustomTextEditorProvider {
 
     public static readonly viewType = 'dnd.mapEditor';
@@ -77,19 +124,35 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
         const updateWebview = () => {
             const text = document.getText();
             let resolvedImageUri = '';
+            let imagePathType = '';
+            let imagePathError = '';
+
             try {
                 const json = JSON.parse(text);
                 if (json.imagePath) {
-                    const docDir = vscode.Uri.joinPath(document.uri, '..');
-                    const imageUri = resolveRelativeUri(docDir, json.imagePath);
-                    resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
+                    const validation = validateImagePath(json.imagePath);
+                    imagePathType = validation.type;
+
+                    if (!validation.valid) {
+                        imagePathError = validation.error || '';
+                    } else if (validation.type === 'external') {
+                        // External HTTPS URL - use directly
+                        resolvedImageUri = json.imagePath;
+                    } else if (validation.type === 'relative') {
+                        // Relative path - resolve using existing logic
+                        const docDir = vscode.Uri.joinPath(document.uri, '..');
+                        const imageUri = resolveRelativeUri(docDir, json.imagePath);
+                        resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
+                    }
                 }
             } catch { /* ignore parse errors */ }
 
             webviewPanel.webview.postMessage({
                 type: 'update',
                 text: text,
-                resolvedImageUri: resolvedImageUri
+                resolvedImageUri: resolvedImageUri,
+                imagePathType: imagePathType,
+                imagePathError: imagePathError
             });
         };
 
@@ -144,6 +207,7 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; script-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline';">
                 <link href="${styleUri}" rel="stylesheet" />
                 <title>D&D Map Editor</title>
             </head>
@@ -169,10 +233,26 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
         if (uris && uris[0]) {
             const imageUri = uris[0];
             const docDir = vscode.Uri.joinPath(document.uri, '..');
-            
+
+            // Check if image is within the workspace folder
+            const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+            if (workspaceFolder) {
+                const workspacePath = workspaceFolder.uri.path.toLowerCase();
+                const selectedPath = imageUri.path.toLowerCase();
+
+                if (!selectedPath.startsWith(workspacePath)) {
+                    vscode.window.showErrorMessage(
+                        'Map images must be within the current project folder. ' +
+                        'Please copy the image into your project and try again.',
+                        { modal: true }
+                    );
+                    return;
+                }
+            }
+
             console.log('Selected image:', imageUri.toString());
             console.log('Document directory:', docDir.toString());
-            
+
             // Calculate relative path manually for web compatibility
             // VS Code URIs always use forward slashes in the path property, even on Windows
             // Normalize to lowercase for case-insensitive comparison (Windows drive letters can vary)

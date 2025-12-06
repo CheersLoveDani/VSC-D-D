@@ -27,8 +27,12 @@
     let mapImage = new Image();
     let imageLoaded = false;
     let imageError = false;
+    let imageErrorMessage = '';
     let currentImageUri = '';
     let isFirstLoad = true;
+
+    // External URL warning
+    const EXTERNAL_URL_WARNING_KEY = 'dnd-map-external-url-warning-dismissed';
 
     // Pan/drag state
     let isDragging = false;
@@ -440,6 +444,7 @@
                     if (!text) {
                         state = { imagePath: '', pins: [] };
                         isEmptyMap = true;
+                        imageErrorMessage = '';
                         updateEmptyState();
                         render();
                         return;
@@ -453,6 +458,25 @@
                     }
                     // @ts-ignore
                     const resolvedImageUri = message.resolvedImageUri;
+                    const imagePathType = message.imagePathType;
+                    const imagePathError = message.imagePathError;
+
+                    // Handle validation errors
+                    if (imagePathError) {
+                        showImagePathError(imagePathError);
+                        return;
+                    }
+
+                    // Clear any previous error message
+                    imageErrorMessage = '';
+
+                    // Show warning for external URLs (but don't block)
+                    if (imagePathType === 'external') {
+                        const dismissed = localStorage.getItem(EXTERNAL_URL_WARNING_KEY) === 'true';
+                        if (!dismissed) {
+                            showExternalUrlWarning();
+                        }
+                    }
 
                     // Check if map has an image
                     isEmptyMap = !state.imagePath && !resolvedImageUri;
@@ -519,6 +543,61 @@
         mapImage.src = uri;
     }
 
+    /**
+     * Show an error when the image path is invalid
+     * @param {string} message
+     */
+    function showImagePathError(message) {
+        imageLoaded = false;
+        imageError = true;
+        imageErrorMessage = message;
+        isEmptyMap = false; // Don't show empty state, show error instead
+        updateEmptyState();
+        render();
+    }
+
+    /**
+     * Show warning modal for external URLs
+     */
+    function showExternalUrlWarning() {
+        // Remove any existing warning modal
+        const existing = document.querySelector('.warning-modal-overlay');
+        if (existing) {
+            existing.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'warning-modal-overlay';
+        overlay.innerHTML = `
+            <div class="warning-modal">
+                <div class="warning-modal-icon">⚠️</div>
+                <h3>External Image URL</h3>
+                <p>You're using an external web URL for this map image.</p>
+                <p><strong>Note:</strong> External URLs can change or become unavailable, which would break your map. Consider downloading images to your project folder.</p>
+                <label class="warning-modal-checkbox">
+                    <input type="checkbox" id="dontShowAgain">
+                    <span>Don't show this warning again</span>
+                </label>
+                <div class="warning-modal-buttons">
+                    <button class="dnd-btn" id="warningDismiss">Got it</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const dismissBtn = overlay.querySelector('#warningDismiss');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                const checkbox = /** @type {HTMLInputElement} */ (overlay.querySelector('#dontShowAgain'));
+                if (checkbox && checkbox.checked) {
+                    localStorage.setItem(EXTERNAL_URL_WARNING_KEY, 'true');
+                }
+                overlay.remove();
+            });
+        }
+    }
+
     function render() {
         if (!ctx || !canvas) return;
 
@@ -538,13 +617,36 @@
         if (imageLoaded && mapImage) {
             ctx.drawImage(mapImage, 0, 0);
         } else if (imageError) {
-            // Draw error message in world space
+            // Draw error message in screen space
             ctx.restore();
-            ctx.fillStyle = '#666';
-            ctx.font = '16px sans-serif';
+            ctx.fillStyle = '#DC2626'; // Red for errors
+            ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Failed to load map image', canvas.width / 2, canvas.height / 2 - 10);
-            ctx.fillText('Check console for details', canvas.width / 2, canvas.height / 2 + 10);
+
+            if (imageErrorMessage) {
+                // Draw custom error message (may be multi-line)
+                const lines = imageErrorMessage.split('\n');
+                const lineHeight = 24;
+                const startY = canvas.height / 2 - (lines.length * lineHeight) / 2;
+
+                // Draw error icon
+                ctx.font = '32px sans-serif';
+                ctx.fillText('⚠️', canvas.width / 2, startY - 30);
+
+                // Draw error lines
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#999';
+                lines.forEach((line, i) => {
+                    ctx.fillText(line.trim(), canvas.width / 2, startY + i * lineHeight);
+                });
+            } else {
+                // Generic error
+                ctx.fillText('Failed to load map image', canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = '#666';
+                ctx.font = '14px sans-serif';
+                ctx.fillText('Check console for details', canvas.width / 2, canvas.height / 2 + 15);
+            }
+
             ctx.save();
             ctx.translate(viewport.translateX, viewport.translateY);
             ctx.scale(viewport.scale, viewport.scale);
