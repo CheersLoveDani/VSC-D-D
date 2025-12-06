@@ -7,7 +7,7 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: min(1200px, 100%);
     margin: 0 auto;
     background: var(--dnd-card-bg);
     padding: var(--dnd-space-6);
@@ -847,4 +847,126 @@ body {
     color: var(--dnd-accent);
     border: none;
     background: transparent;
+}
+
+/* ========== Responsive Layout for Narrow Viewports ========== */
+@media (max-width: 800px) {
+    /* Reduce padding on narrow screens */
+    body {
+        padding: var(--dnd-space-2);
+    }
+    
+    .container {
+        padding: var(--dnd-space-4);
+    }
+    
+    /* Stack main grid vertically */
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: var(--dnd-space-4);
+    }
+    
+    /* Make ability scores horizontal on narrow screens */
+    .ability-scores {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--dnd-space-2);
+    }
+    
+    /* Combat stats - 2 columns instead of 3 */
+    .combat-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Character meta grid - fewer columns */
+    .char-meta-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    
+    /* Grid sections - stack vertically */
+    .grid-sections {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Page 2 grid - stack vertically */
+    .page2-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Spellcasting header - 2 columns */
+    .spellcasting-header {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Spell slots grid - single column */
+    .spell-slots-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Money grid - wrap to 3 columns */
+    .money-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Attack rows - enable horizontal scrolling */
+    .attack-row {
+        overflow-x: auto;
+        min-width: 600px;
+    }
+    
+    .attacks-grid {
+        overflow-x: auto;
+    }
+    
+    /* Weapon rows - enable horizontal scrolling */
+    .weapon-row {
+        overflow-x: auto;
+        min-width: 600px;
+    }
+    
+    .weapons-grid {
+        overflow-x: auto;
+    }
+}
+
+/* ========== Extra narrow viewports (< 500px) ========== */
+@media (max-width: 500px) {
+    /* Further reduce padding */
+    body {
+        padding: var(--dnd-space-1);
+    }
+    
+    .container {
+        padding: var(--dnd-space-3);
+    }
+    
+    /* Ability scores - single column */
+    .ability-scores {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Combat stats - single column */
+    .combat-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Character meta grid - single column */
+    .char-meta-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Money grid - 2 columns */
+    .money-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Spellcasting header - single column */
+    .spellcasting-header {
+        grid-template-columns: 1fr;
+    }
+    
+    /* HP grid - single column */
+    .hp-grid {
+        grid-template-columns: 1fr;
+    }
 }
