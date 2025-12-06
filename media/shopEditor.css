@@ -379,3 +379,100 @@ textarea {
     color: #d4af37;
     font-weight: 600;
 }
+
+/* ========== Responsive Layout for Narrow Viewports ========== */
+@media (max-width: 800px) {
+    body {
+        padding: var(--dnd-space-3);
+    }
+
+    .container {
+        flex-direction: column;
+        gap: var(--dnd-space-4);
+        padding: var(--dnd-space-4);
+    }
+
+    .editor-pane {
+        min-width: 0;
+    }
+
+    .preview-pane {
+        min-width: 0;
+        max-width: none;
+    }
+
+    .inventory-row,
+    .spellbook-row {
+        flex-wrap: wrap;
+    }
+
+    .inv-name,
+    .spell-name {
+        min-width: 140px;
+    }
+}
+
+@media (max-width: 500px) {
+    body {
+        padding: var(--dnd-space-2);
+    }
+
+    .container {
+        padding: var(--dnd-space-3);
+        gap: var(--dnd-space-3);
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: var(--dnd-space-3);
+    }
+
+    .form-row .form-group-small {
+        min-width: 0;
+    }
+
+    .inventory-row,
+    .spellbook-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .inv-name,
+    .spell-name,
+    .inv-qty,
+    .inv-price,
+    .spell-price,
+    .spell-type,
+    .spell-level {
+        flex: none;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .btn-remove,
+    .open-item,
+    .open-spell {
+        align-self: flex-end;
+    }
+
+    .card-header.shop-header {
+        flex-direction: column;
+        gap: var(--dnd-space-2);
+        text-align: center;
+    }
+
+    .card-subheader {
+        flex-direction: column;
+        gap: var(--dnd-space-1);
+        text-align: center;
+    }
+
+    .preview-table {
+        font-size: var(--dnd-text-xs);
+    }
+
+    .preview-table th,
+    .preview-table td {
+        padding: var(--dnd-space-1);
+    }
+}

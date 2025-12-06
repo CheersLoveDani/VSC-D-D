@@ -206,3 +206,52 @@ body {
     padding: var(--dnd-space-3) var(--dnd-space-6);
     font-size: var(--dnd-text-base);
 }
+
+/* ========== Responsive Layout for Narrow Viewports ========== */
+@media (max-width: 600px) {
+    .toolbar {
+        padding: var(--dnd-space-2);
+        gap: var(--dnd-space-1);
+        flex-wrap: wrap;
+        max-width: calc(100vw - var(--dnd-space-8));
+    }
+
+    .toolbar .dnd-btn {
+        padding: var(--dnd-space-1) var(--dnd-space-2);
+        font-size: var(--dnd-text-xs);
+    }
+
+    .pin-popover {
+        min-width: 240px;
+        max-width: calc(100vw - var(--dnd-space-8));
+        padding: var(--dnd-space-4);
+    }
+
+    .preview-popover {
+        min-width: 160px;
+        max-width: calc(100vw - var(--dnd-space-8));
+    }
+
+    .empty-state {
+        padding: var(--dnd-space-6);
+        max-width: calc(100vw - var(--dnd-space-8));
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+    }
+
+    .empty-state-title {
+        font-size: var(--dnd-text-lg);
+    }
+
+    .empty-state-text {
+        font-size: var(--dnd-text-xs);
+        max-width: 220px;
+    }
+
+    .empty-state-btn {
+        padding: var(--dnd-space-2) var(--dnd-space-4);
+        font-size: var(--dnd-text-sm);
+    }
+}

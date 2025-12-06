@@ -314,6 +314,60 @@ body {
     box-shadow: 0 0 0 2px var(--dnd-accent-soft);
 }
 
+/* ========== Responsive Layout for Narrow Viewports ========== */
+@media (max-width: 800px) {
+    body {
+        padding: var(--dnd-space-2);
+    }
+
+    #stat-block-container {
+        padding: var(--dnd-space-3);
+    }
+
+    .ability-scores {
+        flex-wrap: wrap;
+    }
+
+    .ability-score {
+        flex: 1 1 calc(33.333% - var(--dnd-space-2));
+        min-width: 60px;
+    }
+}
+
+@media (max-width: 500px) {
+    body {
+        padding: var(--dnd-space-1);
+    }
+
+    #stat-block-container {
+        padding: var(--dnd-space-2);
+    }
+
+    .stat-block-header h1 {
+        font-size: 22px;
+    }
+
+    .ability-score {
+        flex: 1 1 calc(50% - var(--dnd-space-2));
+    }
+
+    .ability-name {
+        font-size: 9px;
+    }
+
+    .ability-value {
+        font-size: var(--dnd-text-base);
+    }
+
+    .ability-modifier {
+        font-size: var(--dnd-text-xs);
+    }
+
+    .actions-header h3 {
+        font-size: 16px;
+    }
+}
+
 /* ========== Print Styles ========== */
 @media print {
     body {

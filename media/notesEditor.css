@@ -636,3 +636,75 @@ body {
     color: var(--dnd-text-muted);
     font-weight: 500;
 }
+
+/* ========== Responsive Layout for Narrow Viewports ========== */
+@media (max-width: 800px) {
+    .toolbar {
+        padding: var(--dnd-space-2) var(--dnd-space-3);
+    }
+
+    .editor-toolbar {
+        padding: var(--dnd-space-2) var(--dnd-space-3);
+    }
+
+    .content-area {
+        padding: var(--dnd-space-4) var(--dnd-space-4);
+    }
+
+    .input-dialog-content {
+        min-width: 300px;
+    }
+}
+
+@media (max-width: 500px) {
+    .toolbar {
+        padding: var(--dnd-space-2);
+        gap: var(--dnd-space-2);
+    }
+
+    .editor-toolbar {
+        padding: var(--dnd-space-2);
+    }
+
+    .toolbar-group {
+        padding-right: var(--dnd-space-2);
+    }
+
+    .toolbar-btn {
+        min-width: 28px;
+        height: 28px;
+        padding: var(--dnd-space-1) var(--dnd-space-2);
+    }
+
+    .content-area {
+        padding: var(--dnd-space-3) var(--dnd-space-2);
+    }
+
+    .input-dialog-content {
+        min-width: 0;
+        width: calc(100vw - var(--dnd-space-6));
+        max-width: 400px;
+        padding: var(--dnd-space-4);
+    }
+
+    .input-dialog-title {
+        font-size: var(--dnd-text-lg);
+    }
+
+    .table-picker-grid {
+        grid-template-columns: repeat(8, 18px);
+        grid-template-rows: repeat(8, 18px);
+    }
+
+    .table-picker-cell {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* ProseMirror table adjustments for narrow screens */
+    .ProseMirror table td,
+    .ProseMirror table th {
+        min-width: 60px;
+        padding: var(--dnd-space-2);
+    }
+}

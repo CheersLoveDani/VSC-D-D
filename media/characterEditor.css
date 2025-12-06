@@ -14,6 +14,7 @@ body {
     border-radius: var(--dnd-radius-lg);
     box-shadow: var(--dnd-shadow-md);
     border: 1px solid var(--dnd-border-light);
+    overflow: hidden;
 }
 
 /* ========== Page Sections ========== */
@@ -850,7 +851,7 @@ body {
 }
 
 /* ========== Responsive Layout for Narrow Viewports ========== */
-@media (max-width: 800px) {
+@media (max-width: 900px) {
     /* Reduce padding on narrow screens */
     body {
         padding: var(--dnd-space-2);
@@ -909,64 +910,150 @@ body {
     }
     
     /* Attack rows - enable horizontal scrolling */
-    .attack-row {
-        overflow-x: auto;
-        min-width: 600px;
-    }
-    
     .attacks-grid {
         overflow-x: auto;
     }
-    
-    /* Weapon rows - enable horizontal scrolling */
-    .weapon-row {
-        overflow-x: auto;
-        min-width: 600px;
+
+    .attack-row {
+        min-width: 580px;
     }
-    
+
+    /* Weapon rows - enable horizontal scrolling */
     .weapons-grid {
         overflow-x: auto;
     }
+
+    .weapon-row {
+        min-width: 580px;
+    }
 }
 
-/* ========== Extra narrow viewports (< 500px) ========== */
-@media (max-width: 500px) {
+/* ========== Extra narrow viewports ========== */
+@media (max-width: 600px) {
     /* Further reduce padding */
     body {
         padding: var(--dnd-space-1);
     }
-    
+
     .container {
         padding: var(--dnd-space-3);
     }
-    
-    /* Ability scores - single column */
+
+    /* Ability scores - single column with smaller elements */
     .ability-scores {
         grid-template-columns: 1fr;
     }
-    
+
+    .ability-score {
+        grid-template-columns: 40px 1fr 40px;
+    }
+
+    .ability-score input {
+        min-width: 0;
+        font-size: var(--dnd-text-lg);
+        padding: var(--dnd-space-1);
+    }
+
+    .ability-score .modifier {
+        font-size: var(--dnd-text-sm);
+    }
+
     /* Combat stats - single column */
     .combat-stats {
         grid-template-columns: 1fr;
     }
-    
+
+    .combat-stat {
+        padding: var(--dnd-space-2);
+    }
+
+    .combat-stat input {
+        font-size: var(--dnd-text-lg);
+    }
+
     /* Character meta grid - single column */
     .char-meta-grid {
         grid-template-columns: 1fr;
     }
-    
+
     /* Money grid - 2 columns */
     .money-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     /* Spellcasting header - single column */
     .spellcasting-header {
         grid-template-columns: 1fr;
     }
-    
+
     /* HP grid - single column */
     .hp-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Weapon rows - compact 2-column grid */
+    .weapon-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--dnd-space-2);
+        min-width: 0;
+        position: relative;
+    }
+
+    .weapon-row input,
+    .weapon-row select {
+        width: 100%;
+    }
+
+    /* Name spans full width with space for buttons */
+    .weapon-row input.weapon-name-input {
+        grid-column: 1 / -1;
+        width: calc(100% - 36px);
+    }
+
+    /* Delete button positioned at end of name row */
+    .weapon-row button.delete-weapon {
+        position: absolute;
+        top: var(--dnd-space-2);
+        right: var(--dnd-space-2);
+    }
+
+    /* Link button next to delete */
+    .weapon-row button.weapon-link-btn {
+        position: absolute;
+        top: var(--dnd-space-2);
+        right: calc(var(--dnd-space-2) + 28px);
+    }
+
+    /* Attack rows - compact 2-column grid */
+    .attack-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--dnd-space-2);
+        min-width: 0;
+        position: relative;
+    }
+
+    .attack-row input,
+    .attack-row select {
+        width: 100%;
+    }
+
+    /* Name spans full width with space for delete button */
+    .attack-row input:first-of-type {
+        grid-column: 1 / -1;
+        width: calc(100% - 20px);
+    }
+
+    /* Delete button positioned at end of name row */
+    .attack-row > button:last-child {
+        position: absolute;
+        top: var(--dnd-space-2);
+        right: var(--dnd-space-2);
+    }
+
+    .attack-bonus-display,
+    .damage-bonus-display {
+        justify-content: center;
     }
 }
