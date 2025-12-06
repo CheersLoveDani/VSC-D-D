@@ -3,6 +3,46 @@ import * as vscode from 'vscode';
 import { BaseCustomTextEditorProvider } from './baseEditor';
 import { getPreviewData } from '../utils/preview';
 
+/**
+ * Resolves a relative path against a base URI in a web-compatible way.
+ * Handles ./ and ../ segments properly without requiring Node.js path module.
+ * @param baseUri The base URI (e.g., document directory)
+ * @param relativePath The relative path (e.g., "./image.png" or "../images/map.jpg")
+ * @returns The resolved URI
+ */
+function resolveRelativeUri(baseUri: vscode.Uri, relativePath: string): vscode.Uri {
+    // Normalize the relative path by removing leading ./
+    let normalized = relativePath;
+    if (normalized.startsWith('./')) {
+        normalized = normalized.substring(2);
+    }
+
+    // Split the base path and relative path into segments
+    const basePath = baseUri.path;
+    const baseSegments = basePath.split('/').filter(s => s.length > 0);
+    const relativeSegments = normalized.split('/').filter(s => s.length > 0);
+
+    // Process each segment of the relative path
+    for (const segment of relativeSegments) {
+        if (segment === '..') {
+            // Go up one directory
+            if (baseSegments.length > 0) {
+                baseSegments.pop();
+            }
+        } else if (segment !== '.') {
+            // Add the segment
+            baseSegments.push(segment);
+        }
+        // Skip '.' as it means current directory
+    }
+
+    // Reconstruct the path
+    const resolvedPath = '/' + baseSegments.join('/');
+
+    // Create a new URI with the resolved path
+    return baseUri.with({ path: resolvedPath });
+}
+
 export class MapEditorProvider extends BaseCustomTextEditorProvider {
 
     public static readonly viewType = 'dnd.mapEditor';
@@ -41,7 +81,7 @@ export class MapEditorProvider extends BaseCustomTextEditorProvider {
                 const json = JSON.parse(text);
                 if (json.imagePath) {
                     const docDir = vscode.Uri.joinPath(document.uri, '..');
-                    const imageUri = vscode.Uri.joinPath(docDir, json.imagePath);
+                    const imageUri = resolveRelativeUri(docDir, json.imagePath);
                     resolvedImageUri = webviewPanel.webview.asWebviewUri(imageUri).toString();
                 }
             } catch { /* ignore parse errors */ }
