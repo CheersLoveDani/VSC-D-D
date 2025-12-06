@@ -206,3 +206,93 @@ body {
     padding: var(--dnd-space-3) var(--dnd-space-6);
     font-size: var(--dnd-text-base);
 }
+
+/* ========== Warning Modal ========== */
+.warning-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: overlayFadeIn 0.2s ease-out;
+}
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.warning-modal {
+    background: var(--dnd-card-bg);
+    border: 1px solid var(--dnd-border);
+    border-radius: var(--dnd-radius-xl);
+    padding: var(--dnd-space-6);
+    max-width: 420px;
+    text-align: center;
+    box-shadow: var(--dnd-shadow-xl);
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.warning-modal-icon {
+    font-size: 48px;
+    margin-bottom: var(--dnd-space-4);
+}
+
+.warning-modal h3 {
+    margin: 0 0 var(--dnd-space-4) 0;
+    color: var(--dnd-text);
+    font-family: var(--dnd-font-header);
+    font-size: var(--dnd-text-lg);
+}
+
+.warning-modal p {
+    margin: 0 0 var(--dnd-space-3) 0;
+    color: var(--dnd-text-muted);
+    line-height: 1.5;
+    font-size: var(--dnd-text-sm);
+}
+
+.warning-modal-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--dnd-space-2);
+    margin: var(--dnd-space-5) 0;
+    cursor: pointer;
+    font-size: var(--dnd-text-sm);
+    color: var(--dnd-text-muted);
+}
+
+.warning-modal-checkbox input {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.warning-modal-buttons {
+    margin-top: var(--dnd-space-4);
+}
+
+.warning-modal-buttons .dnd-btn {
+    padding: var(--dnd-space-2) var(--dnd-space-6);
+}
